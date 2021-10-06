@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
+const { token } = require('./config.json');
 
 var transporter = nodemailer.createTransport(smtpTransport({
   service: 'gmail',
@@ -68,4 +69,4 @@ bot.on('messageCreate', async (message) => {
   }
 });
 
-bot.login('ODk1MDU2MTk3Nzg5NTY0OTY5.YVzACg.Rkm2Gvurra7e2zVtf6SirENIL2k');
+bot.login(token);
