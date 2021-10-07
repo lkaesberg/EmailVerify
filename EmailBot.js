@@ -250,13 +250,15 @@ bot.on('interactionCreate', async interaction => {
                 await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
             } else {
                 const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                if (unverifiedRole === false) {
+                if (unverifiedRole === "false") {
                     serverSetting.unverifiedRoleName = ""
+                    await interaction.reply("Unverified role deactivated")
                 } else {
                     serverSetting.unverifiedRoleName = unverifiedRole
+                    await interaction.reply("Unverified role changed to " + unverifiedRole)
                 }
                 serverSettingsMap.set(interaction.guild.id, serverSetting)
-                await interaction.reply("Unverified role changed to " + unverifiedRole)
+
                 updateServerSettings(interaction.guildId, serverSetting)
             }
         }
