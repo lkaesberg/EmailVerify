@@ -31,7 +31,10 @@ async function loadServerSettings(guildID) {
                 serverSetting.domains = result.domains.split(",")
             }
             serverSettingsMap.set(guildID, serverSetting)
-            bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+            try {
+                bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+            } catch {
+            }
         }
     )
 }
@@ -51,13 +54,13 @@ const transporter = nodemailer.createTransport(smtpTransport({
 
 const commands = [
     new SlashCommandBuilder().setName('help').setDescription('HELP!'),
-    new SlashCommandBuilder().setName('status').setDescription('Status of email bot'),
-    new SlashCommandBuilder().setName('domains').setDescription('Get/Set email domains for the server').addStringOption(option => option.setName('domain').setDescription('Enter a Domain')),
-    new SlashCommandBuilder().setName('removedomain').setDescription('Remove email domains for the server').addStringOption(option => option.setName('removedomain').setDescription('Enter a Domain')),
-    new SlashCommandBuilder().setName('channelid').setDescription('Get/Set channelid for the server').addStringOption(option => option.setName('channelid').setDescription('Enter a channelid')),
-    new SlashCommandBuilder().setName('messageid').setDescription('Get/Set messageid for the server').addStringOption(option => option.setName('messageid').setDescription('Enter a messageid')),
-    new SlashCommandBuilder().setName('verifiedrole').setDescription('Get/Set verifiedrole for the server').addStringOption(option => option.setName('verifiedrole').setDescription('Enter a verifiedrole name')),
-    new SlashCommandBuilder().setName('unverifiedrole').setDescription('Get/Set unverifiedrole for the server').addStringOption(option => option.setName('unverifiedrole').setDescription('Enter a unverifiedrole name'))
+    new SlashCommandBuilder().setName('status').setDescription('returns whether the bot is properly configured or not'),
+    new SlashCommandBuilder().setName('domains').setDescription('returns registered domains').addStringOption(option => option.setName('domain').setDescription('register given domain')),
+    new SlashCommandBuilder().setName('removedomain').setDescription('remove registered domain').addStringOption(option => option.setName('removedomain').setDescription('remove registered domain')),
+    new SlashCommandBuilder().setName('channelid').setDescription('returns the channel id').addStringOption(option => option.setName('channelid').setDescription('set channelID in which the message is located')),
+    new SlashCommandBuilder().setName('messageid').setDescription('returns the message id').addStringOption(option => option.setName('messageid').setDescription('set messageID of the message to which the user must react to start the verification process')),
+    new SlashCommandBuilder().setName('verifiedrole').setDescription('returns the name of the verified role').addStringOption(option => option.setName('verifiedrole').setDescription('set the role name for the verified role')),
+    new SlashCommandBuilder().setName('unverifiedrole').setDescription('returns the name of the unverified role').addStringOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role (false -> deactivate unverified role)'))
 ]
 
 const serverSettingsMap = new Map()
@@ -123,14 +126,20 @@ bot.on('messageCreate', async (message) => {
     }
     let text = message.content
     if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
-        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSetting.unverifiedRoleName);
+
         const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSetting.verifiedRoleName);
+        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSetting.unverifiedRoleName);
         try {
             await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.add(roleVerified);
-            await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.remove(roleUnverified);
         } catch (e) {
             await message.author.send("Cant find roles. Please contact the admin!")
             return
+        }
+        try {
+            if (serverSetting.unverifiedRoleName !== "") {
+                await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.remove(roleUnverified);
+            }
+        } catch {
         }
         await message.reply("Added role " + roleVerified.name)
         userCodes.delete(message.author.id)
@@ -155,95 +164,101 @@ bot.on('messageCreate', async (message) => {
 bot.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
-    const {commandName} = interaction;
+    if (interaction.member.permissions.has("ADMINISTRATOR")) {
+        const {commandName} = interaction;
 
-    if (commandName === 'help') {
-        await interaction.reply("No Help!");
-    } else if (commandName === 'status') {
-        const serverSetting = serverSettingsMap.get(interaction.guild.id);
-        await interaction.reply("Status: " + serverSetting.status)
-    } else if (commandName === 'domains') {
-        const domain = interaction.options.getString('domain');
-        if (domain == null) {
-            await interaction.reply("Allowed domains: " + serverSettingsMap.get(interaction.guild.id).domains.toString())
-        } else {
-            if (domain.includes("@") && domain.includes(".")) {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                serverSetting.domains.push(domain)
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
-                await interaction.reply("Added " + domain)
-                updateServerSettings(interaction.guildId, serverSetting)
+        if (commandName === 'help') {
+            await interaction.reply("No Help!");
+        } else if (commandName === 'status') {
+            const serverSetting = serverSettingsMap.get(interaction.guild.id);
+            await interaction.reply("Status: " + serverSetting.status)
+        } else if (commandName === 'domains') {
+            const domain = interaction.options.getString('domain');
+            if (domain == null) {
+                await interaction.reply("Allowed domains: " + serverSettingsMap.get(interaction.guild.id).domains.toString())
             } else {
-                await interaction.reply("Please enter a valid domain")
-            }
+                if (domain.includes("@") && domain.includes(".")) {
+                    const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                    serverSetting.domains.push(domain)
+                    serverSettingsMap.set(interaction.guild.id, serverSetting)
+                    await interaction.reply("Added " + domain)
+                    updateServerSettings(interaction.guildId, serverSetting)
+                } else {
+                    await interaction.reply("Please enter a valid domain")
+                }
 
-        }
-    } else if (commandName === 'removedomain') {
-        const removeDomain = interaction.options.getString('removedomain');
-        if (removeDomain == null) {
-            await interaction.reply("Please enter a domain")
-        } else {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            serverSetting.domains = serverSetting.domains.filter(function (value) {
-                return value !== removeDomain;
-            });
-            serverSettingsMap.set(interaction.guild.id, serverSetting)
-            await interaction.reply("Removed " + removeDomain)
-            updateServerSettings(interaction.guildId, serverSetting)
-        }
-    } else if (commandName === 'channelid') {
-        const channelID = interaction.options.getString('channelid');
-        if (channelID == null) {
-            await interaction.reply("ChannelID: " + serverSettingsMap.get(interaction.guild.id).channelID)
-        } else {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            serverSetting.channelID = channelID
-            serverSettingsMap.set(interaction.guild.id, serverSetting)
-            updateServerSettings(interaction.guildId, serverSetting)
-            try {
-                await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
-                await interaction.reply("ChannelID changed to " + channelID)
-            } catch (e) {
-                await interaction.reply("ChannelID changed to " + channelID + " (Not valid)")
             }
-        }
-    } else if (commandName === 'messageid') {
-        const messageID = interaction.options.getString('messageid');
-        if (messageID == null) {
-            await interaction.reply("MessageID: " + serverSettingsMap.get(interaction.guild.id).messageID)
-        } else {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            serverSetting.messageID = messageID
-            serverSettingsMap.set(interaction.guild.id, serverSetting)
-            updateServerSettings(interaction.guildId, serverSetting)
-            try {
-                await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
-                await interaction.reply("MessageID changed to " + messageID)
-            } catch (e) {
-                await interaction.reply("MessageID changed to " + messageID + " (Not valid)")
+        } else if (commandName === 'removedomain') {
+            const removeDomain = interaction.options.getString('removedomain');
+            if (removeDomain == null) {
+                await interaction.reply("Please enter a domain")
+            } else {
+                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                serverSetting.domains = serverSetting.domains.filter(function (value) {
+                    return value !== removeDomain;
+                });
+                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                await interaction.reply("Removed " + removeDomain)
+                updateServerSettings(interaction.guildId, serverSetting)
             }
-        }
-    } else if (commandName === 'verifiedrole') {
-        const verifiedRole = interaction.options.getString('verifiedrole');
-        if (verifiedRole == null) {
-            await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
-        } else {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            serverSetting.verifiedRoleName = verifiedRole
-            serverSettingsMap.set(interaction.guild.id, serverSetting)
-            await interaction.reply("Verified role changed to " + verifiedRole)
-            updateServerSettings(interaction.guildId, serverSetting)
-        }
-    } else if (commandName === 'unverifiedrole') {
-        const unverifiedRole = interaction.options.getString('unverifiedrole');
-        if (unverifiedRole == null) {
-            await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
-        } else {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            serverSetting.unverifiedRoleName = unverifiedRole
-            serverSettingsMap.set(interaction.guild.id, serverSetting)
-            await interaction.reply("Unverified role changed to " + unverifiedRole)
-            updateServerSettings(interaction.guildId, serverSetting)
+        } else if (commandName === 'channelid') {
+            const channelID = interaction.options.getString('channelid');
+            if (channelID == null) {
+                await interaction.reply("ChannelID: " + serverSettingsMap.get(interaction.guild.id).channelID)
+            } else {
+                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                serverSetting.channelID = channelID
+                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                updateServerSettings(interaction.guildId, serverSetting)
+                try {
+                    await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                    await interaction.reply("ChannelID changed to " + channelID)
+                } catch (e) {
+                    await interaction.reply("ChannelID changed to " + channelID + " (Not valid)")
+                }
+            }
+        } else if (commandName === 'messageid') {
+            const messageID = interaction.options.getString('messageid');
+            if (messageID == null) {
+                await interaction.reply("MessageID: " + serverSettingsMap.get(interaction.guild.id).messageID)
+            } else {
+                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                serverSetting.messageID = messageID
+                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                updateServerSettings(interaction.guildId, serverSetting)
+                try {
+                    await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                    await interaction.reply("MessageID changed to " + messageID)
+                } catch (e) {
+                    await interaction.reply("MessageID changed to " + messageID + " (Not valid)")
+                }
+            }
+        } else if (commandName === 'verifiedrole') {
+            const verifiedRole = interaction.options.getString('verifiedrole');
+            if (verifiedRole == null) {
+                await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
+            } else {
+                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                serverSetting.verifiedRoleName = verifiedRole
+                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                await interaction.reply("Verified role changed to " + verifiedRole)
+                updateServerSettings(interaction.guildId, serverSetting)
+            }
+        } else if (commandName === 'unverifiedrole') {
+            const unverifiedRole = interaction.options.getString('unverifiedrole');
+            if (unverifiedRole == null) {
+                await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
+            } else {
+                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                if (unverifiedRole === false) {
+                    serverSetting.unverifiedRoleName = ""
+                } else {
+                    serverSetting.unverifiedRoleName = unverifiedRole
+                }
+                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                await interaction.reply("Unverified role changed to " + unverifiedRole)
+                updateServerSettings(interaction.guildId, serverSetting)
+            }
         }
     }
 });
