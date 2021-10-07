@@ -108,7 +108,7 @@ bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
     if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
         userGuilds.set(user.id, reaction.message.guild)
-        await user.send("Please enter your E-Mail address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").")
+        await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").")
     }
 });
 
@@ -146,12 +146,12 @@ bot.on('messageCreate', async (message) => {
     } else {
         for (const domain of serverSetting.domains) {
             if (!text.endsWith(domain)) {
-                await message.reply("Please enter only valid E-Mail addresses")
+                await message.reply("Please enter only valid email addresses")
                 return
             }
         }
         if (text.includes(' ')) {
-            await message.reply("Please enter only valid E-Mail addresses")
+            await message.reply("Please enter only valid email addresses")
         } else {
             let code = Math.floor((Math.random() + 1) * 100000).toString()
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
