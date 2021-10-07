@@ -171,7 +171,19 @@ bot.on('interactionCreate', async interaction => {
             await interaction.reply("No Help!");
         } else if (commandName === 'status') {
             const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            await interaction.reply("Status: " + serverSetting.status)
+            var response = "Configuration: " + serverSetting.status ? "✔️\n" : "❌\n"
+            response += "ChannelID: " + serverSetting.channelID + "\n"
+            response += "MessageID: " + serverSetting.messageID + "\n"
+            try {
+                bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                response += "Message Found: ✔️\n"
+            } catch {
+                response += "Message Found: ❌\n"
+            }
+            response += "Domains: " + serverSetting.domains.toString().replace(",", "|") + "\n"
+            response += "Verified Role: " + serverSetting.verifiedRoleName + "\n"
+            response += "Unverified Role: " + serverSetting.unverifiedRoleName + "\n"
+            await interaction.reply(response)
         } else if (commandName === 'domains') {
             const domain = interaction.options.getString('domain');
             if (domain == null) {
