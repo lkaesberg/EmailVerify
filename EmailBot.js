@@ -19,7 +19,7 @@ function updateServerSettings(guildID, serverSettings) {
 
 async function loadServerSettings(guildID) {
     const serverSettings = new ServerSettings()
-    await db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], (err, result) => {
+    await db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], async (err, result) => {
             if (err) {
                 throw err;
             }
@@ -32,8 +32,8 @@ async function loadServerSettings(guildID) {
             }
             serverSettingsMap.set(guildID, serverSettings)
             try {
-                bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-            } catch {
+                await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
+            } catch (e) {
             }
         }
     )
@@ -175,7 +175,7 @@ bot.on('interactionCreate', async interaction => {
             response += "ChannelID: " + serverSettings.channelID + "\n"
             response += "MessageID: " + serverSettings.messageID + "\n"
             try {
-                bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
+                await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
                 response += "Message Found: \:white_check_mark:\n"
             } catch {
                 response += "Message Found: \:x: \n"
