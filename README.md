@@ -5,7 +5,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-<a><img src="emailbot.png" alt="EmailBot" width="64" height="64" title="EmailBot"></a>
+<a><img src="emailbot.png" alt="EmailBot" width="128" height="128" title="EmailBot"></a>
   <h3 align="center">Discord Email Bot</h3>
   <p align="center">
     A Email Verification Bot<br />
