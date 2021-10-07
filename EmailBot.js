@@ -171,14 +171,14 @@ bot.on('interactionCreate', async interaction => {
             await interaction.reply("No Help!");
         } else if (commandName === 'status') {
             const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            var response = "Configuration: " + serverSetting.status ? "\:white_check_mark:\n" : "\:negative_squared_cross_mark: \n"
+            var response = "Configuration: " + (serverSetting.status ? "\:white_check_mark:\n" : "\:x: \n")
             response += "ChannelID: " + serverSetting.channelID + "\n"
             response += "MessageID: " + serverSetting.messageID + "\n"
             try {
                 bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
                 response += "Message Found: \:white_check_mark:\n"
             } catch {
-                response += "Message Found: \:negative_squared_cross_mark: \n"
+                response += "Message Found: \:x: \n"
             }
             response += "Domains: " + serverSetting.domains.toString().replace(",", "|") + "\n"
             response += "Verified Role: " + serverSetting.verifiedRoleName + "\n"
