@@ -44,7 +44,7 @@
 
 ### Description
 
-This bot can verify that a discord user owns an email with a certain domain. The discord user starts the verification process by reacting to a specified message. After replying to the bot with the email address a key gets send via email. When the key gets send to the bot the user gets the verified role.
+This bot is able to verify that a discord user owns an email with a certain domain (i.e. verify name@uni.edu mails). This can be useful when there is some sensitive data on the server which shouldn't be accessed by everyone. To verify, the user just has to add a reaction to a specified message and the bot will send a direct message which asks for the email address. A code will be sent to the email which will grant the verified role when send to the bot.
 
 ### Usage
 
@@ -68,6 +68,8 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 The channelID and messageID are used to specify to which message the user has to react to start the verification process.
 
 After activating (Settings -> Advanced -> Developer Mode) you can copy these by right-clicking the channel and message and press Copy ID
+
+If you are having problems to get the checkmark that the bot found the message, please create it while the bot is on the server
 
 react := react to the message with an emoji
 
