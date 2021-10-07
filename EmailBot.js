@@ -5,7 +5,7 @@ const {token, clientId, email, password} = require('./config.json');
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
-const ServerSetting = require('./ServerSetting.js')
+const ServerSettings = require('./ServerSettings.js')
 const sqlite3 = require('sqlite3').verbose()
 
 const db = new sqlite3.Database('bot.db');
@@ -18,21 +18,21 @@ function updateServerSettings(guildID, serverSettings) {
 }
 
 async function loadServerSettings(guildID) {
-    const serverSetting = new ServerSetting()
+    const serverSettings = new ServerSettings()
     await db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], (err, result) => {
             if (err) {
                 throw err;
             }
             if (result !== undefined) {
-                serverSetting.channelID = result.channelid
-                serverSetting.messageID = result.messageid
-                serverSetting.verifiedRoleName = result.verifiedrole
-                serverSetting.unverifiedRoleName = result.unverifiedrole
-                serverSetting.domains = result.domains.split(",")
+                serverSettings.channelID = result.channelid
+                serverSettings.messageID = result.messageid
+                serverSettings.verifiedRoleName = result.verifiedrole
+                serverSettings.unverifiedRoleName = result.unverifiedrole
+                serverSettings.domains = result.domains.split(",")
             }
-            serverSettingsMap.set(guildID, serverSetting)
+            serverSettingsMap.set(guildID, serverSettings)
             try {
-                bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
             } catch {
             }
         }
@@ -120,15 +120,15 @@ bot.on('messageCreate', async (message) => {
     if (userGuild === null) {
         return
     }
-    const serverSetting = serverSettingsMap.get(userGuild.id)
-    if (!serverSetting.status) {
+    const serverSettings = serverSettingsMap.get(userGuild.id)
+    if (!serverSettings.status) {
         return
     }
     let text = message.content
     if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
 
-        const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSetting.verifiedRoleName);
-        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSetting.unverifiedRoleName);
+        const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.verifiedRoleName);
+        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.unverifiedRoleName);
         try {
             await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.add(roleVerified);
         } catch (e) {
@@ -136,7 +136,7 @@ bot.on('messageCreate', async (message) => {
             return
         }
         try {
-            if (serverSetting.unverifiedRoleName !== "") {
+            if (serverSettings.unverifiedRoleName !== "") {
                 await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.remove(roleUnverified);
             }
         } catch {
@@ -144,7 +144,7 @@ bot.on('messageCreate', async (message) => {
         await message.reply("Added role " + roleVerified.name)
         userCodes.delete(message.author.id)
     } else {
-        for (const domain of serverSetting.domains) {
+        for (const domain of serverSettings.domains) {
             if (!text.endsWith(domain)) {
                 await message.reply("Please enter only valid email addresses")
                 return
@@ -170,19 +170,19 @@ bot.on('interactionCreate', async interaction => {
         if (commandName === 'help') {
             await interaction.reply("No Help!");
         } else if (commandName === 'status') {
-            const serverSetting = serverSettingsMap.get(interaction.guild.id);
-            var response = "Configuration: " + (serverSetting.status ? "\:white_check_mark:\n" : "\:x: \n")
-            response += "ChannelID: " + serverSetting.channelID + "\n"
-            response += "MessageID: " + serverSetting.messageID + "\n"
+            const serverSettings = serverSettingsMap.get(interaction.guild.id);
+            var response = "Configuration: " + (serverSettings.status ? "\:white_check_mark:\n" : "\:x: \n")
+            response += "ChannelID: " + serverSettings.channelID + "\n"
+            response += "MessageID: " + serverSettings.messageID + "\n"
             try {
-                bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
                 response += "Message Found: \:white_check_mark:\n"
             } catch {
                 response += "Message Found: \:x: \n"
             }
-            response += "Domains: " + serverSetting.domains.toString().replace(",", "|") + "\n"
-            response += "Verified Role: " + serverSetting.verifiedRoleName + "\n"
-            response += "Unverified Role: " + serverSetting.unverifiedRoleName + "\n"
+            response += "Domains: " + serverSettings.domains.toString().replace(",", "|") + "\n"
+            response += "Verified Role: " + serverSettings.verifiedRoleName + "\n"
+            response += "Unverified Role: " + serverSettings.unverifiedRoleName + "\n"
             await interaction.reply(response)
         } else if (commandName === 'domains') {
             const domain = interaction.options.getString('domain');
@@ -190,11 +190,11 @@ bot.on('interactionCreate', async interaction => {
                 await interaction.reply("Allowed domains: " + serverSettingsMap.get(interaction.guild.id).domains.toString())
             } else {
                 if (domain.includes("@") && domain.includes(".")) {
-                    const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                    serverSetting.domains.push(domain)
-                    serverSettingsMap.set(interaction.guild.id, serverSetting)
+                    const serverSettings = serverSettingsMap.get(interaction.guild.id);
+                    serverSettings.domains.push(domain)
+                    serverSettingsMap.set(interaction.guild.id, serverSettings)
                     await interaction.reply("Added " + domain)
-                    updateServerSettings(interaction.guildId, serverSetting)
+                    updateServerSettings(interaction.guildId, serverSettings)
                 } else {
                     await interaction.reply("Please enter a valid domain")
                 }
@@ -205,25 +205,25 @@ bot.on('interactionCreate', async interaction => {
             if (removeDomain == null) {
                 await interaction.reply("Please enter a domain")
             } else {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                serverSetting.domains = serverSetting.domains.filter(function (value) {
+                const serverSettings = serverSettingsMap.get(interaction.guild.id);
+                serverSettings.domains = serverSettings.domains.filter(function (value) {
                     return value !== removeDomain;
                 });
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
                 await interaction.reply("Removed " + removeDomain)
-                updateServerSettings(interaction.guildId, serverSetting)
+                updateServerSettings(interaction.guildId, serverSettings)
             }
         } else if (commandName === 'channelid') {
             const channelID = interaction.options.getString('channelid');
             if (channelID == null) {
                 await interaction.reply("ChannelID: " + serverSettingsMap.get(interaction.guild.id).channelID)
             } else {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                serverSetting.channelID = channelID
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
-                updateServerSettings(interaction.guildId, serverSetting)
+                const serverSettings = serverSettingsMap.get(interaction.guild.id);
+                serverSettings.channelID = channelID
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
+                updateServerSettings(interaction.guildId, serverSettings)
                 try {
-                    await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                    await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
                     await interaction.reply("ChannelID changed to " + channelID)
                 } catch (e) {
                     await interaction.reply("ChannelID changed to " + channelID + " (Not valid)")
@@ -234,12 +234,12 @@ bot.on('interactionCreate', async interaction => {
             if (messageID == null) {
                 await interaction.reply("MessageID: " + serverSettingsMap.get(interaction.guild.id).messageID)
             } else {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                serverSetting.messageID = messageID
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
-                updateServerSettings(interaction.guildId, serverSetting)
+                const serverSettings = serverSettingsMap.get(interaction.guild.id);
+                serverSettings.messageID = messageID
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
+                updateServerSettings(interaction.guildId, serverSettings)
                 try {
-                    await bot.channels.cache.get(serverSetting.channelID)?.messages.fetch(serverSetting.messageID)
+                    await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
                     await interaction.reply("MessageID changed to " + messageID)
                 } catch (e) {
                     await interaction.reply("MessageID changed to " + messageID + " (Not valid)")
@@ -250,28 +250,28 @@ bot.on('interactionCreate', async interaction => {
             if (verifiedRole == null) {
                 await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
             } else {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
-                serverSetting.verifiedRoleName = verifiedRole
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                const serverSettings = serverSettingsMap.get(interaction.guild.id);
+                serverSettings.verifiedRoleName = verifiedRole
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
                 await interaction.reply("Verified role changed to " + verifiedRole)
-                updateServerSettings(interaction.guildId, serverSetting)
+                updateServerSettings(interaction.guildId, serverSettings)
             }
         } else if (commandName === 'unverifiedrole') {
             const unverifiedRole = interaction.options.getString('unverifiedrole');
             if (unverifiedRole == null) {
                 await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
             } else {
-                const serverSetting = serverSettingsMap.get(interaction.guild.id);
+                const serverSettings = serverSettingsMap.get(interaction.guild.id);
                 if (unverifiedRole === "false") {
-                    serverSetting.unverifiedRoleName = ""
+                    serverSettings.unverifiedRoleName = ""
                     await interaction.reply("Unverified role deactivated")
                 } else {
-                    serverSetting.unverifiedRoleName = unverifiedRole
+                    serverSettings.unverifiedRoleName = unverifiedRole
                     await interaction.reply("Unverified role changed to " + unverifiedRole)
                 }
-                serverSettingsMap.set(interaction.guild.id, serverSetting)
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
 
-                updateServerSettings(interaction.guildId, serverSetting)
+                updateServerSettings(interaction.guildId, serverSettings)
             }
         }
     }

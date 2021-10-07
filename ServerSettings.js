@@ -1,4 +1,4 @@
-class ServerSetting{
+class ServerSettings{
     constructor(){
         this.domains = []
         this.channelID = ""
@@ -10,4 +10,4 @@ class ServerSetting{
         return this.domains.length !== 0 && this.channelID !== "" && this.messageID !== "" && this.verifiedRoleName !== ""
     }
 }
-module.exports = ServerSetting
+module.exports = ServerSettings
