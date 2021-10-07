@@ -5,15 +5,15 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-![Email Bot](emailbot.png "Email Bot")
+<a><img src="emailbot.png" alt="EmailBot" width="64" height="64" title="EmailBot"></a>
   <h3 align="center">Discord Email Bot</h3>
-
   <p align="center">
     A Email Verification Bot<br />
     <p>
     <a href="https://github.com/lkaesberg/EmailBot/issues">Report Bug</a>
     ·
     <a href="https://github.com/lkaesberg/EmailBot/issues">Request Feature</a>
+    </p>
   </p>
 </p>
 
