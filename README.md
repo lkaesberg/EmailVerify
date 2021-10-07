@@ -74,3 +74,6 @@ react := react to the message with an emoji
 **The commands can only be used by an administrator**
 
 The unverified role can be used to make a channel visible in which the message is located
+
+The EmailBot role has to be higher in the role hierarchy then the verified and unverified role else -> `Cant find roles. Please contact the admin!` error
+![img.png](bothierarchy.png)
