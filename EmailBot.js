@@ -5,43 +5,22 @@ const {token, clientId, email, password} = require('./config.json');
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
-const ServerSettings = require('./ServerSettings.js')
-const sqlite3 = require('sqlite3').verbose()
-
-const db = new sqlite3.Database('bot.db');
-db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT);")
-
-function updateServerSettings(guildID, serverSettings) {
-    db.run(
-        "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid) VALUES (?, ?, ?, ?, ?, ?)",
-        [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID])
-}
-
-async function loadServerSettings(guildID) {
-    const serverSettings = new ServerSettings()
-    await db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], async (err, result) => {
-            if (err) {
-                throw err;
-            }
-            if (result !== undefined) {
-                serverSettings.channelID = result.channelid
-                serverSettings.messageID = result.messageid
-                serverSettings.verifiedRoleName = result.verifiedrole
-                serverSettings.unverifiedRoleName = result.unverifiedrole
-                serverSettings.domains = result.domains.split(",")
-            }
-            serverSettingsMap.set(guildID, serverSettings)
-            try {
-                await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-            } catch (e) {
-            }
-        }
-    )
-}
+const database = require('./database/Database.js')
+const fs = require("fs");
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+
+function loadServerSettings(guildID) {
+    database.getServerSettings(guildID, async (serverSettings) => {
+        serverSettingsMap.set(guildID, serverSettings)
+        try {
+            await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
+        } catch (e) {
+        }
+    }).then()
+}
 
 const transporter = nodemailer.createTransport(smtpTransport({
     service: 'gmail',
@@ -52,22 +31,11 @@ const transporter = nodemailer.createTransport(smtpTransport({
     }
 }));
 
-const commands = [
-    new SlashCommandBuilder().setName('help').setDescription('HELP!'),
-    new SlashCommandBuilder().setName('status').setDescription('returns whether the bot is properly configured or not'),
-    new SlashCommandBuilder().setName('domains').setDescription('returns registered domains').addStringOption(option => option.setName('domain').setDescription('register given domain')),
-    new SlashCommandBuilder().setName('removedomain').setDescription('remove registered domain').addStringOption(option => option.setName('removedomain').setDescription('remove registered domain')),
-    new SlashCommandBuilder().setName('channelid').setDescription('returns the channel id').addStringOption(option => option.setName('channelid').setDescription('set channelID in which the message is located')),
-    new SlashCommandBuilder().setName('messageid').setDescription('returns the message id').addStringOption(option => option.setName('messageid').setDescription('set messageID of the message to which the user must react to start the verification process')),
-    new SlashCommandBuilder().setName('verifiedrole').setDescription('returns the name of the verified role').addStringOption(option => option.setName('verifiedrole').setDescription('set the role name for the verified role')),
-    new SlashCommandBuilder().setName('unverifiedrole').setDescription('returns the name of the unverified role').addStringOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role (false -> deactivate unverified role)'))
-]
+module.exports.serverSettingsMap = serverSettingsMap = new Map()
 
-const serverSettingsMap = new Map()
+module.exports.userGuilds = userGuilds = new Map()
 
-const userGuilds = new Map()
-
-const userCodes = new Map()
+module.exports.userCodes = userCodes = new Map()
 
 function sendEmail(email, code, name) {
     const mailOptions = {
@@ -84,6 +52,16 @@ function sendEmail(email, code, name) {
             console.log('Email sent: ' + info.response);
         }
     });
+}
+
+bot.commands = new Discord.Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commands = []
+
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    bot.commands.set(command.data.name, command);
+    commands.push(command.data.toJSON())
 }
 
 bot.once('ready', async () => {
@@ -164,117 +142,23 @@ bot.on('messageCreate', async (message) => {
 bot.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
-    if (interaction.member.permissions.has("ADMINISTRATOR")) {
-        const {commandName} = interaction;
+    const command = bot.commands.get(interaction.commandName);
 
-        if (commandName === 'help') {
-            await interaction.reply("No Help!");
-        } else if (commandName === 'status') {
-            const serverSettings = serverSettingsMap.get(interaction.guild.id);
-            var response = "Configuration: " + (serverSettings.status ? "\:white_check_mark:\n" : "\:x: \n")
-            response += "ChannelID: " + serverSettings.channelID + "\n"
-            response += "MessageID: " + serverSettings.messageID + "\n"
-            try {
-                await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-                response += "Message Found: \:white_check_mark:\n"
-            } catch {
-                response += "Message Found: \:x: \n"
-            }
-            response += "Domains: " + serverSettings.domains.toString().replace(",", "|") + "\n"
-            response += "Verified Role: " + serverSettings.verifiedRoleName + "\n"
-            response += "Unverified Role: " + serverSettings.unverifiedRoleName + "\n"
-            await interaction.reply(response)
-        } else if (commandName === 'domains') {
-            const domain = interaction.options.getString('domain');
-            if (domain == null) {
-                await interaction.reply("Allowed domains: " + serverSettingsMap.get(interaction.guild.id).domains.toString())
-            } else {
-                if (domain.includes("@") && domain.includes(".")) {
-                    const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                    serverSettings.domains.push(domain)
-                    serverSettingsMap.set(interaction.guild.id, serverSettings)
-                    await interaction.reply("Added " + domain)
-                    updateServerSettings(interaction.guildId, serverSettings)
-                } else {
-                    await interaction.reply("Please enter a valid domain")
-                }
+    if (!command) return;
 
-            }
-        } else if (commandName === 'removedomain') {
-            const removeDomain = interaction.options.getString('removedomain');
-            if (removeDomain == null) {
-                await interaction.reply("Please enter a domain")
-            } else {
-                const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                serverSettings.domains = serverSettings.domains.filter(function (value) {
-                    return value !== removeDomain;
-                });
-                serverSettingsMap.set(interaction.guild.id, serverSettings)
-                await interaction.reply("Removed " + removeDomain)
-                updateServerSettings(interaction.guildId, serverSettings)
-            }
-        } else if (commandName === 'channelid') {
-            const channelID = interaction.options.getString('channelid');
-            if (channelID == null) {
-                await interaction.reply("ChannelID: " + serverSettingsMap.get(interaction.guild.id).channelID)
-            } else {
-                const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                serverSettings.channelID = channelID
-                serverSettingsMap.set(interaction.guild.id, serverSettings)
-                updateServerSettings(interaction.guildId, serverSettings)
-                try {
-                    await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-                    await interaction.reply("ChannelID changed to " + channelID)
-                } catch (e) {
-                    await interaction.reply("ChannelID changed to " + channelID + " (Not valid)")
-                }
-            }
-        } else if (commandName === 'messageid') {
-            const messageID = interaction.options.getString('messageid');
-            if (messageID == null) {
-                await interaction.reply("MessageID: " + serverSettingsMap.get(interaction.guild.id).messageID)
-            } else {
-                const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                serverSettings.messageID = messageID
-                serverSettingsMap.set(interaction.guild.id, serverSettings)
-                updateServerSettings(interaction.guildId, serverSettings)
-                try {
-                    await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-                    await interaction.reply("MessageID changed to " + messageID)
-                } catch (e) {
-                    await interaction.reply("MessageID changed to " + messageID + " (Not valid)")
-                }
-            }
-        } else if (commandName === 'verifiedrole') {
-            const verifiedRole = interaction.options.getString('verifiedrole');
-            if (verifiedRole == null) {
-                await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
-            } else {
-                const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                serverSettings.verifiedRoleName = verifiedRole
-                serverSettingsMap.set(interaction.guild.id, serverSettings)
-                await interaction.reply("Verified role changed to " + verifiedRole)
-                updateServerSettings(interaction.guildId, serverSettings)
-            }
-        } else if (commandName === 'unverifiedrole') {
-            const unverifiedRole = interaction.options.getString('unverifiedrole');
-            if (unverifiedRole == null) {
-                await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
-            } else {
-                const serverSettings = serverSettingsMap.get(interaction.guild.id);
-                if (unverifiedRole === "false") {
-                    serverSettings.unverifiedRoleName = ""
-                    await interaction.reply("Unverified role deactivated")
-                } else {
-                    serverSettings.unverifiedRoleName = unverifiedRole
-                    await interaction.reply("Unverified role changed to " + unverifiedRole)
-                }
-                serverSettingsMap.set(interaction.guild.id, serverSettings)
+    if (interaction.user.id === bot.user.id) return;
 
-                updateServerSettings(interaction.guildId, serverSettings)
-            }
+    try {
+        if (interaction.member.permissions.has("ADMINISTRATOR")) {
+            await command.execute(interaction);
+        } else {
+            await interaction.reply({content: 'You are not allowed to execute this command!', ephemeral: true});
         }
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
     }
+
 });
 
 bot.login(token);
