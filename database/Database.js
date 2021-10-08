@@ -27,7 +27,7 @@ class Database {
                      serverSettings.messageID = result.messageid
                      serverSettings.verifiedRoleName = result.verifiedrole
                      serverSettings.unverifiedRoleName = result.unverifiedrole
-                     serverSettings.domains = result.domains.split(",")
+                     serverSettings.domains = result.domains.split(",").slice(1)
                  }
                  callback(serverSettings)
              }
