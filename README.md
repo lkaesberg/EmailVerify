@@ -51,8 +51,7 @@ This bot is able to verify that a discord user owns an email with a certain doma
 #### Invite Bot
 Use this link to invite the bot to your server:
 
-https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268438528&scope=bot%20applications.commands
-
+https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands
 #### Commands
 
 |Commands|Arguments|Usage|
@@ -60,16 +59,9 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |`/status`|**-**|returns whether the bot is properly configured or not|
 |`/domain`|**(domain name)**|**()** -> returns registered domains<br>**(domain name)** -> register given domain|
 |`/removedomain`|**domain name**|remove registered domain|
-|`/channelid`|**(channel id)**| **()** -> returns the channel id <br> **(channel id)** -> set channelID in which the message is located|
-|`/messageid`|**(message id)**| **()** -> returns the message id <br> **(message id)** -> set messageID of the message to which the user must add a reaction to start the verification process|
+|`/message`|**channel,message**| sends a message to the channel to which the user can add a reaction to start the verification process
 |`/verifiedrole`|**(verified role name)**|**()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role|
 |`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(verified role name)** -> set the role name for the unverified role <br> **(false)** -> deactivates unverified role|
-
-The channelID and messageID are used to specify to which message the user has to react to start the verification process.
-
-After activating (Settings -> Advanced -> Developer Mode) you can copy these by right-clicking the channel and message and press Copy ID
-
-If you are having problems to get the checkmark that the bot found the message, please create it while the bot is on the server
 
 react := react to the message with an emoji
 
