@@ -7,7 +7,7 @@ module.exports = {
         const messageText = interaction.options.getString("message", true)
         const channel = interaction.options.getChannel("channel", true)
 
-        await interaction.reply({content: 'Message sent', ephemeral: true})
+        await interaction.deferReply({ephemeral: true})
 
         const message = await channel.send(messageText)
         await message.react("📝")
@@ -16,5 +16,6 @@ module.exports = {
         serverSettings.messageID = message.id
         serverSettingsMap.set(interaction.guild.id, serverSettings)
         database.updateServerSettings(interaction.guildId, serverSettings)
+        await interaction.editReply({content: 'Message sent', ephemeral: true})
     }
 }
