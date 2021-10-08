@@ -84,6 +84,12 @@ bot.on('guildCreate', guild => {
 
 bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
+
+    if (!serverSettings.status) {
+        await user.send("Bot not properly configured. Please contact admin!").catch(error => {
+        })
+    }
+
     if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
         userGuilds.set(user.id, reaction.message.guild)
         await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(error => {
