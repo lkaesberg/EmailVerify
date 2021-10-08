@@ -61,7 +61,7 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |`/removedomain`|**domain name**|remove registered domain|
 |`/message`|**channel,message**| sends a message to the channel to which the user can add a reaction to start the verification process
 |`/verifiedrole`|**(verified role name)**|**()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role|
-|`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(verified role name)** -> set the role name for the unverified role <br> **(false)** -> deactivates unverified role|
+|`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(unverified role name)** -> set the role name for the unverified role <br> **(current unverified role name)** -> deactivates unverified role|
 
 react := react to the message with an emoji
 

@@ -3,7 +3,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const {serverSettingsMap} = require("../EmailBot");
 module.exports = {
     data: new SlashCommandBuilder().setName('unverifiedrole').setDescription('returns the name of the unverified role')
-        .addRoleOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role (false -> deactivate unverified role)')),
+        .addRoleOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role ( (current unverified role) -> deactivate unverified role)')),
     async execute(interaction) {
         const unverifiedRole = interaction.options.getRole('unverifiedrole');
         if (unverifiedRole == null) {
