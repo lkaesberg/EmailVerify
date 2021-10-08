@@ -11,7 +11,7 @@ module.exports = {
             const serverSettings = serverSettingsMap.get(interaction.guild.id);
             serverSettings.verifiedRoleName = verifiedRole.name
             serverSettingsMap.set(interaction.guild.id, serverSettings)
-            await interaction.reply("Verified role changed to " + verifiedRole)
+            await interaction.reply("Verified role changed to " + verifiedRole.name)
             database.updateServerSettings(interaction.guildId, serverSettings)
         }
     }
