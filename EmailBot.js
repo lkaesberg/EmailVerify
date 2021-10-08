@@ -86,7 +86,8 @@ bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
     if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
         userGuilds.set(user.id, reaction.message.guild)
-        await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").")
+        await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(error => {
+        })
     }
 });
 
@@ -158,7 +159,7 @@ bot.on('interactionCreate', async interaction => {
         console.error(error);
         try {
             await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
-        }catch {
+        } catch {
             await interaction.editReply({content: 'There was an error while executing this command!', ephemeral: true});
         }
 
