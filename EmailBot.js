@@ -5,11 +5,15 @@ const {token, clientId, email, password} = require('./config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
+const {stdin, stdout} = require('process')
+const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+
+let emailNotify = false
 
 function loadServerSettings(guildID) {
     database.getServerSettings(guildID, async (serverSettings) => {
@@ -48,7 +52,9 @@ function sendEmail(email, code, name) {
         if (error) {
             console.log(error);
         } else {
-            console.log('Email sent: ' + info.response);
+            if (emailNotify) {
+                console.log('Email sent: ' + info.response);
+            }
         }
     });
 }
@@ -171,5 +177,30 @@ bot.on('interactionCreate', async interaction => {
     }
 
 });
+
+rl.on("line", async command => {
+    switch (command) {
+        case "help":
+            console.log("Commands: email,servers")
+            break
+        case "email":
+            emailNotify = !emailNotify
+            console.log("Email Notification: " + emailNotify.toString())
+            break
+        case "servers":
+            console.log("------------------------------")
+            console.log("Servers:");
+            const servers = (await bot.guilds.fetch())
+            servers.forEach(guild => {
+                console.log(guild.name)
+            })
+            console.log("Server: " + servers.size)
+            console.log("------------------------------")
+            break
+        default:
+            console.log("No command found!")
+            break
+    }
+})
 
 bot.login(token);
