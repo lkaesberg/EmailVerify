@@ -89,7 +89,10 @@ bot.on('guildCreate', guild => {
 
 bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
-
+    if (serverSettings === null) {
+        await user.send("An error occurred. Please remove and add the reaction to try again.")
+        return
+    }
     if (!serverSettings.status) {
         await user.send("Bot not properly configured. Please contact admin!").catch(() => {
         })
@@ -107,7 +110,7 @@ bot.on('messageCreate', async (message) => {
         return
     }
     const userGuild = userGuilds.get(message.author.id)
-    if (userGuild === null) {
+    if (userGuild === undefined) {
         return
     }
     const serverSettings = serverSettingsMap.get(userGuild.id)
