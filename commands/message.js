@@ -13,6 +13,9 @@ module.exports = {
             await interaction.user.send("No permissions to write in that channel!")
             return
         })
+        if (message === undefined) {
+            return
+        }
         await message.react("📝")
         const serverSettings = serverSettingsMap.get(interaction.guild.id);
         serverSettings.channelID = channel.id
