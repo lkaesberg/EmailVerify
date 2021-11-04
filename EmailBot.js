@@ -125,7 +125,7 @@ bot.on('messageCreate', async (message) => {
         try {
             await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.add(roleVerified);
         } catch (e) {
-            await message.author.send("Cant find roles. Please contact the admin!")
+            await message.author.send("Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.")
             return
         }
         try {
