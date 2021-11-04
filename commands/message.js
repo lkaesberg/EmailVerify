@@ -9,7 +9,10 @@ module.exports = {
 
         await interaction.deferReply({ephemeral: true})
 
-        const message = await channel.send(messageText)
+        const message = await channel.send(messageText).catch(async _ => {
+            await interaction.user.send("No permissions to write in that channel!")
+            return
+        })
         await message.react("📝")
         const serverSettings = serverSettingsMap.get(interaction.guild.id);
         serverSettings.channelID = channel.id
