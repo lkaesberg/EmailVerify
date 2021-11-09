@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
-const {token, clientId, email, password} = require('./config.json');
+const {token, clientId, email, password} = require('../config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
@@ -64,7 +64,7 @@ const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('
 const commands = []
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const command = require(`./src/commands/${file}`);
     bot.commands.set(command.data.name, command);
     commands.push(command.data.toJSON())
 }

@@ -3,3 +3,4 @@ package-lock.json
 config.json
 .idea
 bot.db
+src/bot.db
