@@ -137,13 +137,13 @@ bot.on('messageCreate', async (message) => {
         await message.reply("Added role " + roleVerified.name)
         userCodes.delete(message.author.id)
     } else {
+        let validEmail = false
         for (const domain of serverSettings.domains) {
-            if (!text.endsWith(domain)) {
-                await message.reply("Please enter only valid email addresses")
-                return
+            if (text.endsWith(domain)) {
+                validEmail = true
             }
         }
-        if (text.includes(' ')) {
+        if (text.includes(' ') || !validEmail) {
             await message.reply("Please enter only valid email addresses")
         } else {
             let code = Math.floor((Math.random() + 1) * 100000).toString()
