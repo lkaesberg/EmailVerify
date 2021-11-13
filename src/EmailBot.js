@@ -1,17 +1,24 @@
 const Discord = require('discord.js');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
-const {token, clientId, email, password} = require('../config.json');
+const {token, clientId, email, password, topggToken} = require('../config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
+const { AutoPoster } = require('topgg-autoposter')
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+
+const ap = AutoPoster(topggToken, bot)
+
+ap.on('posted', () => {
+    console.log('Posted stats to Top.gg!')
+})
 
 let emailNotify = false
 
