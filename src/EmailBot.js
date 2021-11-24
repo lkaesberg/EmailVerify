@@ -8,7 +8,7 @@ const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
-const { AutoPoster } = require('topgg-autoposter')
+const {AutoPoster} = require('topgg-autoposter')
 
 const rest = new REST().setToken(token);
 
@@ -104,11 +104,14 @@ bot.on('messageReactionAdd', async (reaction, user) => {
         await user.send("Bot not properly configured. Please contact admin!").catch(() => {
         })
     }
-
-    if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
-        userGuilds.set(user.id, reaction.message.guild)
-        await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(() => {
-        })
+    try {
+        if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
+            userGuilds.set(user.id, reaction.message.guild)
+            await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(() => {
+            })
+        }
+    } catch {
+        await user.send("An error occurred. Please remove and add the reaction to try again.")
     }
 });
 
@@ -125,6 +128,7 @@ bot.on('messageCreate', async (message) => {
         return
     }
     let text = message.content
+    let success;
     if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
 
         const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.verifiedRoleName);
@@ -156,6 +160,7 @@ bot.on('messageCreate', async (message) => {
             let code = Math.floor((Math.random() + 1) * 100000).toString()
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
             sendEmail(text, code, userGuilds.get(message.author.id).name)
+
             await message.reply("Please enter the code")
         }
     }
