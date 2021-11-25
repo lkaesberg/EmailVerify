@@ -107,7 +107,7 @@ bot.on('messageReactionAdd', async (reaction, user) => {
     try {
         if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
             userGuilds.set(user.id, reaction.message.guild)
-            await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(() => {
+            await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ").").catch(() => {
             })
         }
     } catch {
