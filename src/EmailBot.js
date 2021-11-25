@@ -186,7 +186,12 @@ bot.on('interactionCreate', async interaction => {
         try {
             await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
         } catch {
-            await interaction.editReply({content: 'There was an error while executing this command!', ephemeral: true});
+            try {
+                await interaction.editReply({content: 'There was an error while executing this command!', ephemeral: true});
+            }
+            catch {
+                console.log("ERROR: Can't reply")
+            }
         }
 
     }
