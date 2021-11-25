@@ -67,7 +67,7 @@ function sendEmail(email, code, name) {
 }
 
 bot.commands = new Discord.Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
 const commands = []
 
 for (const file of commandFiles) {
