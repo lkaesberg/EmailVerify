@@ -47,7 +47,7 @@ module.exports.userGuilds = userGuilds = new Map()
 
 module.exports.userCodes = userCodes = new Map()
 
-function sendEmail(email, code, name) {
+function sendEmail(email, code, name, message) {
     const mailOptions = {
         from: 'informatik.goettingen@gmail.com',
         to: email,
@@ -55,10 +55,12 @@ function sendEmail(email, code, name) {
         text: code
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
+    transporter.sendMail(mailOptions, async function (error, info) {
         if (error) {
             console.log(error);
+            await message.reply("Can't send mail to " + email)
         } else {
+            await message.reply("Please enter the code you received at " + email)
             if (emailNotify) {
                 console.log('Email sent: ' + info.response);
             }
@@ -128,7 +130,6 @@ bot.on('messageCreate', async (message) => {
         return
     }
     let text = message.content
-    let success;
     if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
 
         const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.verifiedRoleName);
@@ -159,9 +160,7 @@ bot.on('messageCreate', async (message) => {
         } else {
             let code = Math.floor((Math.random() + 1) * 100000).toString()
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
-            sendEmail(text, code, userGuilds.get(message.author.id).name)
-
-            await message.reply("Please enter the code you received at " + text)
+            sendEmail(text, code, userGuilds.get(message.author.id).name, message)
         }
     }
 });
