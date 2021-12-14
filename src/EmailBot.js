@@ -161,7 +161,7 @@ bot.on('messageCreate', async (message) => {
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
             sendEmail(text, code, userGuilds.get(message.author.id).name)
 
-            await message.reply("Please enter the code")
+            await message.reply("Please enter the code you received at " + text)
         }
     }
 });
@@ -187,9 +187,11 @@ bot.on('interactionCreate', async interaction => {
             await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
         } catch {
             try {
-                await interaction.editReply({content: 'There was an error while executing this command!', ephemeral: true});
-            }
-            catch {
+                await interaction.editReply({
+                    content: 'There was an error while executing this command!',
+                    ephemeral: true
+                });
+            } catch {
                 console.log("ERROR: Can't reply")
             }
         }
