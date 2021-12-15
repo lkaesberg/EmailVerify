@@ -29,6 +29,9 @@
     <li>
         <a href="#usage">Usage</a>
     </li>
+    <li>
+        <a href="#contributors">Contributors</a>
+    </li>
   </ol>
 
 </details>
@@ -44,14 +47,19 @@
 
 ### Description
 
-This bot is able to verify that a discord user owns an email with a certain domain (i.e. verify name@uni.edu mails). This can be useful when there is some sensitive data on the server which shouldn't be accessed by everyone. To verify, the user just has to add a reaction to a specified message and the bot will send a direct message which asks for the email address. A code will be sent to the email which will grant the verified role when send to the bot.
+This bot is able to verify that a discord user owns an email with a certain domain (i.e. verify name@uni.edu mails).
+This can be useful when there is some sensitive data on the server which shouldn't be accessed by everyone. To verify,
+the user just has to add a reaction to a specified message and the bot will send a direct message which asks for the
+email address. A code will be sent to the email which will grant the verified role when send to the bot.
 
 ### Usage
 
 #### Invite Bot
+
 Use this link to invite the bot to your server:
 
 https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands
+
 #### Commands
 
 |Commands|Arguments|Usage|
@@ -59,9 +67,13 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |`/status`|**-**|returns whether the bot is properly configured or not|
 |`/domain`|**(domain name)**|**()** -> returns registered domains<br>**(domain name)** -> register given domain|
 |`/removedomain`|**domain name**|remove registered domain|
-|`/message`|**channel,message**| sends a message to the channel to which the user can add a reaction to start the verification process
-|`/verifiedrole`|**(verified role name)**|**()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role|
-|`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(unverified role name)** -> set the role name for the unverified role <br> **(current unverified role name)** -> deactivates unverified role|
+|`/message`|**
+channel,message**| sends a message to the channel to which the user can add a reaction to start the verification process
+|`/verifiedrole`|**(verified role name)**|**()** -> returns the name of the verified role <br> **(verified role
+name)** -> set the role name for the verified role|
+|`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(unverified role
+name)** -> set the role name for the unverified role <br> **(current unverified role
+name)** -> deactivates unverified role|
 |`/language`|**language**|set language for the user interactions|
 
 react := react to the message with an emoji
@@ -70,6 +82,20 @@ react := react to the message with an emoji
 
 The unverified role can be used to make a channel visible in which the message is located
 
-The EmailBot role has to be higher in the role hierarchy then the verified and unverified role else -> `Cant find roles. Please contact the admin!` error
+The EmailBot role has to be higher in the role hierarchy then the verified and unverified role else
+-> `Cant find roles. Please contact the admin!` error
 
 ![img.png](images/bothierarchy.png)
+
+### Contributors
+
+#### Developer
+
+- Lars Kaesberg
+
+#### Translation
+
+- Lars Kaesberg (English, German)
+- gus2131 (spanish)
+
+To add more languages please create an issue with the translation file. [Template](language/english.json)
