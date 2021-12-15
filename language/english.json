@@ -1,0 +1,12 @@
+{
+  "mailPositive": "Please enter the code you received at %VAR%",
+  "mailNegative": "Can't send mail to %VAR%",
+  "roleAdded": "Added role %VAR%",
+  "mailInvalid": "Please enter only valid email addresses",
+  "invalidPermissions": "You are not allowed to execute this command!",
+  "commandFailed": "There was an error while executing this command!",
+  "userRetry": "An error occurred. Please remove and add the reaction to try again.",
+  "userBotError": "Bot not properly configured. Please contact admin!",
+  "userEnterEmail": "Please enter your email address to verify %VAR%.",
+  "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role."
+}
