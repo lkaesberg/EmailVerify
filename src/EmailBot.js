@@ -17,7 +17,7 @@ const rest = new REST().setToken(token);
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
 
 if (topggToken !== undefined) {
-    const ap = AutoPoster(topggToken, bot)
+    AutoPoster(topggToken, bot);
     console.log("Posting stats to topGG!")
 } else {
     console.log("No topGG token!")
@@ -71,7 +71,7 @@ function sendEmail(email, code, name, message) {
         } else {
             await message.reply(getLocale(language, "mailPositive", email))
             if (emailNotify) {
-                console.log('Email sent: ' + info.response);
+                console.log('Email sent to: '+email+ ", Info: " + info.response);
             }
         }
     });
@@ -183,7 +183,7 @@ bot.on('interactionCreate', async interaction => {
     if (!command) return;
 
     if (interaction.user.id === bot.user.id) return;
-    let language = ""
+    let language
     try {
         language = serverSettingsMap.get(interaction.guild.id).language
     } catch {
