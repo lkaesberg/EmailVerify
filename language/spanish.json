@@ -1,0 +1,12 @@
+{
+  "mailPositive": "Por favor, ingrese el código que recibió en %VAR%",
+  "mailNegative": "No se puede enviar correo electrónico a %VAR%",
+  "roleAdded": "Se agregó el rol %VAR%",
+  "mailInvalid": "Por favor ingrese solo direcciones de correo electrónico válidas",
+  "invalidPermissions": "¡No tienes permiso para ejecutar este comando!",
+  "commandFailed": "¡Hubo un error al ejecutar este comando!",
+  "userRetry": "Se produjo un error. Elimine y agregue la reacción para volver a intentarlo.",
+  "userBotError": "El bot no está configurado correctamente. ¡Comuníquese con el administrador!",
+  "userEnterEmail": "Por favor ingrese su dirección de correo electrónico para verificar %VAR%.",
+  "userCantFindRole": "No puedo encontrar roles. ¡Por favor, comuníquese con el administrador! Ayuda: Asegúrese de que el nombre siga siendo el mismo y que el rol del bot sea más alto en el menú de roles de configuración del servidor que el rol verificado y no verificado"
+}

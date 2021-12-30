@@ -14,9 +14,10 @@ module.exports = {
         } catch {
             response += "Message Found: \:x: \n"
         }
-        response += "Domains: " + serverSettings.domains.toString().replace(",", "|") + "\n"
+        response += "Domains: " + serverSettings.domains.toString().replaceAll(",", "|") + "\n"
         response += "Verified Role: " + serverSettings.verifiedRoleName + "\n"
         response += "Unverified Role: " + serverSettings.unverifiedRoleName + "\n"
+        response += "Language: " + serverSettings.language + "\n"
         await interaction.reply({content: response, ephemeral: true})
     }
 }

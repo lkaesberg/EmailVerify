@@ -8,17 +8,20 @@ const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
-const { AutoPoster } = require('topgg-autoposter')
+const {AutoPoster} = require('topgg-autoposter')
+const {getLocale, defaultLanguage} = require('./Language')
+
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
 
-const ap = AutoPoster(topggToken, bot)
-
-ap.on('posted', () => {
-    console.log('Posted stats to Top.gg!')
-})
+if (topggToken !== undefined) {
+    AutoPoster(topggToken, bot);
+    console.log("Posting stats to topGG!")
+} else {
+    console.log("No topGG token!")
+}
 
 let emailNotify = false
 
@@ -47,7 +50,7 @@ module.exports.userGuilds = userGuilds = new Map()
 
 module.exports.userCodes = userCodes = new Map()
 
-function sendEmail(email, code, name) {
+function sendEmail(email, code, name, message) {
     const mailOptions = {
         from: 'informatik.goettingen@gmail.com',
         to: email,
@@ -55,19 +58,27 @@ function sendEmail(email, code, name) {
         text: code
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
+    let language = ""
+    try {
+        language = serverSettingsMap.get(userGuilds.get(message.author.id).id).language
+    } catch {
+        language = defaultLanguage
+    }
+    transporter.sendMail(mailOptions, async function (error, info) {
         if (error) {
             console.log(error);
+            await message.reply(getLocale(language, "mailNegative", email))
         } else {
+            await message.reply(getLocale(language, "mailPositive", email))
             if (emailNotify) {
-                console.log('Email sent: ' + info.response);
+                console.log('Email sent to: '+email+ ", Info: " + info.response);
             }
         }
     });
 }
 
 bot.commands = new Discord.Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
 const commands = []
 
 for (const file of commandFiles) {
@@ -97,18 +108,22 @@ bot.on('guildCreate', guild => {
 bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
     if (serverSettings === null) {
-        await user.send("An error occurred. Please remove and add the reaction to try again.")
+        await user.send(getLocale(defaultLanguage, "userRetry"))
         return
     }
     if (!serverSettings.status) {
-        await user.send("Bot not properly configured. Please contact admin!").catch(() => {
+        await user.send(getLocale(serverSettings.language, "userBotError")).catch(() => {
         })
     }
+    try {
+        if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
+            userGuilds.set(user.id, reaction.message.guild)
 
-    if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
-        userGuilds.set(user.id, reaction.message.guild)
-        await user.send("Please enter your email address to verify (<name>" + serverSettings.domains.toString().replace(",", "|") + ").").catch(() => {
-        })
+            await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
+            })
+        }
+    } catch {
+        await user.send(getLocale(serverSettings.language, "userRetry"))
     }
 });
 
@@ -132,7 +147,7 @@ bot.on('messageCreate', async (message) => {
         try {
             await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.add(roleVerified);
         } catch (e) {
-            await message.author.send("Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.")
+            await message.author.send(getLocale(serverSettings.language, "userCantFindRole"))
             return
         }
         try {
@@ -141,7 +156,7 @@ bot.on('messageCreate', async (message) => {
             }
         } catch {
         }
-        await message.reply("Added role " + roleVerified.name)
+        await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
         userCodes.delete(message.author.id)
     } else {
         let validEmail = false
@@ -151,12 +166,11 @@ bot.on('messageCreate', async (message) => {
             }
         }
         if (text.includes(' ') || !validEmail) {
-            await message.reply("Please enter only valid email addresses")
+            await message.reply(getLocale(serverSettings.language, "mailInvalid"))
         } else {
             let code = Math.floor((Math.random() + 1) * 100000).toString()
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
-            sendEmail(text, code, userGuilds.get(message.author.id).name)
-            await message.reply("Please enter the code")
+            sendEmail(text, code, userGuilds.get(message.author.id).name, message)
         }
     }
 });
@@ -169,19 +183,37 @@ bot.on('interactionCreate', async interaction => {
     if (!command) return;
 
     if (interaction.user.id === bot.user.id) return;
-
+    let language
+    try {
+        language = serverSettingsMap.get(interaction.guild.id).language
+    } catch {
+        language = defaultLanguage
+    }
     try {
         if (interaction.member.permissions.has("ADMINISTRATOR")) {
             await command.execute(interaction);
         } else {
-            await interaction.reply({content: 'You are not allowed to execute this command!', ephemeral: true});
+            await interaction.reply({
+                content: getLocale(language, "invalidPermissions"),
+                ephemeral: true
+            });
         }
     } catch (error) {
         console.error(error);
         try {
-            await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
+            await interaction.reply({
+                content: getLocale(language, "commandFailed"),
+                ephemeral: true
+            });
         } catch {
-            await interaction.editReply({content: 'There was an error while executing this command!', ephemeral: true});
+            try {
+                await interaction.editReply({
+                    content: getLocale(language, "commandFailed"),
+                    ephemeral: true
+                });
+            } catch {
+                console.log("ERROR: Can't reply")
+            }
         }
 
     }

@@ -1,0 +1,12 @@
+{
+  "mailPositive": "Bitte gib den Code der zu %VAR% geschickt wurde ein.",
+  "mailNegative": "Email kann nicht zu %VAR% geschickt werden",
+  "roleAdded": "Rolle %VAR% hinzugefügt",
+  "mailInvalid": "Bitte gib eine richtige Email Adresse an",
+  "invalidPermissions": "Keine ausreichende Berechtigung um den Befehl auszuführen!",
+  "commandFailed": "Bei ausführen des Befehls ist ein Fehler aufgetreten!",
+  "userRetry": "Es ist ein Fehler aufgetreten. Bitte entferne die reaction und füge sie erneut hinzu.",
+  "userBotError": "Der Bot ist nicht richtig konfiguriert. Bitte kontaktiere den Admin!",
+  "userEnterEmail": "Bitte gib deine Email Adresse an um dich zu verifizieren %VAR%.",
+  "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle."
+}
