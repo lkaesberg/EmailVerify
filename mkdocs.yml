@@ -2,6 +2,8 @@ site_name: EmailBot
 repo_url: https://github.com/lkaesberg/EmailBot
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot-border.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
