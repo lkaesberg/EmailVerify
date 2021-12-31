@@ -4,7 +4,7 @@ theme:
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
-    scheme: slate
+    scheme: default
     primary: blue
     accent: cyan
   features:
