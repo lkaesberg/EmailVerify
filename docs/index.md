@@ -1,3 +1,5 @@
+<meta name="description" content= "This Discord Bot allows you to verify clients with the help of their email address. This can be useful when there is some sensitive data on the server which shouldn't be accessed by everyone.">
+
 # EmailBot for Discord
 ## Built With
 
