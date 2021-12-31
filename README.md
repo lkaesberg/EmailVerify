@@ -14,6 +14,7 @@
     ·
     <a href="https://github.com/lkaesberg/EmailBot/issues">Request Feature</a>
     </p>
+    <a href="https://emailbot.larskaesberg.de/">Website</a>
   </p>
 </p>
 
