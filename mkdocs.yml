@@ -6,7 +6,7 @@ theme:
   palette:
     scheme: slate
     primary: blue
-    accent: white
+    accent: cyan
   features:
     - navigation.tabs
 nav:
