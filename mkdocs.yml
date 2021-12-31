@@ -5,8 +5,8 @@ theme:
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
     scheme: slate
-    primary: black
-    accent: yellow
+    primary: blue
+    accent: white
   features:
     - navigation.tabs
 nav:
