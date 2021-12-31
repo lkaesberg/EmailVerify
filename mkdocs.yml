@@ -1,7 +1,7 @@
 site_name: EmailBot
 theme:
   name: material
-  logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
+  logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot-border.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
     scheme: default
