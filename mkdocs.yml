@@ -1,4 +1,5 @@
 site_name: EmailBot
+repo_url: https://github.com/lkaesberg/EmailBot
 theme:
   name: material
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot-border.png
