@@ -13,7 +13,7 @@ const {getLocale, defaultLanguage} = require('./Language')
 const UserTimeout = require("./UserTimeout");
 const ServerStats = require("./ServerStats");
 const express = require('express');
-
+const cors = require('cors');
 
 const rest = new REST().setToken(token);
 
@@ -23,6 +23,10 @@ const serverStats = new ServerStats()
 
 const app = express();
 const port = 8181;
+
+app.use(cors({
+    origin: 'https://emailbot.larskaesberg.de'
+}));
 
 app.get('/mailsSendAll', function (req, res) {
     res.send(serverStats.mailsSendAll.toString())
