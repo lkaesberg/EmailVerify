@@ -3,6 +3,7 @@
   "mailNegative": "No se puede enviar correo electrónico a %VAR%",
   "roleAdded": "Se agregó el rol %VAR%",
   "mailInvalid": "Por favor ingrese solo direcciones de correo electrónico válidas",
+  "mailTimeout": "Por favor, espere %VAR% segundos antes de volver a enviar el correo electrónico.",
   "invalidPermissions": "¡No tienes permiso para ejecutar este comando!",
   "commandFailed": "¡Hubo un error al ejecutar este comando!",
   "userRetry": "Se produjo un error. Elimine y agregue la reacción para volver a intentarlo.",
