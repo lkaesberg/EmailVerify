@@ -4,14 +4,9 @@
 
 ## Stats
 
-Mails Send Today: <strong id="allMails">0</strong>
-<script>
-const mailsSendAll = document.getElementById("allMails");
-
-fetch('https://emailbotstats.larskaesberg.de/mailsSendToday')
-  .then(response => response.json())
-  .then(data => console.log(data));
-</script>
+Server Count: <strong id="serverCount">0</strong><br>
+Mails Send Today: <strong id="todayMails">0</strong><br>
+Mails Send All Time: <strong id="allMails">0</strong>
 
 ## Built With
 
@@ -39,3 +34,25 @@ to invite the bot to your server
 ### Need Help
 
 [Click here](https://top.gg/servers/913410472689156097) to join the EmailBot Support Server
+
+<script>
+const serverCount = document.getElementById("serverCount");
+const mailsSendToday = document.getElementById("todayMails");
+const mailsSendAll = document.getElementById("allMails");
+function refreshData(){
+fetch('https://emailbotstats.larskaesberg.de/serverCount')
+  .then(response => response.json())
+  .then(data => serverCount.textContent = data);
+fetch('https://emailbotstats.larskaesberg.de/mailsSendToday')
+  .then(response => response.json())
+  .then(data => mailsSendToday.textContent = data);
+fetch('https://emailbotstats.larskaesberg.de/mailsSendAll')
+  .then(response => response.json())
+  .then(data => mailsSendAll.textContent = data);
+}
+refreshData();
+setInterval(function (){
+refreshData();
+},2000);
+
+</script>
