@@ -4,3 +4,4 @@ config.json
 .idea
 bot.db
 src/bot.db
+ServerStats.json

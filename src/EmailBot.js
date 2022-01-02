@@ -11,11 +11,36 @@ const fs = require("fs");
 const {AutoPoster} = require('topgg-autoposter')
 const {getLocale, defaultLanguage} = require('./Language')
 const UserTimeout = require("./UserTimeout");
+const ServerStats = require("./ServerStats");
+const express = require('express');
 
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+
+const serverStats = new ServerStats()
+
+const app = express();
+const port = 8181;
+
+app.get('/mailsSendAll', function (req, res) {
+    res.send(serverStats.mailsSendAll.toString())
+});
+
+app.get('/mailsSendToday', function (req, res) {
+    serverStats.testDate()
+    res.send(serverStats.mailsSendToday.toString())
+});
+
+app.get('/serverCount', async function (req, res) {
+    let servers = await bot.guilds.fetch()
+    res.send(servers.size.toString())
+});
+
+app.listen(port, function () {
+    console.log(`App listening on port ${port}!`)
+});
 
 if (topggToken !== undefined) {
     AutoPoster(topggToken, bot);
@@ -72,6 +97,7 @@ function sendEmail(email, code, name, message) {
             console.log(error);
             await message.reply(getLocale(language, "mailNegative", email))
         } else {
+            serverStats.increaseMailSend()
             await message.reply(getLocale(language, "mailPositive", email))
             if (emailNotify) {
                 console.log('Email sent to: ' + email + ", Info: " + info.response);
