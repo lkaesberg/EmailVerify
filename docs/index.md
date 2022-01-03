@@ -2,12 +2,6 @@
 
 # EmailBot for Discord
 
-## Stats
-
-Server Count: <strong id="serverCount">0</strong><br>
-Mails Send Today: <strong id="todayMails">0</strong><br>
-Mails Send All Time: <strong id="allMails">0</strong>
-
 ## Built With
 
 <div style="display: -ms-flexbox;     display: -webkit-flex;     display: flex;     -webkit-flex-direction: row;     -ms-flex-direction: row;     flex-direction: row;     -webkit-flex-wrap: wrap;     -ms-flex-wrap: wrap;     flex-wrap: wrap;     -webkit-justify-content: space-around;     -ms-flex-pack: distribute;     justify-content: space-around;     -webkit-align-content: stretch;     -ms-flex-line-pack: stretch;     align-content: stretch;     -webkit-align-items: flex-start;     -ms-flex-align: start;     align-items: flex-start;">
@@ -16,6 +10,12 @@ Mails Send All Time: <strong id="allMails">0</strong>
 <a href="https://discord.js.org/#/"><img src="https://discordjs.guide/meta-image.png" alt="DiscordJS" width="64" height="64" title="DiscordJS"></a>
 <a href="https://nodemailer.com/about/"><img src="https://nodemailer.com/nm_logo_200x136.png" alt="Nodemailer" width="94" height="64" title="Nodemailer"></a>
 </div>
+
+## Statistics
+
+Server count: <strong id="serverCount">0</strong><br>
+Mails sent today: <strong id="todayMails">0</strong><br>
+Mails sent all time: <strong id="allMails">0</strong>
 
 ## Description
 
