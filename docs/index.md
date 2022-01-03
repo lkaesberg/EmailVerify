@@ -53,6 +53,6 @@ fetch('https://emailbotstats.larskaesberg.de/mailsSendAll')
 refreshData();
 setInterval(function (){
 refreshData();
-},2000);
+},10000);
 
 </script>
