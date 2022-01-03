@@ -38,7 +38,7 @@ app.get('/mailsSendToday', function (req, res) {
 });
 
 app.get('/serverCount', async function (req, res) {
-    let servers = await bot.guilds.fetch()
+    let servers = await bot.guilds.cache
     res.send(servers.size.toString())
 });
 
