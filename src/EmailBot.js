@@ -114,12 +114,12 @@ function sendEmail(toEmail, code, name, message) {
     transporter.sendMail(mailOptions, async function (error, info) {
         if (error) {
             console.log(error);
-            await message.reply(getLocale(language, "mailNegative", email))
+            await message.reply(getLocale(language, "mailNegative", toEmail))
         } else {
             serverStats.increaseMailSend()
-            await message.reply(getLocale(language, "mailPositive", email))
+            await message.reply(getLocale(language, "mailPositive", toEmail))
             if (emailNotify) {
-                console.log('Email sent to: ' + email + ", Info: " + info.response);
+                console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
             }
         }
     });
