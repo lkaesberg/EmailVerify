@@ -1,7 +1,17 @@
 const Discord = require('discord.js');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
-const {token, clientId, email, password, topggToken} = require('../config.json');
+const {
+    token,
+    clientId,
+    email,
+    password,
+    smtpHost,
+    smtpPort,
+    isSecure,
+    isGoogle,
+    topggToken
+} = require('../config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
@@ -65,14 +75,19 @@ function loadServerSettings(guildID) {
     }).then()
 }
 
-const transporter = nodemailer.createTransport(smtpTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
+let nodemailerOptions = {
+    host: smtpHost,
     auth: {
         user: email,
         pass: password
     }
-}));
+}
+if (isGoogle) nodemailerOptions["service"] = "gmail"
+if (isSecure) nodemailerOptions["secure"] = isSecure
+if (smtpPort) nodemailerOptions["port"] = smtpPort
+
+
+const transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
 
 module.exports.serverSettingsMap = serverSettingsMap = new Map()
 
@@ -82,10 +97,10 @@ module.exports.userCodes = userCodes = new Map()
 
 let userTimeouts = new Map()
 
-function sendEmail(email, code, name, message) {
+function sendEmail(toEmail, code, name, message) {
     const mailOptions = {
-        from: 'informatik.goettingen@gmail.com',
-        to: email,
+        from: email,
+        to: toEmail,
         subject: name + ' Discord Password',
         text: code
     };
