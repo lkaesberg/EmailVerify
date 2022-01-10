@@ -71,7 +71,7 @@ function sendEmail(email, code, name, message) {
         } else {
             await message.reply(getLocale(language, "mailPositive", email))
             if (emailNotify) {
-                console.log('Email sent to: '+email+ ", Info: " + info.response);
+                console.log('Email sent to: ' + email + ", Info: " + info.response);
             }
         }
     });
@@ -164,6 +164,9 @@ bot.on('messageCreate', async (message) => {
             if (text.endsWith(domain)) {
                 validEmail = true
             }
+        }
+        if (text.split("@").length - 1 !== 1) {
+            validEmail = false
         }
         if (text.includes(' ') || !validEmail) {
             await message.reply(getLocale(serverSettings.language, "mailInvalid"))
