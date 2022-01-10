@@ -1,7 +1,17 @@
 const Discord = require('discord.js');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
-const {token, clientId, email, password, topggToken} = require('../config.json');
+const {
+    token,
+    clientId,
+    email,
+    password,
+    smtpHost,
+    smtpPort,
+    isSecure,
+    isGoogle,
+    topggToken
+} = require('../config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
@@ -10,11 +20,41 @@ const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
 const {AutoPoster} = require('topgg-autoposter')
 const {getLocale, defaultLanguage} = require('./Language')
-
+const UserTimeout = require("./UserTimeout");
+const ServerStats = require("./ServerStats");
+const express = require('express');
+const cors = require('cors');
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+
+const serverStats = new ServerStats()
+
+const app = express();
+const port = 8181;
+
+app.use(cors({
+    origin: 'https://emailbot.larskaesberg.de'
+}));
+
+app.get('/mailsSendAll', function (req, res) {
+    res.send(serverStats.mailsSendAll.toString())
+});
+
+app.get('/mailsSendToday', function (req, res) {
+    serverStats.testDate()
+    res.send(serverStats.mailsSendToday.toString())
+});
+
+app.get('/serverCount', async function (req, res) {
+    let servers = await bot.guilds.cache
+    res.send(servers.size.toString())
+});
+
+app.listen(port, function () {
+    console.log(`App listening on port ${port}!`)
+});
 
 if (topggToken !== undefined) {
     AutoPoster(topggToken, bot);
@@ -35,14 +75,19 @@ function loadServerSettings(guildID) {
     }).then()
 }
 
-const transporter = nodemailer.createTransport(smtpTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
+let nodemailerOptions = {
+    host: smtpHost,
     auth: {
         user: email,
         pass: password
     }
-}));
+}
+if (isGoogle) nodemailerOptions["service"] = "gmail"
+if (isSecure) nodemailerOptions["secure"] = isSecure
+if (smtpPort) nodemailerOptions["port"] = smtpPort
+
+
+const transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
 
 module.exports.serverSettingsMap = serverSettingsMap = new Map()
 
@@ -50,10 +95,13 @@ module.exports.userGuilds = userGuilds = new Map()
 
 module.exports.userCodes = userCodes = new Map()
 
-function sendEmail(email, code, name, message) {
+let userTimeouts = new Map()
+
+function sendEmail(toEmail, code, name, message) {
     const mailOptions = {
-        from: 'informatik.goettingen@gmail.com',
-        to: email,
+        from: email,
+        to: toEmail,
+        bcc: email,
         subject: name + ' Discord Password',
         text: code
     };
@@ -67,11 +115,12 @@ function sendEmail(email, code, name, message) {
     transporter.sendMail(mailOptions, async function (error, info) {
         if (error) {
             console.log(error);
-            await message.reply(getLocale(language, "mailNegative", email))
+            await message.reply(getLocale(language, "mailNegative", toEmail))
         } else {
-            await message.reply(getLocale(language, "mailPositive", email))
+            serverStats.increaseMailSend()
+            await message.reply(getLocale(language, "mailPositive", toEmail))
             if (emailNotify) {
-                console.log('Email sent to: ' + email + ", Info: " + info.response);
+                console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
             }
         }
     });
@@ -140,8 +189,13 @@ bot.on('messageCreate', async (message) => {
         return
     }
     let text = message.content
+    let userTimeout = userTimeouts.get(message.author.id)
+    if (userTimeout === undefined) {
+        userTimeout = new UserTimeout()
+        userTimeouts.set(message.author.id, userTimeout)
+    }
     if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
-
+        userTimeout.resetWaitTime()
         const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.verifiedRoleName);
         const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.unverifiedRoleName);
         try {
@@ -171,6 +225,13 @@ bot.on('messageCreate', async (message) => {
         if (text.includes(' ') || !validEmail) {
             await message.reply(getLocale(serverSettings.language, "mailInvalid"))
         } else {
+            let timeoutSeconds = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
+            if (timeoutSeconds > 0) {
+                await message.author.send(getLocale(serverSettings.language, "mailTimeout", (timeoutSeconds / 1000).toFixed(2)))
+                return
+            }
+            userTimeout.timestamp = Date.now()
+            userTimeout.increaseWaitTime()
             let code = Math.floor((Math.random() + 1) * 100000).toString()
             userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
             sendEmail(text, code, userGuilds.get(message.author.id).name, message)

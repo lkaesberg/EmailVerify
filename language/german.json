@@ -3,6 +3,7 @@
   "mailNegative": "Email kann nicht zu %VAR% geschickt werden",
   "roleAdded": "Rolle %VAR% hinzugefügt",
   "mailInvalid": "Bitte gib eine richtige Email Adresse an",
+  "mailTimeout": "Bitte warte %VAR% Sekunden vor dem erneuten Versenden der Email!",
   "invalidPermissions": "Keine ausreichende Berechtigung um den Befehl auszuführen!",
   "commandFailed": "Bei ausführen des Befehls ist ein Fehler aufgetreten!",
   "userRetry": "Es ist ein Fehler aufgetreten. Bitte entferne die reaction und füge sie erneut hinzu.",

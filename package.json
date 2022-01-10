@@ -11,8 +11,10 @@
   "dependencies": {
     "@discordjs/builders": "^0.6.0",
     "@discordjs/rest": "^0.1.0-canary.0",
+    "cors": "^2.8.5",
     "discord-api-types": "^0.23.1",
     "discord.js": "^13.2.0",
+    "express": "^4.17.2",
     "nodemailer": "^6.6.5",
     "nodemailer-smtp-transport": "^2.4.2",
     "sqlite3": "^4.2.0",
