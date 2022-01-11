@@ -14,6 +14,10 @@ module.exports = {
                 serverSettings.unverifiedRoleName = ""
                 await interaction.reply("Unverified role deactivated")
             } else {
+                if (unverifiedRole.name === "@everyone"){
+                    await interaction.reply("@Everyone is no permitted role!")
+                    return
+                }
                 serverSettings.unverifiedRoleName = unverifiedRole.name
                 await interaction.reply("Unverified role changed to " + unverifiedRole.name)
             }

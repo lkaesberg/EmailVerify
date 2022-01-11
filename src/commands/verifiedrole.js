@@ -8,6 +8,11 @@ module.exports = {
         if (verifiedRole == null) {
             await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
         } else {
+            console.log(verifiedRole.name)
+            if (verifiedRole.name === "@everyone"){
+                await interaction.reply("@Everyone is no permitted role!")
+                return
+            }
             const serverSettings = serverSettingsMap.get(interaction.guild.id);
             serverSettings.verifiedRoleName = verifiedRole.name
             serverSettingsMap.set(interaction.guild.id, serverSettings)
