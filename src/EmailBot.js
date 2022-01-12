@@ -144,7 +144,7 @@ bot.once('ready', async () => {
             .then(() => console.log('Successfully registered application commands.'))
             .catch(console.error);
     })
-    bot.user.setActivity("Bot Website\nhttps://emailbot.larskaesberg.de", {
+    bot.user.setActivity("Bot Website", {
         type: "PLAYING", url: "https://emailbot.larskaesberg.de"
     })
 });
