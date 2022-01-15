@@ -1,4 +1,4 @@
-site_name: EmailBot
+site_name: EmailBot for Discord
 repo_url: https://github.com/lkaesberg/EmailBot
 theme:
   name: material
