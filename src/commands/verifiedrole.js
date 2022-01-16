@@ -6,15 +6,19 @@ module.exports = {
     async execute(interaction) {
         const verifiedRole = interaction.options.getRole('verifiedrole');
         if (verifiedRole == null) {
-            await interaction.reply("Verified role: " + serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
+            let role = interaction.guild.roles.cache.find(r => r.id === serverSettingsMap.get(interaction.guild.id).verifiedRoleName)
+            if (role === undefined) {
+                await interaction.reply("Verified role can not be found!")
+                return
+            }
+            await interaction.reply("Verified role: " + role.name)
         } else {
-            console.log(verifiedRole.name)
-            if (verifiedRole.name === "@everyone"){
+            if (verifiedRole.name === "@everyone") {
                 await interaction.reply("@Everyone is no permitted role!")
                 return
             }
             const serverSettings = serverSettingsMap.get(interaction.guild.id);
-            serverSettings.verifiedRoleName = verifiedRole.name
+            serverSettings.verifiedRoleName = verifiedRole.id
             serverSettingsMap.set(interaction.guild.id, serverSettings)
             await interaction.reply("Verified role changed to " + verifiedRole.name)
             database.updateServerSettings(interaction.guildId, serverSettings)

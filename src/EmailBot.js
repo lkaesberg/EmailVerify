@@ -24,6 +24,7 @@ const UserTimeout = require("./UserTimeout");
 const ServerStats = require("./ServerStats");
 const express = require('express');
 const cors = require('cors');
+const EmailUser = require("./database/EmailUser");
 
 const rest = new REST().setToken(token);
 
@@ -67,6 +68,23 @@ let emailNotify = false
 
 function loadServerSettings(guildID) {
     database.getServerSettings(guildID, async (serverSettings) => {
+        if (!/^\d+$/.test(serverSettings.verifiedRoleName)) {
+            try {
+                let roleID = bot.guilds.cache.find(guild => guild.id === guildID).roles.cache.find(role => role.name === serverSettings.verifiedRoleName).id
+                console.log(serverSettings.verifiedRoleName + " -> " + roleID)
+                serverSettings.verifiedRoleName = roleID
+            } catch {
+            }
+        }
+        if (!/^\d+$/.test(serverSettings.unverifiedRoleName)) {
+            try {
+                let roleID = bot.guilds.cache.find(guild => guild.id === guildID).roles.cache.find(role => role.name === serverSettings.unverifiedRoleName).id
+                console.log(serverSettings.unverifiedRoleName + " -> " + roleID)
+                serverSettings.unverifiedRoleName = roleID
+            } catch {
+            }
+        }
+        database.updateServerSettings(guildID, serverSettings)
         serverSettingsMap.set(guildID, serverSettings)
         try {
             await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
@@ -93,11 +111,11 @@ module.exports.serverSettingsMap = serverSettingsMap = new Map()
 
 module.exports.userGuilds = userGuilds = new Map()
 
-module.exports.userCodes = userCodes = new Map()
+const userCodes = new Map()
 
 let userTimeouts = new Map()
 
-function sendEmail(toEmail, code, name, message) {
+function sendEmail(toEmail, code, name, message, callback) {
     const mailOptions = {
         from: email,
         to: toEmail,
@@ -113,10 +131,11 @@ function sendEmail(toEmail, code, name, message) {
         language = defaultLanguage
     }
     transporter.sendMail(mailOptions, async function (error, info) {
-        if (error) {
+        if (error || info.rejected.length > 0) {
             console.log(error);
             await message.reply(getLocale(language, "mailNegative", toEmail))
         } else {
+            console.log(info)
             serverStats.increaseMailSend()
             await message.reply(getLocale(language, "mailPositive", toEmail))
             if (emailNotify) {
@@ -197,24 +216,49 @@ bot.on('messageCreate', async (message) => {
         userTimeout = new UserTimeout()
         userTimeouts.set(message.author.id, userTimeout)
     }
-    if (userCodes.get(message.author.id + userGuilds.get(message.author.id).id) === text) {
+    let userCode = userCodes.get(message.author.id + userGuilds.get(message.author.id).id)
+    if (userCode !== undefined && userCode.code === text) {
         userTimeout.resetWaitTime()
-        const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.verifiedRoleName);
-        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.name === serverSettings.unverifiedRoleName);
+        const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.verifiedRoleName);
+        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
+
+        database.getEmailUser(userCode.email, userGuilds.get(message.author.id).id, async (currentUserEmail) => {
+            let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch(currentUserEmail.userID)
+            if (message.author.id === currentUserEmail.userID) {
+                return
+            }
+            try {
+                await member.roles.remove(roleVerified)
+                if (roleUnverified !== undefined) {
+                    await member.roles.add(roleUnverified)
+                }
+            } catch (e) {
+                console.log(e)
+            }
+            try {
+                await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
+            } catch {
+            }
+
+        })
+        database.updateEmailUser(new EmailUser(userCode.email, message.author.id, userGuilds.get(message.author.id).id, serverSettings.verifiedRoleName, 0))
+        let verify_client
         try {
-            await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.add(roleVerified);
+            verify_client = userGuilds.get(message.author.id).members.cache.get(message.author.id)
+            await verify_client.roles.add(roleVerified);
+
         } catch (e) {
             await message.author.send(getLocale(serverSettings.language, "userCantFindRole"))
             return
         }
         try {
             if (serverSettings.unverifiedRoleName !== "") {
-                await userGuilds.get(message.author.id).members.cache.get(message.author.id).roles.remove(roleUnverified);
+                await verify_client.roles.remove(roleUnverified);
             }
         } catch {
         }
         await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
-        userCodes.delete(message.author.id)
+        userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)
     } else {
         let validEmail = false
         for (const domain of serverSettings.domains) {
@@ -236,8 +280,11 @@ bot.on('messageCreate', async (message) => {
             userTimeout.timestamp = Date.now()
             userTimeout.increaseWaitTime()
             let code = Math.floor((Math.random() + 1) * 100000).toString()
-            userCodes.set(message.author.id + userGuilds.get(message.author.id).id, code)
-            sendEmail(text, code, userGuilds.get(message.author.id).name, message)
+
+            sendEmail(text, code, userGuilds.get(message.author.id).name, message, (email) => userCodes.set(message.author.id + userGuilds.get(message.author.id).id, {
+                code: code,
+                email: email.toLowerCase()
+            }))
         }
     }
 });

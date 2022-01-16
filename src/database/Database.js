@@ -1,10 +1,12 @@
-const ServerSettings = require('../ServerSettings.js')
+const ServerSettings = require('./ServerSettings.js')
+const EmailUser = require("./EmailUser");
 const sqlite3 = require('sqlite3').verbose()
 
 class Database {
     constructor() {
         this.db = new sqlite3.Database('bot.db');
         this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+        this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
         //this.db.run("ALTER TABLE guilds ADD language TEXT DEFAULT \"english\";")
         this.name = "LARS"
     }
@@ -31,6 +33,24 @@ class Database {
                     serverSettings.domains = result.domains.split(",")
                 }
                 callback(serverSettings)
+            }
+        )
+    }
+
+    updateEmailUser(emailUser) {
+        this.db.run(
+            "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
+            [emailUser.email.toLowerCase(), emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
+    }
+
+    getEmailUser(email, guildID, callback) {
+        this.db.get("SELECT * FROM userEmails WHERE guildID = ? AND email = ?", [guildID, email.toLowerCase()], (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                if (result !== undefined) {
+                    callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
+                }
             }
         )
     }
