@@ -15,8 +15,18 @@ module.exports = {
             response += "Message Found: \:x: \n"
         }
         response += "Domains: " + serverSettings.domains.toString().replaceAll(",", "|") + "\n"
-        response += "Verified Role: " + serverSettings.verifiedRoleName + "\n"
-        response += "Unverified Role: " + serverSettings.unverifiedRoleName + "\n"
+        let roleVerified = interaction.guild.roles.cache.find(r => r.id === serverSettings.verifiedRoleName)
+        if (roleVerified === undefined) {
+            response += "Verified role can not be found!\n"
+        } else {
+            response += "Verified role: " + roleVerified.name + "\n"
+        }
+        let roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
+        if (roleUnverified === undefined) {
+            response += "Unverified role is disabled\n"
+        } else {
+            response += "Unverified role: " + roleUnverified.name + "\n"
+        }
         response += "Language: " + serverSettings.language + "\n"
         await interaction.reply({content: response, ephemeral: true})
     }

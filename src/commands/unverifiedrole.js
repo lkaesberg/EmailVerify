@@ -7,18 +7,23 @@ module.exports = {
     async execute(interaction) {
         const unverifiedRole = interaction.options.getRole('unverifiedrole');
         if (unverifiedRole == null) {
-            await interaction.reply("Unverified role: " + serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
+            let role = interaction.guild.roles.cache.find(r => r.id === serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
+            if (role === undefined) {
+                await interaction.reply("Unverified role is disabled")
+                return
+            }
+            await interaction.reply("Unverified role: " + role.name)
         } else {
             const serverSettings = serverSettingsMap.get(interaction.guild.id);
-            if (unverifiedRole.name === serverSettings.unverifiedRoleName) {
+            if (unverifiedRole.id === serverSettings.unverifiedRoleName) {
                 serverSettings.unverifiedRoleName = ""
                 await interaction.reply("Unverified role deactivated")
             } else {
-                if (unverifiedRole.name === "@everyone"){
+                if (unverifiedRole.name === "@everyone") {
                     await interaction.reply("@Everyone is no permitted role!")
                     return
                 }
-                serverSettings.unverifiedRoleName = unverifiedRole.name
+                serverSettings.unverifiedRoleName = unverifiedRole.id
                 await interaction.reply("Unverified role changed to " + unverifiedRole.name)
             }
             serverSettingsMap.set(interaction.guild.id, serverSettings)
