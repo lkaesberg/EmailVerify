@@ -135,8 +135,8 @@ function sendEmail(toEmail, code, name, message, callback) {
             console.log(error);
             await message.reply(getLocale(language, "mailNegative", toEmail))
         } else {
-            console.log(info)
             serverStats.increaseMailSend()
+            callback(info.accepted[0])
             await message.reply(getLocale(language, "mailPositive", toEmail))
             if (emailNotify) {
                 console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
