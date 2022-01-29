@@ -5,10 +5,32 @@ const sqlite3 = require('sqlite3').verbose()
 class Database {
     constructor() {
         this.db = new sqlite3.Database('bot.db');
-        this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
-        this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
-        //this.db.run("ALTER TABLE guilds ADD language TEXT DEFAULT \"english\";")
+        this.db.serialize(() => {
+                this.runMigration(1, () => {
+                    this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+                    this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
+                })
+                this.runMigration(2, () => {
+
+                })
+            }
+        )
+
+
         this.name = "LARS"
+    }
+
+    runMigration(version, migration) {
+        let user_version
+        this.db.get("PRAGMA user_version;", (err, result) => {
+            if (err) {
+                throw err
+            }
+            if (result.user_version < version) {
+                migration()
+                this.db.run(`PRAGMA user_version = ${version}`)
+            }
+        })
     }
 
 
