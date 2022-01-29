@@ -25,6 +25,7 @@ const ServerStats = require("./ServerStats");
 const express = require('express');
 const cors = require('cors');
 const EmailUser = require("./database/EmailUser");
+const md5hash = require("./crypto/crypto")
 
 const rest = new REST().setToken(token);
 
