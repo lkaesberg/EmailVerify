@@ -274,7 +274,7 @@ bot.on('messageCreate', async (message) => {
 
             sendEmail(text, code, userGuilds.get(message.author.id).name, message, (email) => userCodes.set(message.author.id + userGuilds.get(message.author.id).id, {
                 code: code,
-                email: email.toLowerCase()
+                email: md5hash(email.toLowerCase())
             }))
         }
     }
