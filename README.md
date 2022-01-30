@@ -63,19 +63,18 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 
 #### Commands
 
-|Commands|Arguments|Usage|
-|:---:|:---:|:---:|
-|`/status`|**-**|returns whether the bot is properly configured or not|
-|`/domain`|**(domain name)**|**()** -> returns registered domains<br>**(domain name)** -> register given domain|
-|`/removedomain`|**domain name**|remove registered domain|
-|`/message`|**
-channel,message**| sends a message to the channel to which the user can add a reaction to start the verification process
-|`/verifiedrole`|**(verified role name)**|**()** -> returns the name of the verified role <br> **(verified role
-name)** -> set the role name for the verified role|
-|`/unverifiedrole`|**(unverified role name)**|**()** -> returns the name of the unverified role <br> **(unverified role
-name)** -> set the role name for the unverified role <br> **(current unverified role
-name)** -> deactivates unverified role|
-|`/language`|**language**|set language for the user interactions|
+|       Commands        |         Arguments          |                                                                                                Usage                                                                                                |
+|:---------------------:|:--------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|        `/help`        |                            |                                                                               get instructions on how to use the bot                                                                                |
+|       `/status`       |           **-**            |                                                                        returns whether the bot is properly configured or not                                                                        |
+|       `/domain`       |     **(domain name)**      |                                                         **()** -> returns registered domains<br>**(domain name)** -> register given domain                                                          |
+|    `/removedomain`    |      **domain name**       |                                                                                      remove registered domain                                                                                       |
+|      `/message`       |    **channel,message**     |                                                sends a message to the channel to which the user can add a reaction to start the verification process                                                
+|    `/verifiedrole`    |  **(verified role name)**  |                                      **()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role                                       |
+|   `/unverifiedrole`   | **(unverified role name)** | **()** -> returns the name of the unverified role <br> **(unverified rolename)** -> set the role name for the unverified role <br> **(current unverified rolename)** -> deactivates unverified role |
+|      `/language`      |        **language**        |                                                                               set language for the user interactions                                                                                |
+|  `/delete_user_data`  |                            |                                                                                  delete all the data from the user                                                                                  |
+| `/delete_server_data` |                            |                                                                                 delete all the data from the server                                                                                 |
 
 react := react to the message with an emoji
 
