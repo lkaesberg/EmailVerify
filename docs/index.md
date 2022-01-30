@@ -33,7 +33,7 @@ to invite the bot to your server
 
 ### Need Help
 
-[Click here](https://top.gg/servers/913410472689156097) to join the EmailBot Support Server
+[Click here](https://discord.com/invite/fEBSHUQXu2) to join the EmailBot Support Server
 
 <script>
 const serverCount = document.getElementById("serverCount");
