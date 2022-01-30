@@ -20,10 +20,13 @@ module.exports = {
                 serverSettingsMap.set(interaction.guild.id, serverSettings)
                 await interaction.reply("Added " + domain)
                 database.updateServerSettings(interaction.guildId, serverSettings)
+            } else if (!domain.includes("@") && domain.includes(".")) {
+                serverSettings.domains.push("@" + domain)
+                serverSettingsMap.set(interaction.guild.id, serverSettings)
+                await interaction.reply("Added " + "@" + domain)
             } else {
                 await interaction.reply("Please enter a valid domain")
             }
-
         }
     }
 }

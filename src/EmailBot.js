@@ -154,6 +154,11 @@ bot.once('ready', async () => {
     })
 });
 
+bot.on("guildDelete", guild => {
+    console.log("Removed: " + guild.name)
+    database.deleteServerData(guild.id)
+})
+
 bot.on('guildCreate', guild => {
     console.log(guild.name)
     loadServerSettings(guild.id)
