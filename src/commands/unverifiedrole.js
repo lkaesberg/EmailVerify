@@ -1,20 +1,25 @@
 const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {serverSettingsMap} = require("../EmailBot");
+const ServerSettings = require("../database/ServerSettings");
 module.exports = {
     data: new SlashCommandBuilder().setName('unverifiedrole').setDescription('returns the name of the unverified role')
         .addRoleOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role ( (current unverified role) -> deactivate unverified role)')),
     async execute(interaction) {
         const unverifiedRole = interaction.options.getRole('unverifiedrole');
+        let serverSettings = serverSettingsMap.get(interaction.guildId);
+        if (serverSettings === undefined) {
+            serverSettings = new ServerSettings()
+            serverSettingsMap.set(interaction.guildId, serverSettings)
+        }
         if (unverifiedRole == null) {
-            let role = interaction.guild.roles.cache.find(r => r.id === serverSettingsMap.get(interaction.guild.id).unverifiedRoleName)
+            let role = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
             if (role === undefined) {
                 await interaction.reply("Unverified role is disabled")
                 return
             }
             await interaction.reply("Unverified role: " + role.name)
         } else {
-            const serverSettings = serverSettingsMap.get(interaction.guild.id);
             if (unverifiedRole.id === serverSettings.unverifiedRoleName) {
                 serverSettings.unverifiedRoleName = ""
                 await interaction.reply("Unverified role deactivated")

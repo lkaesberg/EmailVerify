@@ -1,6 +1,7 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {serverSettingsMap} = require("../EmailBot");
 const database = require("../database/Database.js");
+const ServerSettings = require("../database/ServerSettings");
 module.exports = {
     data: new SlashCommandBuilder().setName('message').setDescription("write message to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")),
     async execute(interaction) {
@@ -20,7 +21,11 @@ module.exports = {
             await interaction.user.send("No permissions to add reactions in that channel!")
             return
         })
-        const serverSettings = serverSettingsMap.get(interaction.guild.id);
+        let serverSettings = serverSettingsMap.get(interaction.guildId);
+        if (serverSettings === undefined) {
+            serverSettings = new ServerSettings()
+            serverSettingsMap.set(interaction.guildId, serverSettings)
+        }
         serverSettings.channelID = channel.id
         serverSettings.messageID = message.id
         serverSettingsMap.set(interaction.guild.id, serverSettings)

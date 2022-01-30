@@ -1,10 +1,15 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const {serverSettingsMap} = require('../EmailBot.js')
+const ServerSettings = require("../database/ServerSettings");
 
 module.exports = {
     data: new SlashCommandBuilder().setName('status').setDescription('returns whether the bot is properly configured or not'),
     async execute(interaction) {
-        const serverSettings = serverSettingsMap.get(interaction.guild.id);
+        let serverSettings = serverSettingsMap.get(interaction.guildId);
+        if (serverSettings === undefined) {
+            serverSettings = new ServerSettings()
+            serverSettingsMap.set(interaction.guildId, serverSettings)
+        }
         let response = "Configuration: " + (serverSettings.status ? "\:white_check_mark:\n" : "\:x: \n");
         response += "ChannelID: " + serverSettings.channelID + "\n"
         response += "MessageID: " + serverSettings.messageID + "\n"

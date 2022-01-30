@@ -26,6 +26,7 @@ const express = require('express');
 const cors = require('cors');
 const EmailUser = require("./database/EmailUser");
 const md5hash = require("./crypto/crypto")
+const ServerSettings = require("./database/ServerSettings");
 
 const rest = new REST().setToken(token);
 
@@ -69,22 +70,6 @@ let emailNotify = false
 
 function loadServerSettings(guildID) {
     database.getServerSettings(guildID, async (serverSettings) => {
-        if (!/^\d+$/.test(serverSettings.verifiedRoleName)) {
-            try {
-                let roleID = bot.guilds.cache.find(guild => guild.id === guildID).roles.cache.find(role => role.name === serverSettings.verifiedRoleName).id
-                console.log(serverSettings.verifiedRoleName + " -> " + roleID)
-                serverSettings.verifiedRoleName = roleID
-            } catch {
-            }
-        }
-        if (!/^\d+$/.test(serverSettings.unverifiedRoleName)) {
-            try {
-                let roleID = bot.guilds.cache.find(guild => guild.id === guildID).roles.cache.find(role => role.name === serverSettings.unverifiedRoleName).id
-                console.log(serverSettings.unverifiedRoleName + " -> " + roleID)
-                serverSettings.unverifiedRoleName = roleID
-            } catch {
-            }
-        }
         database.updateServerSettings(guildID, serverSettings)
         serverSettingsMap.set(guildID, serverSettings)
         try {
@@ -180,6 +165,7 @@ bot.on('guildCreate', guild => {
 bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
     if (serverSettings === null) {
+        serverSettingsMap.set(reaction.message.guildId, new ServerSettings())
         await user.send(getLocale(defaultLanguage, "userRetry"))
         return
     }
@@ -208,6 +194,10 @@ bot.on('messageCreate', async (message) => {
         return
     }
     const serverSettings = serverSettingsMap.get(userGuild.id)
+    if (serverSettings === undefined) {
+        serverSettingsMap.set(userGuild.id, new ServerSettings())
+        return
+    }
     if (!serverSettings.status) {
         return
     }
@@ -305,7 +295,7 @@ bot.on('interactionCreate', async interaction => {
         language = defaultLanguage
     }
     try {
-        if (interaction.member.permissions.has("ADMINISTRATOR")) {
+        if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data") {
             await command.execute(interaction);
         } else {
             await interaction.reply({
