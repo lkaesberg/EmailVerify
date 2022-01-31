@@ -10,16 +10,14 @@ module.exports = {
 
         await interaction.deferReply({ephemeral: true})
 
-        const message = await channel.send(messageText).catch( async _ => {
+        const message = await channel.send({content: messageText}).catch(async _ => {
             await interaction.user.send("No permissions to write in that channel!")
-            return
         })
         if (message === undefined) {
             return
         }
         await message.react("📝").catch(async _ => {
             await interaction.user.send("No permissions to add reactions in that channel!")
-            return
         })
         let serverSettings = serverSettingsMap.get(interaction.guildId);
         if (serverSettings === undefined) {

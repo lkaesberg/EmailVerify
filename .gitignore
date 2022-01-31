@@ -5,3 +5,4 @@ config.json
 bot.db
 src/bot.db
 ServerStats.json
+discord-verify.txt

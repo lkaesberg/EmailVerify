@@ -1,70 +1,26 @@
 const Discord = require('discord.js');
-const nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
-const {
-    token,
-    clientId,
-    email,
-    password,
-    smtpHost,
-    smtpPort,
-    isSecure,
-    isGoogle,
-    topggToken
-} = require('../config.json');
+const {token, clientId} = require('../config.json');
 const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
-const {AutoPoster} = require('topgg-autoposter')
 const {getLocale, defaultLanguage} = require('./Language')
-const UserTimeout = require("./UserTimeout");
-const ServerStats = require("./ServerStats");
-const express = require('express');
-const cors = require('cors');
-const EmailUser = require("./database/EmailUser");
-const md5hash = require("./crypto/crypto")
 const ServerSettings = require("./database/ServerSettings");
+const ServerStatsAPI = require("./api/ServerStatsAPI");
+const topggAPI = require("./api/TopGG")
+const MailSender = require("./mail/MailSender")
+const messageCreate = require("./bot/messageCreate")
 
 const rest = new REST().setToken(token);
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
 
-const serverStats = new ServerStats()
+const serverStatsAPI = new ServerStatsAPI(bot)
 
-const app = express();
-const port = 8181;
 
-app.use(cors({
-    origin: 'https://emailbot.larskaesberg.de'
-}));
-
-app.get('/mailsSendAll', function (req, res) {
-    res.send(serverStats.mailsSendAll.toString())
-});
-
-app.get('/mailsSendToday', function (req, res) {
-    serverStats.testDate()
-    res.send(serverStats.mailsSendToday.toString())
-});
-
-app.get('/serverCount', async function (req, res) {
-    let servers = await bot.guilds.cache
-    res.send(servers.size.toString())
-});
-
-app.listen(port, function () {
-    console.log(`App listening on port ${port}!`)
-});
-
-if (topggToken !== undefined) {
-    AutoPoster(topggToken, bot);
-    console.log("Posting stats to topGG!")
-} else {
-    console.log("No topGG token!")
-}
+topggAPI(bot)
 
 let emailNotify = false
 
@@ -79,20 +35,6 @@ function loadServerSettings(guildID) {
     }).then()
 }
 
-let nodemailerOptions = {
-    host: smtpHost,
-    auth: {
-        user: email,
-        pass: password
-    }
-}
-if (isGoogle) nodemailerOptions["service"] = "gmail"
-if (isSecure) nodemailerOptions["secure"] = isSecure
-if (smtpPort) nodemailerOptions["port"] = smtpPort
-
-
-const transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
-
 module.exports.serverSettingsMap = serverSettingsMap = new Map()
 
 module.exports.userGuilds = userGuilds = new Map()
@@ -101,35 +43,7 @@ const userCodes = new Map()
 
 let userTimeouts = new Map()
 
-function sendEmail(toEmail, code, name, message, callback) {
-    const mailOptions = {
-        from: email,
-        to: toEmail,
-        bcc: email,
-        subject: name + ' Discord Password',
-        text: code
-    };
-
-    let language = ""
-    try {
-        language = serverSettingsMap.get(userGuilds.get(message.author.id).id).language
-    } catch {
-        language = defaultLanguage
-    }
-    transporter.sendMail(mailOptions, async function (error, info) {
-        if (error || info.rejected.length > 0) {
-            console.log(error);
-            await message.reply(getLocale(language, "mailNegative", toEmail))
-        } else {
-            serverStats.increaseMailSend()
-            callback(info.accepted[0])
-            await message.reply(getLocale(language, "mailPositive", toEmail))
-            if (emailNotify) {
-                console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
-            }
-        }
-    });
-}
+const mailSender = new MailSender(serverSettingsMap, userGuilds, serverStatsAPI)
 
 bot.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
@@ -167,6 +81,11 @@ bot.on('guildCreate', guild => {
         .catch(console.error);
 })
 
+bot.on("messageCreate", async (message) => {
+        await messageCreate(message, bot, serverSettingsMap, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
+    }
+)
+
 bot.on('messageReactionAdd', async (reaction, user) => {
     const serverSettings = serverSettingsMap.get(reaction.message.guildId)
     if (serverSettings === null) {
@@ -187,101 +106,6 @@ bot.on('messageReactionAdd', async (reaction, user) => {
         }
     } catch {
         await user.send(getLocale(serverSettings.language, "userRetry"))
-    }
-});
-
-bot.on('messageCreate', async (message) => {
-    if (message.channel.type !== 'DM' || message.author.id === bot.user.id) {
-        return
-    }
-    const userGuild = userGuilds.get(message.author.id)
-    if (userGuild === undefined) {
-        return
-    }
-    const serverSettings = serverSettingsMap.get(userGuild.id)
-    if (serverSettings === undefined) {
-        serverSettingsMap.set(userGuild.id, new ServerSettings())
-        return
-    }
-    if (!serverSettings.status) {
-        return
-    }
-    let text = message.content
-    let userTimeout = userTimeouts.get(message.author.id)
-    if (userTimeout === undefined) {
-        userTimeout = new UserTimeout()
-        userTimeouts.set(message.author.id, userTimeout)
-    }
-    let userCode = userCodes.get(message.author.id + userGuilds.get(message.author.id).id)
-    if (userCode !== undefined && userCode.code === text) {
-        userTimeout.resetWaitTime()
-        const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.verifiedRoleName);
-        const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
-
-        database.getEmailUser(userCode.email, userGuilds.get(message.author.id).id, async (currentUserEmail) => {
-            let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch(currentUserEmail.userID)
-            if (message.author.id === currentUserEmail.userID) {
-                return
-            }
-            try {
-                await member.roles.remove(roleVerified)
-                if (roleUnverified !== undefined) {
-                    await member.roles.add(roleUnverified)
-                }
-            } catch (e) {
-                console.log(e)
-            }
-            try {
-                await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
-            } catch {
-            }
-
-        })
-        database.updateEmailUser(new EmailUser(userCode.email, message.author.id, userGuilds.get(message.author.id).id, serverSettings.verifiedRoleName, 0))
-        let verify_client
-        try {
-            verify_client = userGuilds.get(message.author.id).members.cache.get(message.author.id)
-            await verify_client.roles.add(roleVerified);
-
-        } catch (e) {
-            await message.author.send(getLocale(serverSettings.language, "userCantFindRole"))
-            return
-        }
-        try {
-            if (serverSettings.unverifiedRoleName !== "") {
-                await verify_client.roles.remove(roleUnverified);
-            }
-        } catch {
-        }
-        await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
-        userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)
-    } else {
-        let validEmail = false
-        for (const domain of serverSettings.domains) {
-            if (text.endsWith(domain)) {
-                validEmail = true
-            }
-        }
-        if (text.split("@").length - 1 !== 1) {
-            validEmail = false
-        }
-        if (text.includes(' ') || !validEmail) {
-            await message.reply(getLocale(serverSettings.language, "mailInvalid"))
-        } else {
-            let timeoutSeconds = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
-            if (timeoutSeconds > 0) {
-                await message.author.send(getLocale(serverSettings.language, "mailTimeout", (timeoutSeconds / 1000).toFixed(2)))
-                return
-            }
-            userTimeout.timestamp = Date.now()
-            userTimeout.increaseWaitTime()
-            let code = Math.floor((Math.random() + 1) * 100000).toString()
-
-            sendEmail(text, code, userGuilds.get(message.author.id).name, message, (email) => userCodes.set(message.author.id + userGuilds.get(message.author.id).id, {
-                code: code,
-                email: md5hash(email.toLowerCase())
-            }))
-        }
     }
 });
 
@@ -355,4 +179,6 @@ rl.on("line", async command => {
     }
 })
 
-bot.login(token);
+bot.login(token).catch((e) => {
+    console.log("Failed to login: " + e.toString())
+});
