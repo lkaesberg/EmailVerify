@@ -1,7 +1,7 @@
 const ServerSettings = require('./ServerSettings.js')
 const EmailUser = require("./EmailUser");
 const sqlite3 = require('sqlite3').verbose()
-const md5hash = require("../crypto/crypto")
+const md5hash = require("../crypto/Crypto")
 
 class Database {
     constructor() {
@@ -18,9 +18,6 @@ class Database {
                 })
             }
         )
-
-
-        this.name = "LARS"
     }
 
     runMigration(version, migration) {
