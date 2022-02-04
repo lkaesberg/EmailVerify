@@ -67,7 +67,6 @@ class Database {
             }
         )
     }
-
     updateEmailUser(emailUser) {
         this.db.run(
             "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",

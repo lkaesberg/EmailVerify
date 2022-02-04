@@ -7,7 +7,7 @@ const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
 const fs = require("fs");
 const {getLocale, defaultLanguage} = require('./Language')
-const ServerSettings = require("./database/ServerSettings");
+require("./database/ServerSettings");
 const ServerStatsAPI = require("./api/ServerStatsAPI");
 const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
@@ -24,26 +24,13 @@ topggAPI(bot)
 
 let emailNotify = false
 
-function loadServerSettings(guildID) {
-    database.getServerSettings(guildID, async (serverSettings) => {
-        database.updateServerSettings(guildID, serverSettings)
-        serverSettingsMap.set(guildID, serverSettings)
-        try {
-            await bot.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-        } catch (e) {
-        }
-    }).then()
-}
-
-module.exports.serverSettingsMap = serverSettingsMap = new Map()
-
 module.exports.userGuilds = userGuilds = new Map()
 
 const userCodes = new Map()
 
 let userTimeouts = new Map()
 
-const mailSender = new MailSender(serverSettingsMap, userGuilds, serverStatsAPI)
+const mailSender = new MailSender(userGuilds, serverStatsAPI)
 
 bot.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
@@ -58,7 +45,6 @@ for (const file of commandFiles) {
 bot.once('ready', async () => {
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
-        loadServerSettings(guild.id)
         rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
             .then(() => console.log('Successfully registered application commands.'))
             .catch(console.error);
@@ -75,38 +61,33 @@ bot.on("guildDelete", guild => {
 
 bot.on('guildCreate', guild => {
     console.log(guild.name)
-    loadServerSettings(guild.id)
     rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(console.error);
 })
 
 bot.on("messageCreate", async (message) => {
-        await messageCreate(message, bot, serverSettingsMap, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
+        await messageCreate(message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
     }
 )
 
 bot.on('messageReactionAdd', async (reaction, user) => {
-    const serverSettings = serverSettingsMap.get(reaction.message.guildId)
-    if (serverSettings === null) {
-        serverSettingsMap.set(reaction.message.guildId, new ServerSettings())
-        await user.send(getLocale(defaultLanguage, "userRetry"))
-        return
-    }
-    if (!serverSettings.status) {
-        await user.send(getLocale(serverSettings.language, "userBotError")).catch(() => {
-        })
-    }
-    try {
-        if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
-            userGuilds.set(user.id, reaction.message.guild)
-
-            await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
+    await database.getServerSettings(reaction.message.guildId, (async serverSettings => {
+        if (!serverSettings.status) {
+            await user.send(getLocale(serverSettings.language, "userBotError")).catch(() => {
             })
         }
-    } catch {
-        await user.send(getLocale(serverSettings.language, "userRetry"))
-    }
+        try {
+            if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
+                userGuilds.set(user.id, reaction.message.guild)
+
+                await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
+                })
+            }
+        } catch {
+            await user.send(getLocale(serverSettings.language, "userRetry"))
+        }
+    }))
 });
 
 bot.on('interactionCreate', async interaction => {
@@ -117,41 +98,42 @@ bot.on('interactionCreate', async interaction => {
     if (!command) return;
 
     if (interaction.user.id === bot.user.id) return;
-    let language
-    try {
-        language = serverSettingsMap.get(interaction.guild.id).language
-    } catch {
-        language = defaultLanguage
-    }
-    try {
-        if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data") {
-            await command.execute(interaction);
-        } else {
-            await interaction.reply({
-                content: getLocale(language, "invalidPermissions"),
-                ephemeral: true
-            });
-        }
-    } catch (error) {
-        console.error(error);
+    await database.getServerSettings(interaction.guild.id, async serverSettings => {
+        let language
         try {
-            await interaction.reply({
-                content: getLocale(language, "commandFailed"),
-                ephemeral: true
-            });
+            language = serverSettings.language
         } catch {
+            language = defaultLanguage
+        }
+        try {
+            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data") {
+                await command.execute(interaction);
+            } else {
+                await interaction.reply({
+                    content: getLocale(language, "invalidPermissions"),
+                    ephemeral: true
+                });
+            }
+        } catch (error) {
+            console.error(error);
             try {
-                await interaction.editReply({
+                await interaction.reply({
                     content: getLocale(language, "commandFailed"),
                     ephemeral: true
                 });
             } catch {
-                console.log("ERROR: Can't reply")
+                try {
+                    await interaction.editReply({
+                        content: getLocale(language, "commandFailed"),
+                        ephemeral: true
+                    });
+                } catch {
+                    console.log("ERROR: Can't reply")
+                }
             }
+
         }
-
-    }
-
+    })
 });
 
 rl.on("line", async command => {
