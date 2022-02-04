@@ -1,0 +1,13 @@
+{
+  "mailPositive": "Wprowadź kod otrzymany na adres %VAR%",
+  "mailNegative": "Nie można wysłać wiadomości email do %VAR%",
+  "roleAdded": "Dodano rolę %VAR%",
+  "mailInvalid": "Wprowadź tylko prawidłowy adres email",
+  "mailTimeout": "Poczekaj %VAR% sekund przed ponownym wysłaniem emaila!",
+  "invalidPermissions": "Nie masz uprawnień do wykonania tej komendy!",
+  "commandFailed": "Podczas wykonywania komendy wystąpił błąd!",
+  "userRetry": "Wystąpił błąd. Usuń i dodaj reakcję by spróbować ponownie.",
+  "userBotError": "Bot nie został poprawnie skonfigurowany. Skontaktuj się z administratorem!",
+  "userEnterEmail": "Wprowadź swój adres email by zweryfikować %VAR%.",
+  "userCantFindRole": "Nie odnaleziono ról. Skontaktuj się z administratorem! Wskazówka: Upewnij się, że nazwa roli jest wciąż taka sama i rola bota jest wyżej w ustawieniach serwera niż rola zweryfikowana i niezweryfkowana."
+}
