@@ -2,10 +2,10 @@ const {smtpHost, email, password, isGoogle, isSecure, smtpPort} = require("../..
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
+const database = require("../database/Database");
 
 module.exports = class MailSender {
-    constructor(serverSettingsMap, userGuilds, serverStatsAPI) {
-        this.serverSettingsMap = serverSettingsMap
+    constructor(userGuilds, serverStatsAPI) {
         this.userGuilds = userGuilds
         this.serverStatsAPI = serverStatsAPI
         let nodemailerOptions = {
@@ -23,33 +23,35 @@ module.exports = class MailSender {
         this.transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
     }
 
-    sendEmail(toEmail, code, name, message, emailNotify, callback) {
-        const mailOptions = {
-            from: email,
-            to: toEmail,
-            bcc: email,
-            subject: name + ' Discord Password',
-            text: code
-        };
+    async sendEmail(toEmail, code, name, message, emailNotify, callback) {
+        await database.getServerSettings(this.userGuilds.get(message.author.id).id, serverSettings => {
+            const mailOptions = {
+                from: email,
+                to: toEmail,
+                bcc: email,
+                subject: name + ' Discord Password',
+                text: code
+            };
 
-        let language = ""
-        try {
-            language = this.serverSettingsMap.get(this.userGuilds.get(message.author.id).id).language
-        } catch {
-            language = defaultLanguage
-        }
-        this.transporter.sendMail(mailOptions, async (error, info) => {
-            if (error || info.rejected.length > 0) {
-                console.log(error);
-                await message.reply(getLocale(language, "mailNegative", toEmail))
-            } else {
-                this.serverStatsAPI.increaseMailSend()
-                callback(info.accepted[0])
-                await message.reply(getLocale(language, "mailPositive", toEmail))
-                if (emailNotify) {
-                    console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
-                }
+            let language = ""
+            try {
+                language = serverSettings.language
+            } catch {
+                language = defaultLanguage
             }
-        });
+            this.transporter.sendMail(mailOptions, async (error, info) => {
+                if (error || info.rejected.length > 0) {
+                    console.log(error);
+                    await message.reply(getLocale(language, "mailNegative", toEmail))
+                } else {
+                    this.serverStatsAPI.increaseMailSend()
+                    callback(info.accepted[0])
+                    await message.reply(getLocale(language, "mailPositive", toEmail))
+                    if (emailNotify) {
+                        console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
+                    }
+                }
+            });
+        })
     }
 }
