@@ -48,6 +48,14 @@ bot.once('ready', async () => {
         rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
             .then(() => console.log('Successfully registered application commands.'))
             .catch(console.error);
+        database.getServerSettings(guild.id, async serverSettings => {
+            try {
+                await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
+            }catch (e) {
+                
+            }
+            
+        })
     })
     bot.user.setActivity("Bot Website", {
         type: "PLAYING", url: "https://emailbot.larskaesberg.de"
@@ -78,6 +86,7 @@ bot.on('messageReactionAdd', async (reaction, user) => {
             })
             return
         }
+        console.log(reaction.message.id)
         try {
             if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
                 userGuilds.set(user.id, reaction.message.guild)
