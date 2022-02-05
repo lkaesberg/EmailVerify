@@ -79,7 +79,7 @@ bot.on('messageReactionAdd', async (reaction, user) => {
             return
         }
         try {
-            if (reaction.message.channel.id === serverSettings.channelID && reaction.message.id === serverSettings.messageID && serverSettings.status) {
+            if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
                 userGuilds.set(user.id, reaction.message.guild)
 
                 await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
