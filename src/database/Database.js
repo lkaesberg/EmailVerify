@@ -16,6 +16,10 @@ class Database {
                         this.db.run("UPDATE userEmails SET email = ? WHERE email = ? AND guildID = ?;", [md5hash(result.email), result.email, result.guildID])
                     })
                 })
+                this.runMigration(3, () => {
+                    this.db.run("ALTER TABLE guilds ADD autoVerify NUMBER DEFAULT 0")
+                    this.db.run("ALTER TABLE guilds ADD autoAddUnverified NUMBER DEFAULT 0")
+                })
             }
         )
     }
@@ -45,8 +49,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified])
     }
 
     async getServerSettings(guildID, callback) {
@@ -61,12 +65,15 @@ class Database {
                     serverSettings.verifiedRoleName = result.verifiedrole
                     serverSettings.unverifiedRoleName = result.unverifiedrole
                     serverSettings.language = result.language
+                    serverSettings.autoVerify = result.autoVerify
+                    serverSettings.autoAddUnverified = result.autoAddUnverified
                     serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
                 }
                 callback(serverSettings)
             }
         )
     }
+
     updateEmailUser(emailUser) {
         this.db.run(
             "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",

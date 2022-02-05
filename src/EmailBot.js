@@ -15,7 +15,7 @@ const messageCreate = require("./bot/messageCreate")
 
 const rest = new REST().setToken(token);
 
-const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS]});
 
 const serverStatsAPI = new ServerStatsAPI(bot)
 
@@ -51,10 +51,10 @@ bot.once('ready', async () => {
         database.getServerSettings(guild.id, async serverSettings => {
             try {
                 await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-            }catch (e) {
-                
+            } catch (e) {
+
             }
-            
+
         })
     })
     bot.user.setActivity("Bot Website", {
@@ -65,6 +65,21 @@ bot.once('ready', async () => {
 bot.on("guildDelete", guild => {
     console.log("Removed: " + guild.name)
     database.deleteServerData(guild.id)
+})
+
+bot.on("guildMemberAdd", async member => {
+    console.log(member.user.username)
+    console.log(member.guild.id)
+    await database.getServerSettings(member.guild.id, serverSettings => {
+        console.log(serverSettings.autoAddUnverified)
+        if (serverSettings.autoAddUnverified === 1) {
+            const roleUnverified = member.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
+            if (roleUnverified !== undefined) {
+                console.log(roleUnverified.name)
+                bot.guilds.cache.get(member.guild.id).members.cache.get(member.id).roles.add(roleUnverified)
+            }
+        }
+    })
 })
 
 bot.on('guildCreate', guild => {

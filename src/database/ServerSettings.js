@@ -5,6 +5,8 @@ class ServerSettings {
         this.messageID = ""
         this.verifiedRoleName = ""
         this.unverifiedRoleName = ""
+        this.autoAddUnverified = 0
+        this.autoVerify = 0
         this.language = "english"
     }
 
