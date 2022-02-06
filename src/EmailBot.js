@@ -12,6 +12,7 @@ const ServerStatsAPI = require("./api/ServerStatsAPI");
 const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
 const messageCreate = require("./bot/messageCreate")
+const sendVerifyMessage = require("./bot/sendVerifyMessage")
 
 const rest = new REST().setToken(token);
 
@@ -51,10 +52,10 @@ bot.once('ready', async () => {
         database.getServerSettings(guild.id, async serverSettings => {
             try {
                 await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-            }catch (e) {
-                
+            } catch (e) {
+
             }
-            
+
         })
     })
     bot.user.setActivity("Bot Website", {
@@ -65,6 +66,21 @@ bot.once('ready', async () => {
 bot.on("guildDelete", guild => {
     console.log("Removed: " + guild.name)
     database.deleteServerData(guild.id)
+})
+
+bot.on("guildMemberAdd", async member => {
+    console.log(member.user.username)
+    console.log(member.guild.id)
+    await database.getServerSettings(member.guild.id, serverSettings => {
+        console.log(serverSettings.autoAddUnverified)
+        if (serverSettings.autoAddUnverified === 1) {
+            const roleUnverified = member.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
+            if (roleUnverified !== undefined) {
+                console.log(roleUnverified.name)
+                bot.guilds.cache.get(member.guild.id).members.cache.get(member.id).roles.add(roleUnverified)
+            }
+        }
+    })
 })
 
 bot.on('guildCreate', guild => {
@@ -80,29 +96,16 @@ bot.on("messageCreate", async (message) => {
 )
 
 bot.on('messageReactionAdd', async (reaction, user) => {
-    await database.getServerSettings(reaction.message.guildId, (async serverSettings => {
-        if (!serverSettings.status) {
-            await user.send(getLocale(serverSettings.language, "userBotError")).catch(() => {
-            })
-            return
-        }
-        console.log(reaction.message.id)
-        try {
-            if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
-                userGuilds.set(user.id, reaction.message.guild)
-
-                await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
-                })
-            }
-        } catch {
-            await user.send(getLocale(serverSettings.language, "userRetry"))
-        }
-    }))
+    await sendVerifyMessage(reaction.message.guild, user, reaction.message.channel.id, reaction.message.id, userGuilds)
 });
 
 bot.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+    if (interaction.isButton()) {
+        await sendVerifyMessage(interaction.guild, interaction.user, null, null, userGuilds, true)
+        interaction.deferUpdate()
+    }
 
+    if (!interaction.isCommand()) return;
     const command = bot.commands.get(interaction.commandName);
 
     if (!command) return;
@@ -116,7 +119,7 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data") {
+            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({
