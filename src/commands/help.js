@@ -3,7 +3,7 @@ module.exports = {
     data: new SlashCommandBuilder().setName('help').setDescription('show instructions on how to use the bot'),
     async execute(interaction) {
         await interaction.reply(
-            "1)    Use `/message` to create a the verify message\n" +
+            "1)    Use `/button` or `/message` to create the verify message\n" +
             "2)   Use `/domains` to add the verified domains\n" +
             "3)   Use `/verifiedrole` to add the verified role\n" +
             "3.1) Use `/unverifiedrole` to add the unverified role if needed\n" +
