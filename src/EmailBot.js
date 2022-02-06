@@ -12,10 +12,11 @@ const ServerStatsAPI = require("./api/ServerStatsAPI");
 const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
 const messageCreate = require("./bot/messageCreate")
+const sendVerifyMessage = require("./bot/sendVerifyMessage")
 
 const rest = new REST().setToken(token);
 
-const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS]});
+const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
 
 const serverStatsAPI = new ServerStatsAPI(bot)
 
@@ -95,29 +96,16 @@ bot.on("messageCreate", async (message) => {
 )
 
 bot.on('messageReactionAdd', async (reaction, user) => {
-    await database.getServerSettings(reaction.message.guildId, (async serverSettings => {
-        if (!serverSettings.status) {
-            await user.send(getLocale(serverSettings.language, "userBotError")).catch(() => {
-            })
-            return
-        }
-        console.log(reaction.message.id)
-        try {
-            if (reaction.message.channel.id === serverSettings.channelID && serverSettings.status) {
-                userGuilds.set(user.id, reaction.message.guild)
-
-                await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
-                })
-            }
-        } catch {
-            await user.send(getLocale(serverSettings.language, "userRetry"))
-        }
-    }))
+    await sendVerifyMessage(reaction.message.guild, user, reaction.message.channel.id, reaction.message.id, userGuilds)
 });
 
 bot.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+    if (interaction.isButton()) {
+        await sendVerifyMessage(interaction.guild, interaction.user, null, null, userGuilds, true)
+        interaction.deferUpdate()
+    }
 
+    if (!interaction.isCommand()) return;
     const command = bot.commands.get(interaction.commandName);
 
     if (!command) return;
@@ -131,7 +119,7 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data") {
+            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({
