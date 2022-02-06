@@ -11,7 +11,7 @@ class ServerSettings {
     }
 
     get status() {
-        return this.domains.length !== 0 && this.channelID !== "" && this.messageID !== "" && this.verifiedRoleName !== ""
+        return this.domains.length !== 0 && this.verifiedRoleName !== ""
     }
 }
 
