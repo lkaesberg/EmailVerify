@@ -59,7 +59,7 @@ bot.once('ready', async () => {
 
         })
     })
-    bot.user.setActivity("Bot Website", {
+    bot.user.setActivity("/verify | Website", {
         type: "PLAYING", url: "https://emailbot.larskaesberg.de"
     })
 });
