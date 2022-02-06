@@ -13,6 +13,7 @@ const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
 const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
+const {raw} = require("express");
 
 const rest = new REST().setToken(token);
 
@@ -69,16 +70,21 @@ bot.on("guildDelete", guild => {
 })
 
 bot.on("guildMemberAdd", async member => {
-    console.log(member.user.username)
-    console.log(member.guild.id)
-    await database.getServerSettings(member.guild.id, serverSettings => {
-        console.log(serverSettings.autoAddUnverified)
-        if (serverSettings.autoAddUnverified === 1) {
+    await database.getServerSettings(member.guild.id, async serverSettings => {
+        if (serverSettings.autoAddUnverified) {
             const roleUnverified = member.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
             if (roleUnverified !== undefined) {
                 console.log(roleUnverified.name)
-                bot.guilds.cache.get(member.guild.id).members.cache.get(member.id).roles.add(roleUnverified)
+                try {
+                    await member.roles.add(roleUnverified)
+                } catch (e) {
+
+                }
+
             }
+        }
+        if (serverSettings.autoVerify) {
+            await sendVerifyMessage(member.guild, member.user, null, null, userGuilds, true)
         }
     })
 })

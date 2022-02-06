@@ -28,6 +28,8 @@ module.exports = {
                 response += "Unverified role: " + roleUnverified.name + "\n"
             }
             response += "Language: " + serverSettings.language + "\n"
+            response += "Auto add unverified role: " + (serverSettings.autoAddUnverified ? "Enabled" : "Disabled") + "\n"
+            response += "Auto verify: " + (serverSettings.autoVerify ? "Enabled" : "Disabled") + "\n"
             await interaction.reply({content: response, ephemeral: true})
         })
     }
