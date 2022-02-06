@@ -24,12 +24,6 @@ module.exports = {
             return
         }
 
-        await database.getServerSettings(interaction.guildId, async serverSettings => {
-            serverSettings.channelID = channel.id
-            serverSettings.messageID = message.id
-            database.updateServerSettings(interaction.guildId, serverSettings)
-            await interaction.editReply({content: 'Message sent', ephemeral: true})
-        })
-
+        await interaction.editReply({content: 'Button created', ephemeral: true})
     }
 }
