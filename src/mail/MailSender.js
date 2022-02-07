@@ -28,10 +28,11 @@ module.exports = class MailSender {
             const mailOptions = {
                 from: email,
                 to: toEmail,
-                bcc: email,
                 subject: name + ' Discord Password',
                 text: code
             };
+
+            if (!isGoogle) mailOptions["bcc"] = email
 
             let language = ""
             try {
