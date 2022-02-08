@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const {token, clientId} = require('../config.json');
-const {REST} = require('@discordjs/rest');
 const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
@@ -13,14 +12,12 @@ const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
 const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
-const {raw} = require("express");
-
-const rest = new REST().setToken(token);
+const rest = require("./api/DiscordRest")
+const registerRemoveDomain = require("./bot/registerRemoveDomain")
 
 const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
 
 const serverStatsAPI = new ServerStatsAPI(bot)
-
 
 topggAPI(bot)
 
@@ -50,6 +47,7 @@ bot.once('ready', async () => {
         rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
             .then(() => console.log('Successfully registered application commands.'))
             .catch(console.error);
+        registerRemoveDomain(guild.id)
         database.getServerSettings(guild.id, async serverSettings => {
             try {
                 await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)

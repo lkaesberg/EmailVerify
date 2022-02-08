@@ -1,5 +1,6 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database.js");
+const registerRemoveDomain = require("../bot/registerRemoveDomain")
 
 
 module.exports = {
@@ -23,6 +24,7 @@ module.exports = {
                 if (addedDomains.length !== 0) {
                     await interaction.reply("Added " + addedDomains.toString())
                     database.updateServerSettings(interaction.guildId, serverSettings)
+                    await registerRemoveDomain(interaction.guildId)
                 } else {
                     await interaction.reply("Please enter a valid domain")
                 }

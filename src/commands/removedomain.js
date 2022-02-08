@@ -1,5 +1,6 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database.js");
+const registerRemoveDomain = require("../bot/registerRemoveDomain")
 
 module.exports = {
     data: new SlashCommandBuilder().setName('removedomain').setDescription('remove registered domain').addStringOption(option => option.setName('removedomain').setDescription('remove registered domain').setRequired(true)),
@@ -12,6 +13,7 @@ module.exports = {
             });
             await interaction.reply("Removed " + removeDomain)
             database.updateServerSettings(interaction.guildId, serverSettings)
+            await registerRemoveDomain(interaction.guildId, {data: this.data})
         })
     }
 }
