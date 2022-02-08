@@ -14,7 +14,7 @@ module.exports = async function registerRemoveDomain(guildId, removeDomain = req
             removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
                 return {"name": domain, "value": domain}
             })
-            rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand})
-        })
+            rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand}).catch()
+        }).catch()
     })
 }
