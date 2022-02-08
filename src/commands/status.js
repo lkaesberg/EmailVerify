@@ -27,6 +27,7 @@ module.exports = {
             } else {
                 response += "Unverified role: " + roleUnverified.name + "\n"
             }
+            response += "Verify message: " + (serverSettings.verifyMessage ? serverSettings.verifyMessage : "Default") + "\n"
             response += "Language: " + serverSettings.language + "\n"
             response += "Auto add unverified role: " + (serverSettings.autoAddUnverified ? "Enabled" : "Disabled") + "\n"
             response += "Auto verify: " + (serverSettings.autoVerify ? "Enabled" : "Disabled") + "\n"

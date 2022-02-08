@@ -6,22 +6,24 @@ const md5hash = require("../crypto/Crypto")
 class Database {
     constructor() {
         this.db = new sqlite3.Database('bot.db');
-        this.db.serialize(() => {
-                this.runMigration(1, () => {
-                    this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
-                    this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
-                })
-                this.runMigration(2, () => {
-                    this.db.each("SELECT email, guildID FROM userEmails", (err, result) => {
-                        this.db.run("UPDATE userEmails SET email = ? WHERE email = ? AND guildID = ?;", [md5hash(result.email), result.email, result.guildID])
-                    })
-                })
-                this.runMigration(3, () => {
-                    this.db.run("ALTER TABLE guilds ADD autoVerify NUMBER DEFAULT 0")
-                    this.db.run("ALTER TABLE guilds ADD autoAddUnverified NUMBER DEFAULT 0")
-                })
-            }
-        )
+
+        this.runMigration(1, () => {
+            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+            this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
+        })
+        this.runMigration(2, () => {
+            this.db.each("SELECT email, guildID FROM userEmails", (err, result) => {
+                this.db.run("UPDATE userEmails SET email = ? WHERE email = ? AND guildID = ?;", [md5hash(result.email), result.email, result.guildID])
+            })
+        })
+        this.runMigration(3, () => {
+            this.db.run("ALTER TABLE guilds ADD autoVerify NUMBER DEFAULT 0")
+            this.db.run("ALTER TABLE guilds ADD autoAddUnverified NUMBER DEFAULT 0")
+        })
+        this.runMigration(4, () => {
+            this.db.run("ALTER TABLE guilds ADD verifyMessage TEXT DEFAULT ''")
+        })
+
     }
 
     runMigration(version, migration) {
@@ -31,7 +33,10 @@ class Database {
             }
             if (result.user_version < version) {
                 console.log("Run Migration: " + version)
-                migration()
+                this.db.serialize(() => {
+                    migration()
+                })
+                console.log("Finished: " + version)
                 this.db.run(`PRAGMA user_version = ${version}`)
             }
         })
@@ -49,8 +54,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage])
     }
 
     async getServerSettings(guildID, callback) {
@@ -67,6 +72,7 @@ class Database {
                     serverSettings.language = result.language
                     serverSettings.autoVerify = result.autoVerify
                     serverSettings.autoAddUnverified = result.autoAddUnverified
+                    serverSettings.verifyMessage = result.verifyMessage
                     serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
                 }
                 callback(serverSettings)

@@ -8,6 +8,7 @@ class ServerSettings {
         this.autoAddUnverified = 0
         this.autoVerify = 0
         this.language = "english"
+        this.verifyMessage = ""
     }
 
     get status() {

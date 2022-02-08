@@ -41,12 +41,28 @@ for (const file of commandFiles) {
     commands.push(command.data.toJSON())
 }
 
+function registerCommands(guild) {
+    rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
+        .then(() => console.log('Successfully registered application commands.'))
+        .catch(async () => {
+            const channels = await bot.guilds.cache.get(guild.id).channels.fetch()
+            const errorChannel = channels.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
+            if (errorChannel) {
+                try {
+                    await errorChannel.send("No permissions to create Commands. Please visit: https://emailbot.larskaesberg.de/") 
+                }
+                catch (e) {
+                    
+                }
+            }
+            await bot.guilds.cache.get(guild.id).leave()
+        });
+}
+
 bot.once('ready', async () => {
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
-        rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
-            .then(() => console.log('Successfully registered application commands.'))
-            .catch(console.error);
+        registerCommands(guild)
         registerRemoveDomain(guild.id)
         database.getServerSettings(guild.id, async serverSettings => {
             try {
@@ -89,9 +105,7 @@ bot.on("guildMemberAdd", async member => {
 
 bot.on('guildCreate', guild => {
     console.log(guild.name)
-    rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
-        .then(() => console.log('Successfully registered application commands.'))
-        .catch(console.error);
+    registerCommands(guild)
 })
 
 bot.on("messageCreate", async (message) => {

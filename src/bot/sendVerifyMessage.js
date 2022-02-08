@@ -13,8 +13,14 @@ module.exports = async function sendVerifyMessage(guild, user, channelId, messag
         try {
             if (serverSettings.status) {
                 userGuilds.set(user.id, guild)
-                await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
-                })
+                if (serverSettings.verifyMessage !== "") {
+                    await user.send(serverSettings.verifyMessage).catch(() => {
+                    })
+                } else {
+                    await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
+                    })
+                }
+
             }
         } catch {
             await user.send(getLocale(serverSettings.language, "userRetry"))
