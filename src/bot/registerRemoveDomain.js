@@ -5,7 +5,7 @@ const {clientId} = require("../../config.json");
 
 module.exports = async function registerRemoveDomain(guildId, removeDomain = require("../commands/removedomain")) {
     await database.getServerSettings(guildId, async serverSettings => {
-        rest.get(Routes.applicationGuildCommands(clientId, guildId)).then(commands => {
+        await rest.get(Routes.applicationGuildCommands(clientId, guildId)).then(async commands => {
             const commandId = commands.find(command => command.name === "removedomain")?.id
 
             if (!commandId) return
@@ -21,7 +21,7 @@ module.exports = async function registerRemoveDomain(guildId, removeDomain = req
                 removeDomainCommand["options"][0]["choices"] = undefined
             }
 
-            rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand}).catch()
+            await rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand}).catch()
         }).catch()
-    })
+    }).catch()
 }
