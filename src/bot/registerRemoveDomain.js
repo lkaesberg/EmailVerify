@@ -11,9 +11,16 @@ module.exports = async function registerRemoveDomain(guildId, removeDomain = req
             if (!commandId) return
 
             let removeDomainCommand = removeDomain.data.toJSON()
-            removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
-                return {"name": domain, "value": domain}
-            })
+
+
+            if (serverSettings.domains.length < 25) {
+                removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
+                    return {"name": domain, "value": domain}
+                })
+            } else {
+                removeDomainCommand["options"][0]["choices"] = undefined
+            }
+
             rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand}).catch()
         }).catch()
     })
