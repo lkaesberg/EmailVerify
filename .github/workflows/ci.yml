@@ -14,7 +14,11 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
-        script: whoami
+        script: |
+          cd EmailBot
+          git pull
+          npm install
+          pm2 ls
   pages:
     runs-on: ubuntu-latest
     steps:
