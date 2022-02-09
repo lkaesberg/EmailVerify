@@ -14,8 +14,9 @@ jobs:
           sudo chmod 600 ../private.key
           echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           ssh -i $SSH_KEY_PATH emailbot@larskaesberg.de
-          cd EmailBot
+          cd ~/EmailBot
           git pull
+          npm install
           pm2 ls
         shell: bash
         env:
