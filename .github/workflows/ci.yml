@@ -18,7 +18,7 @@ jobs:
           cd EmailBot
           git pull
           npm install
-          pm2 ls
+          pm2 restart EmailBot
   pages:
     runs-on: ubuntu-latest
     steps:
