@@ -7,6 +7,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+    - name: Deploy to ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd EmailBot
+          git pull
+          npm install
+          npm audit fix
+          pm2 restart EmailBot
+  pages:
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
