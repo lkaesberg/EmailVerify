@@ -18,6 +18,7 @@ jobs:
           cd EmailBot
           git pull
           npm install
+          npm audit fix
           pm2 restart EmailBot
   pages:
     runs-on: ubuntu-latest
