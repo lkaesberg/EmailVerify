@@ -2,7 +2,7 @@ const database = require("../database/Database");
 const {getLocale} = require("../Language");
 module.exports = async function sendVerifyMessage(guild, user, channelId, messageId, userGuilds, interaction = false) {
     await database.getServerSettings(guild.id, (async serverSettings => {
-        if (channelId !== serverSettings.channelID && messageId !== serverSettings.messageID && !interaction) {
+        if ((channelId !== serverSettings.channelID || messageId !== serverSettings.messageID) && !interaction) {
             return
         }
         if (!serverSettings.status) {
