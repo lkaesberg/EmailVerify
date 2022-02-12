@@ -1,5 +1,5 @@
 {
-  "mailPositive": "Please enter the code you received at %VAR%",
+  "mailPositive": "Please enter the code you received at %VAR% (Check the spam folder if you do not receive a code).",
   "mailNegative": "Can't send mail to %VAR%",
   "roleAdded": "Added role %VAR%",
   "mailInvalid": "Please enter only valid email addresses",

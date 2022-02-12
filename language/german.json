@@ -1,5 +1,5 @@
 {
-  "mailPositive": "Bitte gib den Code der zu %VAR% geschickt wurde ein.",
+  "mailPositive": "Bitte gib den Code der zu %VAR% geschickt wurde ein (Prüfen Sie den Spam-Ordner, falls Sie keinen Code erhalten).",
   "mailNegative": "Email kann nicht zu %VAR% geschickt werden",
   "roleAdded": "Rolle %VAR% hinzugefügt",
   "mailInvalid": "Bitte gib eine richtige Email Adresse an",
