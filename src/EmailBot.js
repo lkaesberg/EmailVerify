@@ -45,14 +45,12 @@ function registerCommands(guild) {
     rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(async () => {
-            const channels = await bot.guilds.cache.get(guild.id).channels.fetch()
-            const errorChannel = channels.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
+            const errorChannel = guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
             if (errorChannel) {
                 try {
-                    await errorChannel.send("No permissions to create Commands. Please visit: https://emailbot.larskaesberg.de/") 
-                }
-                catch (e) {
-                    
+                    await errorChannel.send("No permissions to create Commands. Please visit: https://emailbot.larskaesberg.de/")
+                } catch (e) {
+
                 }
             }
             await bot.guilds.cache.get(guild.id).leave()
