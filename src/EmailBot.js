@@ -118,7 +118,10 @@ bot.on('messageReactionAdd', async (reaction, user) => {
 bot.on('interactionCreate', async interaction => {
     if (interaction.isButton()) {
         await sendVerifyMessage(interaction.guild, interaction.user, null, null, userGuilds, true)
-        interaction.deferUpdate()
+        interaction.deferUpdate().catch(() => {
+            console.log("Can't defer button interaction!")
+        })
+        return
     }
 
     if (!interaction.isCommand()) return;
