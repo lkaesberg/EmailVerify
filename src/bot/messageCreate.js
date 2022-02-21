@@ -57,7 +57,8 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                 await verify_client.roles.add(roleVerified);
 
             } catch (e) {
-                await message.author.send(getLocale(serverSettings.language, "userCantFindRole"))
+                message.author.send(getLocale(serverSettings.language, "userCantFindRole")).catch(() => {
+                })
                 return
             }
             try {
