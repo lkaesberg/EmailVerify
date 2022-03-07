@@ -72,7 +72,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
         } else {
             let validEmail = false
             for (const domain of serverSettings.domains) {
-                if (text.endsWith(domain)) {
+                if (text.toLowerCase().endsWith(domain.toLowerCase())) {
                     validEmail = true
                 }
             }
