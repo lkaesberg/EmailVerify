@@ -15,7 +15,7 @@ const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
 
-const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES]});
+const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS]});
 
 const serverStatsAPI = new ServerStatsAPI(bot)
 
@@ -86,11 +86,17 @@ bot.on("guildMemberAdd", async member => {
         if (serverSettings.autoAddUnverified) {
             const roleUnverified = member.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
             if (roleUnverified !== undefined) {
-                console.log(roleUnverified.name)
                 try {
                     await member.roles.add(roleUnverified)
                 } catch (e) {
+                    const errorChannel = member.guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
+                    if (errorChannel) {
+                        try {
+                            await errorChannel.send("Cant add unverified role to new member. Help: Ensure that the bot role is higher in the serversettings role menu then the verified and unverified role.")
+                        } catch (e) {
 
+                        }
+                    }
                 }
 
             }

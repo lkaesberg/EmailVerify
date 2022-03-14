@@ -1,4 +1,4 @@
-const database = require("../../database/Database.js");
+const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 
 module.exports = {
