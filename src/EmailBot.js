@@ -76,6 +76,12 @@ bot.once('ready', async () => {
     })
 });
 
+setInterval(function () {
+    bot.user.setActivity("/verify | Website", {
+        type: "PLAYING", url: "https://emailbot.larskaesberg.de"
+    })
+}, 3600000);
+
 bot.on("guildDelete", guild => {
     console.log("Removed: " + guild.name)
     database.deleteServerData(guild.id)
