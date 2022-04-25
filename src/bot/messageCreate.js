@@ -32,21 +32,23 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
 
             database.getEmailUser(userCode.email, userGuilds.get(message.author.id).id, async (currentUserEmail) => {
-                let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch(currentUserEmail.userID)
+                let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.cache.get(currentUserEmail.userID)
                 if (message.author.id === currentUserEmail.userID) {
                     return
                 }
-                try {
-                    await member.roles.remove(roleVerified)
-                    if (roleUnverified) {
-                        await member.roles.add(roleUnverified)
+                if (member) {
+                    try {
+                        await member.roles.remove(roleVerified)
+                        if (roleUnverified) {
+                            await member.roles.add(roleUnverified)
+                        }
+                    } catch (e) {
+                        console.log(e)
                     }
-                } catch (e) {
-                    console.log(e)
-                }
-                try {
-                    await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
-                } catch {
+                    try {
+                        await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
+                    } catch {
+                    }
                 }
 
             })
