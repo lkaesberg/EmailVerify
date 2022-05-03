@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 module.exports = {
-    data: new SlashCommandBuilder().setName('help').setDescription('show instructions on how to use the bot'),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('help').setDescription('show instructions on how to use the bot'),
     async execute(interaction) {
         await interaction.reply(
             "1)    Use `/button` or `/message` to create the verify message\n" +

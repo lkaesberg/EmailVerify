@@ -3,7 +3,7 @@ const database = require("../database/Database");
 const {MessageActionRow, MessageButton} = require('discord.js');
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('button').setDescription("create button to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")).addStringOption(option => option.setName("buttontext").setRequired(true).setDescription("Button text")),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('button').setDescription("create button to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")).addStringOption(option => option.setName("buttontext").setRequired(true).setDescription("Button text")),
     async execute(interaction) {
         const messageText = interaction.options.getString("message", true)
         const buttonText = interaction.options.getString("buttontext", true)

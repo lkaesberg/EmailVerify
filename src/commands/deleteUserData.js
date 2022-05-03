@@ -2,7 +2,7 @@ const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('delete_user_data').setDescription('delete the stored data for the user').addStringOption(option => option.setName('verify').setDescription('type "delete" to remove the data').setRequired(true)),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('delete_user_data').setDescription('delete the stored data for the user').addStringOption(option => option.setName('verify').setDescription('type "delete" to remove the data').setRequired(true)),
     async execute(interaction) {
         if (interaction.options.getString("verify") === "delete") {
             database.deleteUserData(interaction.user.id)

@@ -3,7 +3,7 @@ const {languages} = require("../Language")
 const database = require("../database/Database.js");
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('language').setDescription('Set language of bot')
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('language').setDescription('Set language of bot')
         .addStringOption(option => option.setName("language").setDescription("Language").setRequired(true).addChoices([...languages.keys()].map(value => {
             return [value, value]
         }))),

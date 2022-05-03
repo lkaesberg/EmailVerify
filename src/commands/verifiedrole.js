@@ -2,7 +2,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database.js");
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('verifiedrole').setDescription('returns the name of the verified role').addRoleOption(option => option.setName('verifiedrole').setDescription('set the role name for the verified role')),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('verifiedrole').setDescription('returns the name of the verified role').addRoleOption(option => option.setName('verifiedrole').setDescription('set the role name for the verified role')),
     async execute(interaction) {
         const verifiedRole = interaction.options.getRole('verifiedrole');
         await database.getServerSettings(interaction.guildId, async serverSettings => {

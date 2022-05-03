@@ -2,7 +2,7 @@ const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('unverifiedrole').setDescription('returns the name of the unverified role')
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('unverifiedrole').setDescription('returns the name of the unverified role')
         .addRoleOption(option => option.setName('unverifiedrole').setDescription('set the role name for the unverified role ( (current unverified role) -> deactivate unverified role)')),
     async execute(interaction) {
         const unverifiedRole = interaction.options.getRole('unverifiedrole');

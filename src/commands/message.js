@@ -2,7 +2,7 @@ const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database.js");
 
 module.exports = {
-    data: new SlashCommandBuilder().setName('message').setDescription("write message to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('message').setDescription("write message to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")),
     async execute(interaction) {
         const messageText = interaction.options.getString("message", true)
         const channel = interaction.options.getChannel("channel", true)
