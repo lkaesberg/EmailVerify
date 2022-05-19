@@ -1,5 +1,5 @@
 site_name: EmailVerify for Discord
-repo_url: https://github.com/lkaesberg/EmailBot
+repo_url: https://github.com/lkaesberg/EmailVerify
 theme:
   name: material
   icon:
