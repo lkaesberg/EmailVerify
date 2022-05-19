@@ -6,7 +6,7 @@
 <br />
 <p align="center">
 <a><img src="images/emailbot.png" alt="EmailBot" width="128" height="128" title="EmailBot"></a>
-  <h3 align="center">Discord Email Bot</h3>
+  <h3 align="center">Discord Email Verify</h3>
   <p align="center">
     A Email Verification Bot<br />
     <p>
