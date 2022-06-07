@@ -42,6 +42,9 @@ module.exports = class MailSender {
             }
             this.transporter.sendMail(mailOptions, async (error, info) => {
                 if (error || info.rejected.length > 0) {
+                    if (emailNotify) {
+                        console.log(error);
+                    }
                     await message.reply(getLocale(language, "mailNegative", toEmail))
                 } else {
                     this.serverStatsAPI.increaseMailSend()
