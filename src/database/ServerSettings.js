@@ -9,6 +9,7 @@ class ServerSettings {
         this.autoVerify = 0
         this.language = "english"
         this.verifyMessage = ""
+        this.logChannel = ""
     }
 
     get status() {

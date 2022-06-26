@@ -23,6 +23,9 @@ class Database {
         this.runMigration(4, () => {
             this.db.run("ALTER TABLE guilds ADD verifyMessage TEXT DEFAULT ''")
         })
+        this.runMigration(5, () => {
+            this.db.run("ALTER TABLE guilds ADD logChannel TEXT DEFAULT ''")
+        })
 
     }
 
@@ -54,8 +57,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
     }
 
     async getServerSettings(guildID, callback) {
@@ -74,6 +77,7 @@ class Database {
                     serverSettings.autoAddUnverified = result.autoAddUnverified
                     serverSettings.verifyMessage = result.verifyMessage
                     serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
+                    serverSettings.logChannel = result.logChannel
                 }
                 callback(serverSettings)
             }

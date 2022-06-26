@@ -69,6 +69,12 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                 }
             } catch {
             }
+            try {
+                if (serverSettings.logChannel !== "") {
+                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: ${message.author.username} => ${userCode.logEmail}`)
+                }
+            } catch {
+            }
             await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
             userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)
         } else {
@@ -95,7 +101,8 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
 
                 await mailSender.sendEmail(text, code, userGuilds.get(message.author.id).name, message, emailNotify, (email) => userCodes.set(message.author.id + userGuilds.get(message.author.id).id, {
                     code: code,
-                    email: md5hash(email.toLowerCase())
+                    email: md5hash(email.toLowerCase()),
+                    logEmail: email
                 }))
             }
         }

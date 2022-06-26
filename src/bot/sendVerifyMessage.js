@@ -17,7 +17,11 @@ module.exports = async function sendVerifyMessage(guild, user, channelId, messag
                     await user.send(serverSettings.verifyMessage).catch(() => {
                     })
                 } else {
-                    await user.send(getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))).catch(() => {
+                    let message = getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|") + ")"))
+                    if (serverSettings.logChannel !== "") {
+                        message += " Caution: The admin can see the used email address"
+                    }
+                    await user.send(message).catch(() => {
                     })
                 }
 

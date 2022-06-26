@@ -17,6 +17,7 @@
 |     `/verify_on_join`     |           **enable**            |                                                                **(enable/disable)** -> automatically asks every new member to verify                                                                |
 |    `/delete_user_data`    |                                 |                                                                                  delete all the data from the user                                                                                  |
 |   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
+|    `/set_log_channel`     |        **(logchannel)**         |                                                               **()** -> disable log channel <br> **(log channel)** -> set log channel                                                               |
 
 react := react to the message with an emoji
 
