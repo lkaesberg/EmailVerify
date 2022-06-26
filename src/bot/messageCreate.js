@@ -71,7 +71,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             }
             try {
                 if (serverSettings.logChannel !== "") {
-                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: ${message.author.username} => ${userCode.logEmail}`)
+                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${message.author.id}> => ${userCode.logEmail}`)
                 }
             } catch {
             }
