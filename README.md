@@ -106,3 +106,32 @@ The EmailBot role has to be higher in the role hierarchy then the verified and u
 - Norma1Name (Hebrew)
 
 To add more languages please create an issue with the translation file. [Template](language/english.json)
+
+### Host The EmailVerify Bot Yourself
+
+To install the bot execute following commands:
+#### Download the Bot
+```
+git clone https://github.com/lkaesberg/EmailVerify.git
+cd emailverify
+```
+#### Create Config File
+```
+nano config.json
+```
+```
+{
+  "token": "<Discord Bot Token>",
+  "clientId": "<Discord Bot Client ID>",
+  "email": "<Email Address>",
+  "password": "<Email Password>",
+  "smtpHost": "<SMTP Server>",
+  "isGoogle": <true/false>,
+  "topggToken": "<optional: TopGG Token (remove field when empty)>"
+}
+```
+#### Install and Start the Bot
+```
+npm install
+npm start
+```
