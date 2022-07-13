@@ -80,7 +80,8 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
         } else {
             let validEmail = false
             for (const domain of serverSettings.domains) {
-                if (text.toLowerCase().endsWith(domain.toLowerCase())) {
+                let regex = new RegExp(domain.replace(/\./g, "\\.").replace(/\*/g, ".+").concat("$"))
+                if (regex.test(text)) {
                     validEmail = true
                 }
             }
