@@ -40,7 +40,7 @@
 
 </details>
 
-### Built With
+## Built With
 
 <div style="display: -ms-flexbox;     display: -webkit-flex;     display: flex;     -webkit-flex-direction: row;     -ms-flex-direction: row;     flex-direction: row;     -webkit-flex-wrap: wrap;     -ms-flex-wrap: wrap;     flex-wrap: wrap;     -webkit-justify-content: space-around;     -ms-flex-pack: distribute;     justify-content: space-around;     -webkit-align-content: stretch;     -ms-flex-line-pack: stretch;     align-content: stretch;     -webkit-align-items: flex-start;     -ms-flex-align: start;     align-items: flex-start;">
 <a href="https://nodejs.org/en/"><img src="https://chris-noring.gallerycdn.vsassets.io/extensions/chris-noring/node-snippets/1.3.2/1606066290744/Microsoft.VisualStudio.Services.Icons.Default" alt="NodeJS" width="64" height="64" title="NodeJS"></a>
@@ -56,15 +56,15 @@ This can be useful when there is some sensitive data on the server which shouldn
 the user just has to add a reaction to a specified message and the bot will send a direct message which asks for the
 email address. A code will be sent to the email which will grant the verified role when send to the bot.
 
-### Usage
+## Usage
 
-#### Invite Bot
+### Invite Bot
 
 Use this link to invite the bot to your server:
 
 https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands
 
-#### Commands
+### Commands
 
 |         Commands          |            Arguments            |                                                                                                Usage                                                                                                |
 |:-------------------------:|:-------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
@@ -95,13 +95,13 @@ The EmailBot role has to be higher in the role hierarchy then the verified and u
 
 ![img.png](images/bothierarchy.png)
 
-### Contributors
+## Contributors
 
-#### Developer
+### Developer
 
 - Lars Kaesberg
 
-#### Translation
+### Translation
 
 - Lars Kaesberg (English, German)
 - gus2131 (Spanish)
@@ -110,15 +110,15 @@ The EmailBot role has to be higher in the role hierarchy then the verified and u
 
 To add more languages please create an issue with the translation file. [Template](language/english.json)
 
-### Self Host
+## Self Host
 
 To install the bot execute following commands:
-#### Download the Bot
+### Download the Bot
 ```
 git clone https://github.com/lkaesberg/EmailVerify.git
 cd emailverify
 ```
-#### Create Config File
+### Create Config File
 ```
 nano config.json
 ```
@@ -133,7 +133,7 @@ nano config.json
   "topggToken": "<optional: TopGG Token (remove field when empty)>"
 }
 ```
-#### Install and Start the Bot
+### Install and Start the Bot
 ```
 npm install
 npm start
