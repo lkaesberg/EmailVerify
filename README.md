@@ -33,6 +33,9 @@
     <li>
         <a href="#contributors">Contributors</a>
     </li>
+    <li>
+        <a href="#self-host">Self Host</a>
+    </li>
   </ol>
 
 </details>
@@ -107,7 +110,7 @@ The EmailBot role has to be higher in the role hierarchy then the verified and u
 
 To add more languages please create an issue with the translation file. [Template](language/english.json)
 
-### Host The EmailVerify Bot Yourself
+### Self Host
 
 To install the bot execute following commands:
 #### Download the Bot
