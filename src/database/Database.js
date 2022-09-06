@@ -8,7 +8,7 @@ class Database {
         this.db = new sqlite3.Database('bot.db');
 
         this.runMigration(1, () => {
-            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, blacklist TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
             this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
         })
         this.runMigration(2, () => {
@@ -26,7 +26,9 @@ class Database {
         this.runMigration(5, () => {
             this.db.run("ALTER TABLE guilds ADD logChannel TEXT DEFAULT ''")
         })
-
+        this.runMigration(6, () => {
+            this.db.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
+            })
     }
 
     runMigration(version, migration) {
