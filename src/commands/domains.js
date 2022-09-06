@@ -9,7 +9,7 @@ module.exports = {
         const domains = interaction.options.getString('domain');
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (domains === null) {
-                await interaction.reply("Allowed domains: " + serverSettings.domains.toString())
+                await interaction.reply("Allowed domains: " + serverSettings.domains.toString().replaceAll("*", "\\*"))
             } else {
                 let addedDomains = []
                 domains.split(",").forEach(domain => {
@@ -22,7 +22,7 @@ module.exports = {
                     }
                 })
                 if (addedDomains.length !== 0) {
-                    await interaction.reply("Added " + addedDomains.toString())
+                    await interaction.reply("Added " + addedDomains.toString().replaceAll("*", "\\*"))
                     database.updateServerSettings(interaction.guildId, serverSettings)
                     await registerRemoveDomain(interaction.guildId)
                 } else {
