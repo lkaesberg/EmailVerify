@@ -11,7 +11,7 @@ module.exports = {
         .setDescription('register blacklisted emails (add multiple separated by \',\'), (pass "-" to clear)')
         ),
     async execute(interaction) {
-        const blacklist = interaction.options.getString('blacklist');
+        const blacklist = interaction.options.getString('email');
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!blacklist) {
                 await interaction.reply("Blacklisted names: " + serverSettings.blacklist.toString());
