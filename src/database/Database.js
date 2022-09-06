@@ -8,7 +8,7 @@ class Database {
         this.db = new sqlite3.Database('bot.db');
 
         this.runMigration(1, () => {
-            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT,verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
             this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
         })
         this.runMigration(2, () => {
@@ -26,7 +26,9 @@ class Database {
         this.runMigration(5, () => {
             this.db.run("ALTER TABLE guilds ADD logChannel TEXT DEFAULT ''")
         })
-
+        this.runMigration(6, () => {
+            this.db.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
+            })
     }
 
     runMigration(version, migration) {
@@ -57,8 +59,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
     }
 
     async getServerSettings(guildID, callback) {
@@ -77,6 +79,7 @@ class Database {
                     serverSettings.autoAddUnverified = result.autoAddUnverified
                     serverSettings.verifyMessage = result.verifyMessage
                     serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
+                    serverSettings.blacklist = result.blacklist.split(",").filter((name) => name.length !== 0)
                     serverSettings.logChannel = result.logChannel
                 }
                 callback(serverSettings)

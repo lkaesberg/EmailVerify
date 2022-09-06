@@ -19,7 +19,9 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
         if (!serverSettings.status) {
             return
         }
-        let text = message.content
+        const text = message.content
+        if(serverSettings.blacklist.includes(text)) 
+            return await message.reply(getLocale(serverSettings.language, "mailBlacklisted"));
         let userTimeout = userTimeouts.get(message.author.id)
         if (!userTimeout) {
             userTimeout = new UserTimeout()
