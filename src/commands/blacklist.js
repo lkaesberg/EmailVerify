@@ -15,12 +15,12 @@ module.exports = {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!blacklist) {
                 await interaction.reply("Blacklisted names: " + serverSettings.blacklist.toString());
-            } else if(blacklist === "-")
+            } else if (blacklist === "-") {
                 serverSettings.blacklist=[];
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 await interaction.reply("Blacklist cleared!");
             }
-            else{
+            else {
                     const blacklistedNames = serverSettings.blacklist.concat(blacklist.split(",").map(name=> name.trim()));
                     serverSettings.blacklist = blacklistedNames;
                     database.updateServerSettings(interaction.guildId, serverSettings);
