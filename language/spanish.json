@@ -1,6 +1,7 @@
 {
   "mailPositive": "Por favor, ingrese el código que recibió en %VAR% (Compruebe la carpeta de spam si no recibe un código).",
   "mailNegative": "No se puede enviar correo electrónico a %VAR%",
+  "mailBlacklisted": "Tu correo electrónico está en la lista negra",
   "roleAdded": "Se agregó el rol %VAR%",
   "mailInvalid": "Por favor ingrese solo direcciones de correo electrónico válidas",
   "mailTimeout": "Por favor, espere %VAR% segundos antes de volver a enviar el correo electrónico.",
