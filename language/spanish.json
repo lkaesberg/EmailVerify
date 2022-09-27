@@ -10,5 +10,6 @@
   "userRetry": "Se produjo un error. Elimine y agregue la reacción para volver a intentarlo.",
   "userBotError": "El bot no está configurado correctamente. ¡Comuníquese con el administrador!",
   "userEnterEmail": "Por favor ingrese su dirección de correo electrónico para verificar %VAR%.",
-  "userCantFindRole": "No puedo encontrar roles. ¡Por favor, comuníquese con el administrador! Ayuda: Asegúrese de que el nombre siga siendo el mismo y que el rol del bot sea más alto en el menú de roles de configuración del servidor que el rol verificado y no verificado"
+  "userCantFindRole": "No puedo encontrar roles. ¡Por favor, comuníquese con el administrador! Ayuda: Asegúrese de que el nombre siga siendo el mismo y que el rol del bot sea más alto en el menú de roles de configuración del servidor que el rol verificado y no verificado",
+  "emailText": "¡Bienvenido a %VAR%!\nAquí está su código de acceso: %VAR%\n\nNo comparta este código con nadie."
 }

@@ -24,14 +24,12 @@ module.exports = class MailSender {
     }
 
     async sendEmail(toEmail, code, name, message, emailNotify, callback) {
-        let message = "Welcome to "+name+"!\nHere is your access code: "+code+"\n\nDo not share this code with anyone."
-        
         await database.getServerSettings(this.userGuilds.get(message.author.id).id, serverSettings => {
             const mailOptions = {
                 from: email,
                 to: toEmail,
                 subject: name + ' Discord Email Verification',
-                text: message
+                text: getLocale(serverSettings.language, "emailText", name, code)
             };
 
             if (!isGoogle) mailOptions["bcc"] = email

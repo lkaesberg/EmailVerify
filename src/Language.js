@@ -25,7 +25,11 @@ function getLocale(language, string, ...vars) {
 
 
     let count = 0;
-    locale = locale.replace(/%VAR%/g, () => vars[count] !== null ? vars[count] : "%VAR%");
+    locale = locale.replace(/%VAR%/g, () => {
+        let variable = vars[count] !== null ? vars[count] : "%VAR%"
+        count += 1
+        return variable
+    });
 
     return locale;
 }

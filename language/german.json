@@ -10,5 +10,6 @@
   "userRetry": "Es ist ein Fehler aufgetreten. Bitte entferne die reaction und füge sie erneut hinzu.",
   "userBotError": "Der Bot ist nicht richtig konfiguriert. Bitte kontaktiere den Admin!",
   "userEnterEmail": "Bitte gib deine Email Adresse an um dich zu verifizieren %VAR%.",
-  "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle."
+  "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle.",
+  "emailText": "Willkommen bei %VAR%!\nHier ist Ihr Zugangscode: %VAR%\n\nTeilen Sie diesen Code mit niemandem."
 }
