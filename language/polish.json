@@ -10,5 +10,6 @@
   "userRetry": "Wystąpił błąd. Usuń i dodaj reakcję by spróbować ponownie.",
   "userBotError": "Bot nie został poprawnie skonfigurowany. Skontaktuj się z administratorem!",
   "userEnterEmail": "Wprowadź swój adres email by zweryfikować %VAR%.",
-  "userCantFindRole": "Nie odnaleziono ról. Skontaktuj się z administratorem! Wskazówka: Upewnij się, że nazwa roli jest wciąż taka sama i rola bota jest wyżej w ustawieniach serwera niż rola zweryfikowana i niezweryfkowana."
+  "userCantFindRole": "Nie odnaleziono ról. Skontaktuj się z administratorem! Wskazówka: Upewnij się, że nazwa roli jest wciąż taka sama i rola bota jest wyżej w ustawieniach serwera niż rola zweryfikowana i niezweryfkowana.",
+  "emailText": "Witamy w %VAR%!\nOto Twój kod dostępu: %VAR%\n\nNie udostępniaj nikomu tego kodu."
 }

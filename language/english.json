@@ -10,5 +10,6 @@
   "userRetry": "An error occurred. Please remove and add the reaction to try again.",
   "userBotError": "Bot not properly configured. Please contact admin!",
   "userEnterEmail": "Please enter your email address to verify %VAR%.",
-  "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role."
+  "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
+  "emailText": "Welcome to %VAR%!\nHere is your access code: %VAR%\n\nDo not share this code with anyone."
 }

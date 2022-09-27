@@ -28,8 +28,8 @@ module.exports = class MailSender {
             const mailOptions = {
                 from: email,
                 to: toEmail,
-                subject: name + ' Discord Password',
-                text: code
+                subject: name + ' Discord Email Verification',
+                text: getLocale(serverSettings.language, "emailText", name, code)
             };
 
             if (!isGoogle) mailOptions["bcc"] = email
