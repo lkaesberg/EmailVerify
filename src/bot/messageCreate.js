@@ -20,7 +20,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             return
         }
         const text = message.content
-        if(serverSettings.blacklist.some((element) => text.includes(element))) 
+        if (serverSettings.blacklist.some((element) => text.includes(element)))
             return await message.reply(getLocale(serverSettings.language, "mailBlacklisted"));
         let userTimeout = userTimeouts.get(message.author.id)
         if (!userTimeout) {
@@ -73,7 +73,8 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             }
             try {
                 if (serverSettings.logChannel !== "") {
-                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${message.author.id}>\t →\t ${userCode.logEmail}`)
+                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${message.author.id}>\t →\t ${userCode.logEmail}`).catch(() => {
+                    })
                 }
             } catch {
             }
