@@ -64,7 +64,7 @@ bot.once('ready', async () => {
         registerRemoveDomain(guild.id)
         database.getServerSettings(guild.id, async serverSettings => {
             try {
-                await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
+                await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID).messages.fetch(serverSettings.messageID)
             } catch (e) {
 
             }
