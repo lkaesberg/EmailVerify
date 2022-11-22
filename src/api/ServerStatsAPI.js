@@ -14,9 +14,7 @@ class ServerStatsAPI {
     }
 
     registerEndpoints() {
-        this.app.use(cors({
-            origin: 'https://emailbot.larskaesberg.de/'
-        }));
+        this.app.use(cors());
 
         this.app.get('/mailsSendAll', (req, res) => {
             res.send(this.serverStats.mailsSendAll.toString())
