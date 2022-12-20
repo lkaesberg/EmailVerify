@@ -15,7 +15,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         script: |
-          cd EmailBot
+          cd EmailVerify
           git pull
           npm install
           npm audit fix
