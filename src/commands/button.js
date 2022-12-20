@@ -18,7 +18,8 @@ module.exports = {
                     .setStyle('PRIMARY'),
             );
         const message = await channel.send({content: messageText, components: [button]}).catch(async _ => {
-            await interaction.user.send("No permissions to write in that channel!")
+            await interaction.user.send("No permissions to write in that channel!").catch(async _ => {
+            })
         })
         if (message === undefined) {
             return
