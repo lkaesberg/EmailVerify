@@ -90,11 +90,11 @@ class Database {
     updateEmailUser(emailUser) {
         this.db.run(
             "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
-            [emailUser.email.toLowerCase(), emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
+            [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
     }
 
     getEmailUser(email, guildID, callback) {
-        this.db.get("SELECT * FROM userEmails WHERE guildID = ? AND email = ?", [guildID, email.toLowerCase()], (err, result) => {
+        this.db.get("SELECT * FROM userEmails WHERE guildID = ? AND email = ?", [guildID, email], (err, result) => {
                 if (err) {
                     throw err;
                 }
