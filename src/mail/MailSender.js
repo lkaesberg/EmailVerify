@@ -1,4 +1,4 @@
-const {smtpHost, email, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
+const {smtpHost, email, username, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
@@ -11,7 +11,7 @@ module.exports = class MailSender {
         let nodemailerOptions = {
             host: smtpHost,
             auth: {
-                user: email,
+                user: username,
                 pass: password
             }
         }
@@ -26,7 +26,7 @@ module.exports = class MailSender {
     async sendEmail(toEmail, code, name, message, emailNotify, callback) {
         await database.getServerSettings(this.userGuilds.get(message.author.id).id, serverSettings => {
             const mailOptions = {
-                from: email,
+                from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,
                 subject: name + ' Discord Email Verification',
                 text: getLocale(serverSettings.language, "emailText", name, code)
