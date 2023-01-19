@@ -128,6 +128,7 @@ nano config.json
   "token": "<Discord Bot Token>",
   "clientId": "<Discord Bot Client ID>",
   "email": "<Email Address>",
+  "username": "<Mail Server Username>",
   "password": "<Email Password>",
   "smtpHost": "<SMTP Server>",
   "isGoogle": <true/false>,
