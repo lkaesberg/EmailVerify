@@ -1,8 +1,13 @@
-const {smtpHost, email, username, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
+const {smtpHost, email, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
+
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
+
+if (typeof username === 'undefined') {
+    const username = email;
+}
 
 module.exports = class MailSender {
     constructor(userGuilds, serverStatsAPI) {
