@@ -1,4 +1,4 @@
-const {smtpHost, email, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
+const {smtpHost, email, username, password, isGoogle, isSecure, smtpPort} = require("../../config.json");
 
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
