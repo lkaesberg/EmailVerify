@@ -6,7 +6,7 @@ const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
 
 if (typeof username === 'undefined') {
-    const username = email;
+    username = email;
 }
 
 module.exports = class MailSender {
