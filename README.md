@@ -140,3 +140,7 @@ nano config.json
 npm install
 npm start
 ```
+### Usage
+Type "email" in the console to see debugging messages for email errors.
+
+If you are using a Gmail account you have to create an App password and use that instead of your password.
