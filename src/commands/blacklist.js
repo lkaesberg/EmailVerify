@@ -21,12 +21,12 @@ module.exports = {
                 await interaction.reply("Blacklist cleared!");
             }
             else {
-                    const newBlacklists = blacklist.split(",").map(name=> name.trim())
-                    const blacklistedNames = (format = false) => serverSettings.blacklist
-                        .concat(format ? newBlacklists.map(v=> `**${v}**`) : newBlacklists);
-                    serverSettings.blacklist = blacklistedNames();
-                    database.updateServerSettings(interaction.guildId, serverSettings);
-                    await interaction.reply("Added:\n" + blacklistedNames(true).join(", "));
+                const newBlacklists = blacklist.split(",").map(name=> name.trim())
+                const blacklistedNames = (format = false) => serverSettings.blacklist
+                    .concat(format ? newBlacklists.map(v=> `**${v}**`) : newBlacklists);
+                await interaction.reply("Added:\n" + blacklistedNames(true).join(", "));
+                serverSettings.blacklist = blacklistedNames();
+                database.updateServerSettings(interaction.guildId, serverSettings);
             }
         })
 
