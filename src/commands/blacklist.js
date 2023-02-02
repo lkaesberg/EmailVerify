@@ -23,7 +23,7 @@ module.exports = {
             else {
                     const newBlacklists = blacklist.split(",").map(name=> name.trim())
                     const blacklistedNames = (format = false) => serverSettings.blacklist
-                        .concat(format ? newBlacklists.map(v=> `**${v}**`) : v);
+                        .concat(format ? newBlacklists.map(v=> `**${v}**`) : newBlacklists);
                     serverSettings.blacklist = blacklistedNames();
                     database.updateServerSettings(interaction.guildId, serverSettings);
                     await interaction.reply("Added:\n" + blacklistedNames(true).join(", "));
