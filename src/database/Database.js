@@ -28,7 +28,10 @@ class Database {
         })
         this.runMigration(6, () => {
             this.db.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
-            })
+        })
+        this.runMigration(7, () => {
+            this.db.run("ALTER TABLE guilds ADD allowlist TEXT DEFAULT ''")
+        })
     }
 
     runMigration(version, migration) {
@@ -59,32 +62,32 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, allowlist, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.allowlist.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
     }
 
     async getServerSettings(guildID, callback) {
         const serverSettings = new ServerSettings()
         await this.db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], async (err, result) => {
-                if (err) {
-                    throw err;
-                }
-                if (result !== undefined) {
-                    serverSettings.channelID = result.channelid
-                    serverSettings.messageID = result.messageid
-                    serverSettings.verifiedRoleName = result.verifiedrole
-                    serverSettings.unverifiedRoleName = result.unverifiedrole
-                    serverSettings.language = result.language
-                    serverSettings.autoVerify = result.autoVerify
-                    serverSettings.autoAddUnverified = result.autoAddUnverified
-                    serverSettings.verifyMessage = result.verifyMessage
-                    serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
-                    serverSettings.blacklist = result.blacklist.split(",").filter((name) => name.length !== 0)
-                    serverSettings.logChannel = result.logChannel
-                }
-                callback(serverSettings)
+            if (err) {
+                throw err;
             }
-        )
+            if (result !== undefined) {
+                serverSettings.channelID = result.channelid
+                serverSettings.messageID = result.messageid
+                serverSettings.verifiedRoleName = result.verifiedrole
+                serverSettings.unverifiedRoleName = result.unverifiedrole
+                serverSettings.language = result.language
+                serverSettings.autoVerify = result.autoVerify
+                serverSettings.autoAddUnverified = result.autoAddUnverified
+                serverSettings.verifyMessage = result.verifyMessage
+                serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
+                serverSettings.allowlist = result.allowlist.split(",").filter((name) => name.length !== 0)
+                serverSettings.blacklist = result.blacklist.split(",").filter((name) => name.length !== 0)
+                serverSettings.logChannel = result.logChannel
+            }
+            callback(serverSettings)
+        })
     }
 
     updateEmailUser(emailUser) {
@@ -95,13 +98,13 @@ class Database {
 
     getEmailUser(email, guildID, callback) {
         this.db.get("SELECT * FROM userEmails WHERE guildID = ? AND email = ?", [guildID, email], (err, result) => {
-                if (err) {
-                    throw err;
-                }
-                if (result !== undefined) {
-                    callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
-                }
+            if (err) {
+                throw err;
             }
+            if (result !== undefined) {
+                callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
+            }
+        }
         )
     }
 }

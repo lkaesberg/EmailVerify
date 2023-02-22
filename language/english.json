@@ -4,6 +4,7 @@
   "roleAdded": "Added role %VAR%",
   "mailInvalid": "Please enter only valid email addresses",
   "mailBlacklisted": "Your email is blacklisted",
+  "mailNotAllowlisted": "Your email is not allowed",
   "mailTimeout": "Please wait %VAR% seconds before resending the email!",
   "invalidPermissions": "You are not allowed to execute this command!",
   "commandFailed": "There was an error while executing this command!",

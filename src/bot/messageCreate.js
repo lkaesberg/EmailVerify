@@ -2,7 +2,7 @@ require("../database/ServerSettings");
 const UserTimeout = require("../UserTimeout");
 const database = require("../database/Database");
 const EmailUser = require("../database/EmailUser");
-const {getLocale} = require("../Language");
+const { getLocale } = require("../Language");
 const md5hash = require("../crypto/Crypto");
 
 module.exports = async function (message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify) {
@@ -20,8 +20,12 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             return
         }
         const text = message.content
-        if (serverSettings.blacklist.some((element) => text.includes(element)))
+        if (!serverSettings.allowlist.some((element) => text.endsWith(element))) {
+            return await message.reply(getLocale(serverSettings.language, "mailNotAllowlisted"));
+        }
+        if (serverSettings.blacklist.some((element) => text.includes(element))) {
             return await message.reply(getLocale(serverSettings.language, "mailBlacklisted"));
+        }
         let userTimeout = userTimeouts.get(message.author.id)
         if (!userTimeout) {
             userTimeout = new UserTimeout()
@@ -49,7 +53,8 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                     }
                     try {
                         await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
-                    } catch {
+                    } catch (e) {
+                        console.log(e)
                     }
                 }
 
@@ -69,14 +74,16 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                 if (serverSettings.unverifiedRoleName !== "") {
                     await verify_client.roles.remove(roleUnverified);
                 }
-            } catch {
+            } catch (e) {
+                console.log(e)
             }
             try {
                 if (serverSettings.logChannel !== "") {
                     userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${message.author.id}>\t →\t ${userCode.logEmail}`).catch(() => {
                     })
                 }
-            } catch {
+            } catch (e) {
+                console.log(e)
             }
             await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
             userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)

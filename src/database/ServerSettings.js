@@ -1,6 +1,7 @@
 class ServerSettings {
     constructor() {
         this.domains = []
+        this.allowlist = []
         this.blacklist = []
         this.channelID = ""
         this.messageID = ""

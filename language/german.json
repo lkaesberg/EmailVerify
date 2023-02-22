@@ -2,6 +2,7 @@
   "mailPositive": "Bitte gib den Code der zu %VAR% geschickt wurde ein (Prüfen Sie den Spam-Ordner, falls Sie keinen Code erhalten).",
   "mailNegative": "Email kann nicht zu %VAR% geschickt werden",
   "mailBlacklisted": "Ihre E-Mail ist auf der Blacklist",
+  "mailNotAllowlisted": "Ihre E-Mail ist nicht erlaubt",
   "roleAdded": "Rolle %VAR% hinzugefügt",
   "mailInvalid": "Bitte gib eine richtige Email Adresse an",
   "mailTimeout": "Bitte warte %VAR% Sekunden vor dem erneuten Versenden der Email!",
