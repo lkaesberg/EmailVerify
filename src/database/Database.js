@@ -63,7 +63,13 @@ class Database {
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
             "INSERT OR REPLACE INTO guilds (guildid, domains, allowlist, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.allowlist.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
+            [
+                guildID, serverSettings.domains.toString(), serverSettings.allowlist.toString(), serverSettings.blacklist.toString(),
+                serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID,
+                serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage,
+                serverSettings.logChannel
+            ]
+        )
     }
 
     async getServerSettings(guildID, callback) {
@@ -93,7 +99,8 @@ class Database {
     updateEmailUser(emailUser) {
         this.db.run(
             "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
-            [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
+            [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic]
+        )
     }
 
     getEmailUser(email, guildID, callback) {
@@ -104,13 +111,10 @@ class Database {
             if (result !== undefined) {
                 callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
             }
-        }
-        )
+        })
     }
 }
 
 const database = new Database()
 
 module.exports = database
-
-

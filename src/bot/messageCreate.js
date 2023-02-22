@@ -110,13 +110,22 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                 userTimeout.increaseWaitTime()
                 let code = Math.floor((Math.random() + 1) * 100000).toString()
 
-                await mailSender.sendEmail(text.toLowerCase(), code, userGuilds.get(message.author.id).name, message, emailNotify, (email) => userCodes.set(message.author.id + userGuilds.get(message.author.id).id, {
-                    code: code,
-                    email: md5hash(email),
-                    logEmail: email
-                }))
+                await mailSender.sendEmail(
+                    text.toLowerCase(),
+                    code,
+                    userGuilds.get(message.author.id).name,
+                    message,
+                    emailNotify,
+                    (email) => userCodes.set(
+                        message.author.id + userGuilds.get(message.author.id).id,
+                        {
+                            code: code,
+                            email: md5hash(email),
+                            logEmail: email
+                        }
+                    )
+                )
             }
         }
     })
-
 }
