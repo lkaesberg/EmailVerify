@@ -1,0 +1,15 @@
+{
+  "mailPositive": "Por favor, insira aqui o código recebido em %VAR% (Confira a pasta de spam, se você não tiver recebido o código).",
+  "mailNegative": "Não foi possível enviar email para %VAR%",
+  "roleAdded": "Role adicionada %VAR%",
+  "mailInvalid": "Por favor, insira apenas email válido",
+  "mailBlacklisted": "Seu email está na blacklist",
+  "mailTimeout": "Por favor, espere %VAR% segundos antes de reenviar o email!",
+  "invalidPermissions": "Você não está autorizado a executar este comando!",
+  "commandFailed": "Ocorreu um erro ao executar este comando!",
+  "userRetry": "Ocorreu um erro. Por favor, remove e adicione a reação novamente.",
+  "userBotError": "Bot não configurado corretamente. Por favor contate o Administrador!",
+  "userEnterEmail": "Por favor, insira o seu endereço de email para verificar %VAR%.",
+  "userCantFindRole": "Não foi possível encontrar as roles. Por favor contate o administrador! Ajuda: Confirme que o nome continua igual, e que a role do bot é maior que a role de verificado e não verificado no menu de configuração do servidor.",
+  "emailText": "Bem vindo a %VAR%!\nAqui está seu código de acesso: %VAR%\n\nNão compartilhe este código com ninguém."
+}
