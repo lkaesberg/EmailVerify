@@ -113,6 +113,8 @@ To add more languages please create an issue with the translation file. [Templat
 
 ## Self Host
 
+Node version: 16.15.0
+
 To install the bot execute following commands:
 ### Download the Bot
 ```
