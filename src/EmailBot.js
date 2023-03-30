@@ -41,9 +41,9 @@ for (const file of commandFiles) {
     commands.push(command.data.toJSON())
 }
 
-function registerCommands(guild) {
+function registerCommands(guild, count = 0, total = 0) {
     rest.put(Discord.Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
-        .then(() => console.log('Successfully registered application commands.'))
+        .then(() => console.log(`Successfully registered application commands for ${guild.name}: ${count}/${total}`))
         .catch(async () => {
             const errorChannel = guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
             if (errorChannel) {
@@ -58,9 +58,11 @@ function registerCommands(guild) {
 }
 
 bot.once('ready', async () => {
-    (await bot.guilds.fetch()).forEach(guild => {
-        console.log(guild.name)
-        registerCommands(guild)
+    let guilds = await bot.guilds.fetch()
+    let counter = 0
+    guilds.forEach((guild) => {
+        counter += 1
+        registerCommands(guild, counter, guilds.size)
         registerRemoveDomain(guild.id)
         database.getServerSettings(guild.id, async serverSettings => {
             try {
