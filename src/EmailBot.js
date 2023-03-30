@@ -14,6 +14,7 @@ const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
+const {PermissionsBitField} = require("discord.js");
 
 const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
 
@@ -42,6 +43,10 @@ for (const file of commandFiles) {
 }
 
 function registerCommands(guild) {
+    //TODO
+    rest.put(Routes.applicationGuildCommands(clientId, guild.id), { body: [] })
+        .then(() => console.log('Successfully deleted all guild commands.'))
+        .catch(console.error);
     rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(async () => {
@@ -58,6 +63,10 @@ function registerCommands(guild) {
 }
 
 bot.once('ready', async () => {
+    //TODO
+    rest.put(Routes.applicationCommands(clientId), { body: [] })
+        .then(() => console.log('Successfully deleted all application commands.'))
+        .catch(console.error);
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
         registerCommands(guild)
@@ -150,7 +159,14 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            await command.execute(interaction);
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
+                await command.execute(interaction);
+            } else {
+                await interaction.reply({
+                    content: getLocale(language, "invalidPermissions"),
+                    ephemeral: true
+                });
+            }
         } catch (error) {
             console.error(error);
             try {
