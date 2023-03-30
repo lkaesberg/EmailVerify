@@ -58,7 +58,7 @@ function registerCommands(guild, count = 0, total = 0) {
 }
 
 bot.once('ready', async () => {
-    let guilds = await bot.guilds.fetch()
+    let guilds = await bot.guilds.cache
     let counter = 0
     guilds.forEach((guild) => {
         counter += 1
