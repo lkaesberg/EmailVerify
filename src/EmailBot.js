@@ -42,10 +42,6 @@ for (const file of commandFiles) {
 }
 
 function registerCommands(guild) {
-    //TODO
-    rest.put(Routes.applicationGuildCommands(clientId, guild.id), { body: [] })
-        .then(() => console.log('Successfully deleted all guild commands.'))
-        .catch(console.error);
     rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(async () => {
@@ -62,10 +58,6 @@ function registerCommands(guild) {
 }
 
 bot.once('ready', async () => {
-    //TODO
-    rest.put(Routes.applicationCommands(clientId), { body: [] })
-        .then(() => console.log('Successfully deleted all application commands.'))
-        .catch(console.error);
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
         registerCommands(guild)
@@ -127,7 +119,6 @@ bot.on('guildCreate', guild => {
 })
 
 bot.on("messageCreate", async (message) => {
-        console.log("Message:", message.content)
         await messageCreate(message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
     }
 )
