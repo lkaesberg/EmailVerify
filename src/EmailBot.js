@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const {token, clientId} = require('../config.json');
-const {Routes} = require('discord-api-types/v9');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
@@ -43,11 +42,7 @@ for (const file of commandFiles) {
 }
 
 function registerCommands(guild) {
-    //TODO
-    rest.put(Routes.applicationGuildCommands(clientId, guild.id), { body: [] })
-        .then(() => console.log('Successfully deleted all guild commands.'))
-        .catch(console.error);
-    rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
+    rest.put(Discord.Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(async () => {
             const errorChannel = guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
@@ -63,10 +58,6 @@ function registerCommands(guild) {
 }
 
 bot.once('ready', async () => {
-    //TODO
-    rest.put(Routes.applicationCommands(clientId), { body: [] })
-        .then(() => console.log('Successfully deleted all application commands.'))
-        .catch(console.error);
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
         registerCommands(guild)
