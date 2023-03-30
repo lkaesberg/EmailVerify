@@ -2,7 +2,7 @@ const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
 
 module.exports = {
-    data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not'),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not').setDefaultMemberPermissions(0),
     async execute(interaction) {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             let response = "Configuration: " + (serverSettings.status ? "\:white_check_mark:\n" : "\:x: \n");

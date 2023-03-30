@@ -15,7 +15,7 @@ const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
 
-const bot = new Discord.Client({intents: [Discord.Intents.FLAGS.DIRECT_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MEMBERS]});
+const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
 
 const serverStatsAPI = new ServerStatsAPI(bot)
 
@@ -42,6 +42,10 @@ for (const file of commandFiles) {
 }
 
 function registerCommands(guild) {
+    //TODO
+    rest.put(Routes.applicationGuildCommands(clientId, guild.id), { body: [] })
+        .then(() => console.log('Successfully deleted all guild commands.'))
+        .catch(console.error);
     rest.put(Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
         .then(() => console.log('Successfully registered application commands.'))
         .catch(async () => {
@@ -58,6 +62,10 @@ function registerCommands(guild) {
 }
 
 bot.once('ready', async () => {
+    //TODO
+    rest.put(Routes.applicationCommands(clientId), { body: [] })
+        .then(() => console.log('Successfully deleted all application commands.'))
+        .catch(console.error);
     (await bot.guilds.fetch()).forEach(guild => {
         console.log(guild.name)
         registerCommands(guild)
@@ -119,6 +127,7 @@ bot.on('guildCreate', guild => {
 })
 
 bot.on("messageCreate", async (message) => {
+        console.log("Message:", message.content)
         await messageCreate(message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
     }
 )
@@ -150,14 +159,7 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            if (interaction.member.permissions.has("ADMINISTRATOR") || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
-                await command.execute(interaction);
-            } else {
-                await interaction.reply({
-                    content: getLocale(language, "invalidPermissions"),
-                    ephemeral: true
-                });
-            }
+            await command.execute(interaction);
         } catch (error) {
             console.error(error);
             try {

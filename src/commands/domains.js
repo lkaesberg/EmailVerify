@@ -4,7 +4,7 @@ const registerRemoveDomain = require("../bot/registerRemoveDomain")
 
 
 module.exports = {
-    data: new SlashCommandBuilder().setDefaultPermission(true).setName('domains').setDescription('returns registered domains').addStringOption(option => option.setName('domain').setDescription('register given domain (use * as wildcard) (add multiple domains separated by \',\')')),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('domains').setDescription('returns registered domains').addStringOption(option => option.setName('domain').setDescription('register given domain (use * as wildcard) (add multiple domains separated by \',\')')).setDefaultMemberPermissions(0),
     async execute(interaction) {
         const domains = interaction.options.getString('domain');
         await database.getServerSettings(interaction.guildId, async serverSettings => {

@@ -4,10 +4,11 @@ const database = require("../database/Database");
 const EmailUser = require("../database/EmailUser");
 const {getLocale} = require("../Language");
 const md5hash = require("../crypto/Crypto");
+const {ChannelType} = require("discord.js");
 
 module.exports = async function (message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify) {
 
-    if (message.channel.type !== 'DM' || message.author.id === bot.user.id) {
+    if (message.channel.type !== ChannelType.DM || message.author.id === bot.user.id) {
         return
     }
     const userGuild = userGuilds.get(message.author.id)

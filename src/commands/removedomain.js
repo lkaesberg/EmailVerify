@@ -3,7 +3,7 @@ const database = require("../database/Database.js");
 const registerRemoveDomain = require("../bot/registerRemoveDomain")
 
 module.exports = {
-    data: new SlashCommandBuilder().setDefaultPermission(true).setName('removedomain').setDescription('remove registered domain').addStringOption(option => option.setName('removedomains').setDescription('remove registered domain (remove multiple domains separated by \',\')').setRequired(true)),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('removedomain').setDescription('remove registered domain').addStringOption(option => option.setName('removedomains').setDescription('remove registered domain (remove multiple domains separated by \',\')').setRequired(true)).setDefaultMemberPermissions(0),
     async execute(interaction) {
         const removeDomains = interaction.options.getString('removedomains', true).split(",");
 

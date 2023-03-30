@@ -9,7 +9,7 @@ module.exports = {
     .addStringOption(option => option
         .setName('email')
         .setDescription('register blacklisted emails (add multiple separated by ","), (pass "-" to clear)')
-        ),
+        ).setDefaultMemberPermissions(0),
     async execute(interaction) {
         const blacklist = interaction.options.getString('email');
         await database.getServerSettings(interaction.guildId, async serverSettings => {
