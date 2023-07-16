@@ -8,6 +8,7 @@ services:
       - 8181:8181
     volumes:
       - app_data:/usr/app/
+    restart: always
 
 volumes:
   app_data:
