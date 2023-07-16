@@ -1,0 +1,13 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8181:8181
+    volumes:
+      - app_data:/usr/app/
+
+volumes:
+  app_data:
