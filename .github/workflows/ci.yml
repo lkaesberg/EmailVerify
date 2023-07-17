@@ -23,7 +23,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: emailverify:latest
+          tags: lkaesberg/emailverify:latest
   pages:
     runs-on: ubuntu-latest
     steps:
