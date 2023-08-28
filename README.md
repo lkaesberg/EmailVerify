@@ -108,6 +108,7 @@ The EmailBot role has to be higher in the role hierarchy then the verified and u
 - kploskonka (Polish)
 - Norma1Name (Hebrew)
 - iplayagain (Korean)
+- Charles Van (France)
 
 To add more languages please create an issue with the translation file. [Template](language/english.json)
 
