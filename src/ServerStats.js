@@ -5,7 +5,7 @@ module.exports = class ServerStats {
         this.mailsSendAll = 0
         this.mailsSendToday = 0
         this.lastDate = new Date()
-        this.fileName = "ServerStats.json"
+        this.fileName = "config/ServerStats.json"
         if (!fs.existsSync(this.fileName)) {
             this.updateFile()
         }

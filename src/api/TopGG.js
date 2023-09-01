@@ -1,4 +1,4 @@
-const {topggToken} = require("../../config.json");
+const {topggToken} = require("../../config/config.json");
 const {AutoPoster} = require("topgg-autoposter");
 
 module.exports = function (bot) {

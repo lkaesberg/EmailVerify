@@ -1,7 +1,7 @@
 const database = require("../database/Database");
 const rest = require("../api/DiscordRest");
 const {Routes} = require("discord-api-types/v9");
-const {clientId} = require("../../config.json");
+const {clientId} = require("../../config/config.json");
 
 module.exports = async function registerRemoveDomain(guildId, removeDomain = require("../commands/removedomain")) {
     await database.getServerSettings(guildId, async serverSettings => {

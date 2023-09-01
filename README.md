@@ -124,7 +124,7 @@ cd emailverify
 ```
 ### Create Config File
 ```
-nano config.json
+nano config/config.json
 ```
 ```
 {

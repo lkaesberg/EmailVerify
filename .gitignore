@@ -1,8 +1,8 @@
 node_modules
 package-lock.json
-config.json
+config/config.json
 .idea
-bot.db
+config/bot.db
 src/bot.db
-ServerStats.json
+config/ServerStats.json
 discord-verify.txt

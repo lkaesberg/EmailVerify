@@ -5,7 +5,7 @@ services:
     ports:
       - 8181:8181
     volumes:
-      - app_data:/usr/app/
+      - app_data:/usr/app/config
     restart: always
 
 volumes:

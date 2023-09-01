@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const {token, clientId} = require('../config.json');
+const {token, clientId} = require('../config/config.json');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
 const rl = require('readline').createInterface(stdin, stdout)
