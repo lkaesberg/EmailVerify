@@ -5,7 +5,7 @@ const md5hash = require("../crypto/Crypto")
 
 class Database {
     constructor() {
-        this.db = new sqlite3.Database('bot.db');
+        this.db = new sqlite3.Database('config/bot.db');
 
         this.runMigration(1, () => {
             this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
