@@ -1,11 +1,19 @@
 # Commands
 
+**The following commands can be used by any user.**
+
+|      Commands       | Arguments |               Usage               |
+|:-------------------:|:---------:|:---------------------------------:|
+|      `/verify`      |           |       verify on the server        |
+| `/delete_user_data` |           | delete all the data from the user |
+
+**The following commands can only be used by an administrator**
+
 |         Commands          |            Arguments            |                                                                                                Usage                                                                                                |
 |:-------------------------:|:-------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |          `/help`          |                                 |                                                                               get instructions on how to use the bot                                                                                |
-|         `/verify`         |                                 |                                                                                        verify on the server                                                                                         |
 |         `/status`         |              **-**              |                                                                        returns whether the bot is properly configured or not                                                                        |
-|         `/domains`         |        **(domain name)**        |                                                         **()** -> returns registered domains<br>**(domain name)** -> register given domain                                                          |
+|         `/domains`        |        **(domain name)**        |                                                         **()** -> returns registered domains<br>**(domain name)** -> register given domain                                                          |
 |      `/removedomain`      |         **domain name**         |                                                                                      remove registered domain                                                                                       |
 |         `/button`         | **channel,message, buttontext** |                                                                  creates a button in the channel with the message and button text                                                                   |
 |        `/message`         |       **channel,message**       |                                                sends a message to the channel to which the user can add a reaction to start the verification process                                                |
@@ -15,13 +23,11 @@
 |        `/language`        |          **language**           |                                                                               set language for the user interactions                                                                                |
 | `/add_unverified_on_join` |           **enable**            |                                                          **(enable/disable)** -> automatically adds the unverified role to every new user                                                           |
 |     `/verify_on_join`     |           **enable**            |                                                                **(enable/disable)** -> automatically asks every new member to verify                                                                |
-|    `/delete_user_data`    |                                 |                                                                                  delete all the data from the user                                                                                  |
 |   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
 |    `/set_log_channel`     |        **(logchannel)**         |                                                               **()** -> disable log channel <br> **(log channel)** -> set log channel                                                               |
+|       `/blacklist`        |          **(emails)**           |       **()** -> returns a comma-separated list of emails that are blocked from being verified <br> **(emails)** -> set a comma-separated list of emails that are blocked from being verified        |
 
 react := react to the message with an emoji
-
-**The commands can only be used by an administrator**
 
 The unverified role can be used to make a channel visible in which the message is located
 

@@ -57,6 +57,7 @@ Following data gets stored from the bot:
 - `channelid` reference to the channel with the verify message
 - `messageid` reference to the verify message
 - `language` language setting for the server
+- `blacklist` list of emails that are blocked from being verified
 
 #### User
 
