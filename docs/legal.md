@@ -57,6 +57,11 @@ Following data gets stored from the bot:
 - `channelid` reference to the channel with the verify message
 - `messageid` reference to the verify message
 - `language` language setting for the server
+- `autoVerify` automatically verify when joining a server
+- `autoAddUnverified` automatically add the unverified role to every new member of the server
+- `verifyMessage` message to show to the user when verifying
+- `logChannel` channel to log the emails of verified users
+- `blacklist` list of emails that are blocked from being verified
 
 #### User
 
