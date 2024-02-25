@@ -1,0 +1,15 @@
+{
+  "mailPositive": "Lütfen %VAR% mailine gönderilen kodu giriniz (Eğer elinize bir kod ulaşmadıysa spam klasörünü kontrol ediniz).",
+  "mailNegative": "%VAR% adresine mail gönderilemiyor!",
+  "roleAdded": "%VAR% rolü eklendi!",
+  "mailInvalid": "Lütfen yalnızca geçerli e-posta adreslerini giriniz",
+  "mailBlacklisted": "E-postanız kara listede",
+  "mailTimeout": "Lütfen e-postanızı yeniden göndermeden önce %VAR% saniye bekleyiniz!",
+  "invalidPermissions": "Bu komutu çalıştırma izniniz yok!",
+  "commandFailed": "Komutu çalıştırırken bir hata meydana geldi!",
+  "userRetry": "Bir hata meydana geldi. Tekrar denemek için lütfen reaksiyonu kaldırıp tekrar ekleyiniz.",
+  "userBotError": "Bot düzgün bir şekilde ayarlanmamış. Lütfen bir admine ulaşınız!",
+  "userEnterEmail": "Hesabınızı doğrulamak için lütfen email adresinizi giriniz %VAR%.",
+  "userCantFindRole": "Rolleri bulamıyorum. Lütfen adminle iletişime geçin! Yardım: Rol adının hala aynı olduğundan ve sunucu ayarları rol menüsünde bot rolünün doğrulanmış ve doğrulanmamış rolden daha yüksek olduğundan emin olun.",
+  "emailText": "%VAR% hoş geldiniz!\n\nBu, Discord sunucusuna erişmenizi sağlayacak bir koddur.\nErişim elde etmek için lütfen bu kodu yalnızca Discord aracılığıyla EmailBot'a gönderin. Lütfen bu kodu EmailBot dışında kimseye göndermeyin.\nErişim kodunuz: %VAR%"
+}
