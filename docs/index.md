@@ -15,9 +15,9 @@
 
 ## Statistics
 
-Server count: <strong id="serverCount">0</strong><br>
-Mails sent today: <strong id="todayMails">0</strong><br>
-Mails sent all time: <strong id="allMails">0</strong>
+EmailVerify server count: <strong id="serverCount">0</strong><br>
+Users verified today: <strong id="todayMails">0</strong><br>
+Users verified all time: <strong id="allMails">0</strong>
 
 ## Description
 
