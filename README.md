@@ -1,7 +1,6 @@
 <!--
 *** Build using the Best-README-Template.
 -->
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
@@ -9,6 +8,12 @@
   <h3 align="center">Discord Email Verify</h3>
   <p align="center">
     A Email Verification Bot<br />
+    <p align="center">
+  <a href="https://github.com/lkaesberg/EmailVerify/actions"><img src="https://github.com/lkaesberg/EmailVerify/actions/workflows/ci.yml/badge.svg" alt="Build Status"></a>
+  <a href="https://github.com/lkaesberg/EmailVerify/blob/main/LICENSE"><img src="https://img.shields.io/github/license/lkaesberg/EmailVerify" alt="License"></a>
+  <a href="https://github.com/lkaesberg/EmailVerify/network/members"><img src="https://img.shields.io/github/forks/lkaesberg/EmailVerify?style=social" alt="GitHub forks"></a>
+  <a href="https://github.com/lkaesberg/EmailVerify/stargazers"><img src="https://img.shields.io/github/stars/lkaesberg/EmailVerify?style=social" alt="GitHub stars"></a>
+</p>
     <p>
     <a href="https://github.com/lkaesberg/EmailBot/issues">Report Bug</a>
     ·
