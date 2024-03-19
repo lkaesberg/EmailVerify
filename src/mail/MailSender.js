@@ -18,6 +18,9 @@ module.exports = class MailSender {
             auth: {
                 user: username,
                 pass: password
+            },
+            tls: {
+              rejectUnauthorized: false
             }
         }
         if (isGoogle) nodemailerOptions["service"] = "gmail"
