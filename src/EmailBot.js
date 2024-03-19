@@ -21,7 +21,7 @@ const serverStatsAPI = new ServerStatsAPI(bot)
 
 topggAPI(bot)
 
-let emailNotify = false
+let emailNotify = true
 
 module.exports.userGuilds = userGuilds = new Map()
 
