@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*' 
 jobs:
   build_and_push_docker_image:
     runs-on: ubuntu-latest
@@ -23,7 +25,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/lkaesberg/emailverify:latest
+          tags: |
+            ghcr.io/lkaesberg/emailverify:latest
+            ghcr.io/lkaesberg/emailverify:${GITHUB_REF_NAME}
   pages:
     runs-on: ubuntu-latest
     steps:
