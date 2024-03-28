@@ -23,7 +23,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/emailverify:latest
+          tags: ghcr.io/lkaesberg/emailverify:latest
   pages:
     runs-on: ubuntu-latest
     steps:
