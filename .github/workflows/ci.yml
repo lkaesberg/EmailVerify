@@ -13,10 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Extract tag name
-        run: echo "CLEAN_TAG_NAME=$(echo ${GITHUB_REF#refs/tags/} | sed 's/[^a-zA-Z0-9_.-]/_/g')" >> $GITHUB_ENV
-
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v1
         with:
@@ -31,7 +27,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/lkaesberg/emailverify:latest
-            ghcr.io/lkaesberg/emailverify:${{ env.CLEAN_TAG_NAME }}
+            ghcr.io/lkaesberg/emailverify:${{ github.ref_name }}
   pages:
     runs-on: ubuntu-latest
     steps:
