@@ -1,7 +1,7 @@
 version: '3'
 services:
   app:
-    image: lkaesberg/emailverify:latest
+    image: ghcr.io/lkaesberg/emailverify:latest
     ports:
       - 8181:8181
     volumes:
