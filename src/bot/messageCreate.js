@@ -35,7 +35,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
 
             database.getEmailUser(userCode.email, userGuilds.get(message.author.id).id, async (currentUserEmail) => {
-                let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch.get(currentUserEmail.userID)
+                let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch(currentUserEmail.userID)
                 if (message.author.id === currentUserEmail.userID) {
                     return
                 }
