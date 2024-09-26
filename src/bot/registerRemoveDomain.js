@@ -22,7 +22,7 @@ module.exports = async function registerRemoveDomain(guildId, removeDomain = req
 
             if (serverSettings.domains.length < 25) {
                 removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
-                    return {"name": truncateString(domain), "value": domain}
+                    return {"name": truncateString(domain), "value": truncateString(domain)}
                 })
             } else {
                 removeDomainCommand["options"][0]["choices"] = undefined
