@@ -13,7 +13,7 @@ module.exports = async function registerRemoveDomain(guildId, removeDomain = req
             let removeDomainCommand = removeDomain.data.toJSON()
 
 
-            if (serverSettings.domains.length > 0 && serverSettings.domains.length < 100) {
+            if (serverSettings.domains.length > 0 && serverSettings.domains.length < 25) {
                 removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
                     return {"name": domain, "value": domain}
                 })
