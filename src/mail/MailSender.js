@@ -31,8 +31,13 @@ module.exports = class MailSender {
         this.transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
     }
 
-    async sendEmail(toEmail, code, name, message, emailNotify, callback) {
-        await database.getServerSettings(this.userGuilds.get(message.author.id).id, serverSettings => {
+    async sendEmail(toEmail, code, name, message, emailNotify, callback, options = {}) {
+        // message can be a DM Message or an Interaction (from modals/buttons)
+        const isGuildInteraction = typeof message.guildId !== 'undefined' && message.guildId !== null;
+        const userId = message.user ? message.user.id : message.author.id;
+        const serverId = isGuildInteraction ? message.guildId : this.userGuilds.get(userId).id;
+
+        await database.getServerSettings(serverId, serverSettings => {
             const mailOptions = {
                 from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,
@@ -53,11 +58,33 @@ module.exports = class MailSender {
                     if (emailNotify) {
                         console.log(error);
                     }
-                    await message.reply(getLocale(language, "mailNegative", toEmail))
+                    if (!options.suppressReply) {
+                        const negative = getLocale(language, "mailNegative", toEmail)
+                        if (isGuildInteraction) {
+                            if (message.deferred || message.replied) {
+                                await message.followUp({ content: negative, ephemeral: true }).catch(() => {})
+                            } else {
+                                await message.reply({ content: negative, ephemeral: true }).catch(() => {})
+                            }
+                        } else {
+                            await message.reply(negative).catch(() => {})
+                        }
+                    }
                 } else {
                     this.serverStatsAPI.increaseMailSend()
                     callback(info.accepted[0])
-                    await message.reply(getLocale(language, "mailPositive", toEmail))
+                    if (!options.suppressReply) {
+                        const positive = getLocale(language, "mailPositive", toEmail)
+                        if (isGuildInteraction) {
+                            if (message.deferred || message.replied) {
+                                await message.followUp({ content: positive, ephemeral: true }).catch(() => {})
+                            } else {
+                                await message.reply({ content: positive, ephemeral: true }).catch(() => {})
+                            }
+                        } else {
+                            await message.reply(positive).catch(() => {})
+                        }
+                    }
                     if (emailNotify) {
                         console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
                     }
