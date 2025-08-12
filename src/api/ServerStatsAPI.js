@@ -3,17 +3,17 @@ const express = require("express");
 const cors = require("cors");
 
 class ServerStatsAPI {
-    constructor(bot) {
+    constructor(bot, startServer = true) {
         this.serverStats = new ServerStats()
         this.app = express();
         this.port = 8181;
         this.bot = bot
 
-        this.registerEndpoints()
+        this.registerEndpoints(startServer)
 
     }
 
-    registerEndpoints() {
+    registerEndpoints(startServer) {
         this.app.use(cors({
             origin: "https://emailbot.larskaesberg.de"
         }));
@@ -28,13 +28,24 @@ class ServerStatsAPI {
         });
 
         this.app.get('/serverCount', async (req, res) => {
-            let servers = await this.bot.guilds.cache
+            try {
+                const shardUtil = this.bot.shard;
+                if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
+                    const counts = await shardUtil.fetchClientValues('guilds.cache.size');
+                    const total = counts.reduce((sum, count) => sum + Number(count || 0), 0);
+                    res.send(total.toString());
+                    return;
+                }
+            } catch {}
+            const servers = this.bot.guilds.cache;
             res.send(servers.size.toString())
         });
 
-        this.app.listen(this.port, () => {
-            console.log(`App listening on port ${this.port}!`)
-        });
+        if (startServer) {
+            this.app.listen(this.port, () => {
+                console.log(`App listening on port ${this.port}!`)
+            });
+        }
     }
 
     increaseMailSend() {
