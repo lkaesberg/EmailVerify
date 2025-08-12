@@ -2,10 +2,8 @@ const Discord = require('discord.js');
 const {token, clientId} = require('../config/config.json');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
-let shardListEnv = null;
-try { shardListEnv = process.env.SHARD_LIST ? JSON.parse(process.env.SHARD_LIST) : null; } catch {}
-const isPrimary = !shardListEnv || (Array.isArray(shardListEnv) && shardListEnv.includes(0));
-const rl = isPrimary ? require('readline').createInterface(stdin, stdout) : { on: () => {} }
+const readline = require('readline')
+let rl = null
 const fs = require("fs");
 const {getLocale, defaultLanguage} = require('./Language')
 require("./database/ServerSettings");
@@ -23,11 +21,7 @@ const EmailUser = require("./database/EmailUser");
 
 const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
 
-const serverStatsAPI = new ServerStatsAPI(bot, isPrimary)
-
-if (!shardListEnv) {
-    topggAPI(bot)
-}
+const serverStatsAPI = new ServerStatsAPI(bot, false)
 
 let emailNotify = true
 
@@ -66,6 +60,42 @@ function registerCommands(guild, count = 0, total = 0) {
 }
 
 bot.once('ready', async () => {
+    // Determine primary shard at runtime per discord.js docs
+    const isPrimary = !bot.shard || bot.shard.ids.includes(0)
+    if (isPrimary) {
+        serverStatsAPI.app.listen(serverStatsAPI.port, () => {
+            console.log(`App listening on port ${serverStatsAPI.port}!`)
+        })
+        rl = readline.createInterface(stdin, stdout)
+        rl.on("line", async command => {
+            switch (command) {
+                case "help":
+                    console.log("Commands: email,servers")
+                    break
+                case "email":
+                    emailNotify = !emailNotify
+                    console.log("Email Notification: " + emailNotify.toString())
+                    break
+                case "servers":
+                    console.log("------------------------------")
+                    console.log("Servers:");
+                    const servers = (await bot.guilds.fetch())
+                    servers.forEach(guild => {
+                        console.log(guild.name)
+                    })
+                    console.log("Server: " + servers.size)
+                    console.log("------------------------------")
+                    break
+                default:
+                    console.log("No command found!")
+                    break
+            }
+        })
+    }
+    // Only in unsharded mode, post TopGG stats from client
+    if (!bot.shard) {
+        topggAPI(bot)
+    }
     let guilds = await bot.guilds.cache
     let counter = 0
     guilds.forEach((guild) => {
@@ -401,30 +431,7 @@ bot.on('interactionCreate', async interaction => {
     })
 });
 
-if (isPrimary) rl.on("line", async command => {
-    switch (command) {
-        case "help":
-            console.log("Commands: email,servers")
-            break
-        case "email":
-            emailNotify = !emailNotify
-            console.log("Email Notification: " + emailNotify.toString())
-            break
-        case "servers":
-            console.log("------------------------------")
-            console.log("Servers:");
-            const servers = (await bot.guilds.fetch())
-            servers.forEach(guild => {
-                console.log(guild.name)
-            })
-            console.log("Server: " + servers.size)
-            console.log("------------------------------")
-            break
-        default:
-            console.log("No command found!")
-            break
-    }
-})
+// CLI listener is initialized in ready() only on primary shard
 
 bot.login(token).catch((e) => {
     console.log("Failed to login: " + e.toString())
