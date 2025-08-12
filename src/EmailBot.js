@@ -22,6 +22,8 @@ const EmailUser = require("./database/EmailUser");
 const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
 
 const serverStatsAPI = new ServerStatsAPI(bot, false)
+// expose for shard broadcast usage
+bot.serverStatsAPI = serverStatsAPI
 
 let emailNotify = true
 

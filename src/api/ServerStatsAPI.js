@@ -8,12 +8,14 @@ class ServerStatsAPI {
         this.app = express();
         this.port = 8181;
         this.bot = bot
+        this.started = false;
 
-        this.registerEndpoints(startServer)
+        this.registerEndpoints()
+        if (startServer) this.start()
 
     }
 
-    registerEndpoints(startServer) {
+    registerEndpoints() {
         this.app.use(cors({
             origin: "https://emailbot.larskaesberg.de"
         }));
@@ -40,15 +42,32 @@ class ServerStatsAPI {
             const servers = this.bot.guilds.cache;
             res.send(servers.size.toString())
         });
+    }
 
-        if (startServer) {
-            this.app.listen(this.port, () => {
-                console.log(`App listening on port ${this.port}!`)
-            });
-        }
+    start() {
+        if (this.started) return;
+        this.started = true;
+        this.app.listen(this.port, () => {
+            console.log(`App listening on port ${this.port}!`)
+        });
     }
 
     increaseMailSend() {
+        try {
+            const shardUtil = this.bot.shard;
+            if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
+                // If this is NOT the primary shard (id 0), forward the increment to shard 0
+                if (!shardUtil.ids.includes(0)) {
+                    shardUtil.broadcastEval((client) => {
+                        if (client.shard && client.shard.ids.includes(0) && client.serverStatsAPI) {
+                            client.serverStatsAPI.serverStats.increaseMailSend();
+                        }
+                    }).catch(() => {});
+                    return;
+                }
+            }
+        } catch {}
+        // Unsharded or primary shard: update locally
         this.serverStats.increaseMailSend()
     }
 
