@@ -2,7 +2,10 @@ const Discord = require('discord.js');
 const {token, clientId} = require('../config/config.json');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
-const rl = require('readline').createInterface(stdin, stdout)
+let shardListEnv = null;
+try { shardListEnv = process.env.SHARD_LIST ? JSON.parse(process.env.SHARD_LIST) : null; } catch {}
+const isPrimary = !shardListEnv || (Array.isArray(shardListEnv) && shardListEnv.includes(0));
+const rl = isPrimary ? require('readline').createInterface(stdin, stdout) : { on: () => {} }
 const fs = require("fs");
 const {getLocale, defaultLanguage} = require('./Language')
 require("./database/ServerSettings");
@@ -20,9 +23,11 @@ const EmailUser = require("./database/EmailUser");
 
 const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
 
-const serverStatsAPI = new ServerStatsAPI(bot)
+const serverStatsAPI = new ServerStatsAPI(bot, isPrimary)
 
-topggAPI(bot)
+if (!shardListEnv) {
+    topggAPI(bot)
+}
 
 let emailNotify = true
 
@@ -396,7 +401,7 @@ bot.on('interactionCreate', async interaction => {
     })
 });
 
-rl.on("line", async command => {
+if (isPrimary) rl.on("line", async command => {
     switch (command) {
         case "help":
             console.log("Commands: email,servers")
