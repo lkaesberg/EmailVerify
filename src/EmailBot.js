@@ -35,6 +35,13 @@ let userTimeouts = new Map()
 
 const mailSender = new MailSender(userGuilds, serverStatsAPI)
 
+// Track ephemeral prompt messages so we can delete them at the right time
+const verifyPromptMessages = new Map() // key: userId, value: messageId for "Enter Email" prompt
+const codePromptMessages = new Map()   // key: userId+guildId, value: messageId for "Enter Code" prompt
+
+module.exports.verifyPromptMessages = verifyPromptMessages
+module.exports.codePromptMessages = codePromptMessages
+
 bot.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
 const commands = []
@@ -189,7 +196,10 @@ bot.on('interactionCreate', async interaction => {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('openEmailModal').setLabel('Enter Email').setStyle(ButtonStyle.Primary)
                 )
-                await interaction.reply({ content: instruction, components: [row], ephemeral: true }).catch(() => {})
+                const prompt = await interaction.reply({ content: instruction, components: [row], ephemeral: true, fetchReply: true }).catch(() => null)
+                if (prompt && prompt.id) {
+                    verifyPromptMessages.set(interaction.user.id, prompt.id)
+                }
                 setTimeout(() => {
                     interaction.deleteReply().catch(() => {})
                 }, 300000)
@@ -219,6 +229,15 @@ bot.on('interactionCreate', async interaction => {
                 const emailRow = new ActionRowBuilder().addComponents(emailInput)
                 modal.addComponents(emailRow)
                 await interaction.showModal(modal).catch(() => {})
+                // After opening the email modal, delete the preceding ephemeral verify prompt (the one with the button)
+                setTimeout(() => {
+                    try {
+                        if (interaction.message && interaction.message.id) {
+                            interaction.message.delete().catch(() => {})
+                            interaction.webhook.deleteMessage(interaction.message.id).catch(() => {})
+                        }
+                    } catch {}
+                }, 0)
             })
             return
         }
@@ -241,7 +260,17 @@ bot.on('interactionCreate', async interaction => {
                     .setRequired(true)
                 const firstActionRow = new ActionRowBuilder().addComponents(codeInput)
                 modal.addComponents(firstActionRow)
+                // Show code modal
                 await interaction.showModal(modal).catch(() => {})
+                // After opening the code modal, delete the preceding ephemeral code prompt (the one with the button)
+                setTimeout(() => {
+                    try {
+                        if (interaction.message && interaction.message.id) {
+                            interaction.message.delete().catch(() => {})
+                            interaction.webhook.deleteMessage(interaction.message.id).catch(() => {})
+                        }
+                    } catch {}
+                }, 0)
             })
             return
         }
@@ -314,8 +343,18 @@ bot.on('interactionCreate', async interaction => {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('openCodeModal').setLabel('Enter Code').setStyle(ButtonStyle.Success)
                 )
-                const follow = await interaction.followUp({ content: infoText, components: [row], ephemeral: true }).catch(() => null)
+                // Delete the initial verify prompt ("Enter Email") once email has been submitted
+                const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
+                if (prevVerifyPromptId) {
+                    verifyPromptMessages.delete(interaction.user.id)
+                    // Try both deletion methods for reliability with ephemeral messages
+                    interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
+                }
+
+                const follow = await interaction.followUp({ content: infoText, components: [row], ephemeral: true, fetchReply: true }).catch(() => null)
                 if (follow && follow.id) {
+                    // Track the code prompt so we can delete it after code submission
+                    codePromptMessages.set(interaction.user.id + userGuild.id, follow.id)
                     setTimeout(() => {
                         interaction.webhook.deleteMessage(follow.id).catch(() => {})
                     }, 300000)
@@ -328,12 +367,20 @@ bot.on('interactionCreate', async interaction => {
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true }).catch(() => {})
+                const sent = await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true, fetchReply: true }).catch(() => null)
+                setTimeout(() => {
+                    try { interaction.deleteReply().catch(() => {}) } catch {}
+                    try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
+                }, 2500)
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
-                    await interaction.reply({ content: getLocale(serverSettings.language, "userBotError"), ephemeral: true }).catch(() => {})
+                    const sent = await interaction.reply({ content: getLocale(serverSettings.language, "userBotError"), ephemeral: true, fetchReply: true }).catch(() => null)
+                    setTimeout(() => {
+                        try { interaction.deleteReply().catch(() => {}) } catch {}
+                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
+                    }, 2500)
                     return
                 }
                 const userCode = userCodes.get(interaction.user.id + userGuild.id)
@@ -378,10 +425,32 @@ bot.on('interactionCreate', async interaction => {
                             userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
                         }
                     } catch {}
-                    await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), ephemeral: true }).catch(() => {})
+                    const sent = await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), ephemeral: true, fetchReply: true }).catch(() => null)
+                    // Delete the code prompt message after successful verification
+                    const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
+                    if (codePromptId) {
+                        codePromptMessages.delete(interaction.user.id + userGuild.id)
+                        interaction.webhook.deleteMessage(codePromptId).catch(() => {})
+                    }
+                    // Remove the success message shortly after showing it
+                    setTimeout(() => {
+                        try { interaction.deleteReply().catch(() => {}) } catch {}
+                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
+                    }, 2500)
                     userCodes.delete(interaction.user.id + userGuild.id)
                 } else {
-                    await interaction.reply({ content: 'Invalid code. Please try again.', ephemeral: true }).catch(() => {})
+                    const sent = await interaction.reply({ content: 'Invalid code. Please try again.', ephemeral: true, fetchReply: true }).catch(() => null)
+                    // Delete the code prompt message after any code submission (even if invalid)
+                    const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
+                    if (codePromptId) {
+                        codePromptMessages.delete(interaction.user.id + userGuild.id)
+                        interaction.webhook.deleteMessage(codePromptId).catch(() => {})
+                    }
+                    // Remove the error message shortly after showing it
+                    setTimeout(() => {
+                        try { interaction.deleteReply().catch(() => {}) } catch {}
+                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
+                    }, 2500)
                 }
             })
             return
