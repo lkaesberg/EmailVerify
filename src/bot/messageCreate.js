@@ -28,59 +28,95 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             userTimeout = new UserTimeout()
             userTimeouts.set(message.author.id, userTimeout)
         }
-        let userCode = userCodes.get(message.author.id + userGuilds.get(message.author.id).id)
+        const userGuildRef = userGuilds.get(message.author.id)
+        let userCode = userCodes.get(message.author.id + (userGuildRef && userGuildRef.id ? userGuildRef.id : userGuildRef))
         if (userCode && userCode.code === text) {
             userTimeout.resetWaitTime()
-            const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.verifiedRoleName);
-            const roleUnverified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
+            const guildId = userGuildRef && userGuildRef.id ? userGuildRef.id : userGuildRef
 
-            database.getEmailUser(userCode.email, userGuilds.get(message.author.id).id, async (currentUserEmail) => {
-                let member = await bot.guilds.cache.get(currentUserEmail.guildID).members.fetch(currentUserEmail.userID)
-                if (message.author.id === currentUserEmail.userID) {
+            // Prepare role IDs
+            const roleVerifiedId = serverSettings.verifiedRoleName
+            const roleUnverifiedId = serverSettings.unverifiedRoleName
+
+            // Unverify previous owner of the email, if any, on the shard that owns the guild
+            await database.getEmailUser(userCode.email, guildId, async (currentUserEmail) => {
+                if (currentUserEmail && message.author.id !== currentUserEmail.userID) {
+                    if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+                        await bot.shard.broadcastEval(async (client, context) => {
+                            const { guildId, prevUserId, roleVerifiedId, roleUnverifiedId, guildName } = context
+                            const guild = client.guilds.cache.get(guildId)
+                            if (!guild) return
+                            try {
+                                const member = await guild.members.fetch(prevUserId).catch(() => null)
+                                if (!member) return
+                                const roleVerified = guild.roles.cache.get(roleVerifiedId)
+                                const roleUnverified = roleUnverifiedId ? guild.roles.cache.get(roleUnverifiedId) : null
+                                if (roleVerified) await member.roles.remove(roleVerified).catch(() => {})
+                                if (roleUnverified) await member.roles.add(roleUnverified).catch(() => {})
+                                try { await member.send("You got unverified on " + guildName + " because somebody else used that email!").catch(() => {}) } catch {}
+                            } catch {}
+                        }, { context: { guildId, prevUserId: currentUserEmail.userID, roleVerifiedId, roleUnverifiedId, guildName: userGuildRef.name } }).catch(() => {})
+                    } else {
+                        try {
+                            const guild = bot.guilds.cache.get(guildId)
+                            if (guild) {
+                                const member = await guild.members.fetch(currentUserEmail.userID).catch(() => null)
+                                if (member) {
+                                    const roleVerified = guild.roles.cache.get(roleVerifiedId)
+                                    const roleUnverified = roleUnverifiedId ? guild.roles.cache.get(roleUnverifiedId) : null
+                                    if (roleVerified) await member.roles.remove(roleVerified).catch(() => {})
+                                    if (roleUnverified) await member.roles.add(roleUnverified).catch(() => {})
+                                    try { await member.send("You got unverified on " + guild.name + " because somebody else used that email!").catch(() => {}) } catch {}
+                                }
+                            }
+                        } catch {}
+                    }
+                }
+            })
+
+            // Update DB for the new owner
+            database.updateEmailUser(new EmailUser(userCode.email, message.author.id, guildId, serverSettings.verifiedRoleName, 0))
+
+            // Verify current user on the correct shard and log
+            if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+                await bot.shard.broadcastEval(async (client, context) => {
+                    const { guildId, userId, roleVerifiedId, roleUnverifiedId, logChannelId } = context
+                    const guild = client.guilds.cache.get(guildId)
+                    if (!guild) return
+                    try {
+                        const member = await guild.members.fetch(userId).catch(() => null)
+                        if (!member) return
+                        const roleVerified = guild.roles.cache.get(roleVerifiedId)
+                        const roleUnverified = roleUnverifiedId ? guild.roles.cache.get(roleUnverifiedId) : null
+                        if (roleVerified) await member.roles.add(roleVerified).catch(() => {})
+                        if (roleUnverified) await member.roles.remove(roleUnverified).catch(() => {})
+                        if (logChannelId) {
+                            guild.channels.cache.get(logChannelId)?.send(`Authorized: <@${userId}>\t →\t ${member.user.tag}`).catch(() => {})
+                        }
+                    } catch {}
+                }, { context: { guildId, userId: message.author.id, roleVerifiedId, roleUnverifiedId, logChannelId: serverSettings.logChannel } }).catch(() => {})
+            } else {
+                try {
+                    const guild = bot.guilds.cache.get(guildId)
+                    if (guild) {
+                        const member = await guild.members.fetch(message.author.id).catch(() => null)
+                        if (!member) throw new Error('member not found')
+                        const roleVerified = guild.roles.cache.get(roleVerifiedId)
+                        const roleUnverified = roleUnverifiedId ? guild.roles.cache.get(roleUnverifiedId) : null
+                        if (roleVerified) await member.roles.add(roleVerified).catch(() => {})
+                        if (roleUnverified) await member.roles.remove(roleUnverified).catch(() => {})
+                        if (serverSettings.logChannel) {
+                            guild.channels.cache.get(serverSettings.logChannel)?.send(`Authorized: <@${message.author.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
+                        }
+                    }
+                } catch (e) {
+                    message.author.send(getLocale(serverSettings.language, "userCantFindRole")).catch(() => {})
                     return
                 }
-                if (member) {
-                    try {
-                        await member.roles.remove(roleVerified)
-                        if (roleUnverified) {
-                            await member.roles.add(roleUnverified)
-                        }
-                    } catch (e) {
-                        console.log(e)
-                    }
-                    try {
-                        await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
-                    } catch {
-                    }
-                }
+            }
 
-            })
-            database.updateEmailUser(new EmailUser(userCode.email, message.author.id, userGuilds.get(message.author.id).id, serverSettings.verifiedRoleName, 0))
-            let verify_client
-            try {
-                verify_client = userGuilds.get(message.author.id).members.cache.get(message.author.id)
-                await verify_client.roles.add(roleVerified);
-
-            } catch (e) {
-                message.author.send(getLocale(serverSettings.language, "userCantFindRole")).catch(() => {
-                })
-                return
-            }
-            try {
-                if (serverSettings.unverifiedRoleName !== "") {
-                    await verify_client.roles.remove(roleUnverified);
-                }
-            } catch {
-            }
-            try {
-                if (serverSettings.logChannel !== "") {
-                    userGuilds.get(message.author.id).channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${message.author.id}>\t →\t ${userCode.logEmail}`).catch(() => {
-                    })
-                }
-            } catch {
-            }
-            await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
-            userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)
+            await message.reply(getLocale(serverSettings.language, "roleAdded", "verified")).catch(() => {})
+            userCodes.delete(message.author.id + guildId)
         } else {
             let validEmail = false
             for (const domain of serverSettings.domains) {

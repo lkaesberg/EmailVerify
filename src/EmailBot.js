@@ -157,6 +157,17 @@ bot.on("guildMemberAdd", async member => {
             }
         }
         if (serverSettings.autoVerify) {
+            // Ensure mapping exists cross-shard before attempting auto-verify DMs
+            try {
+                userGuilds.set(member.user.id, member.guild)
+                if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+                    await bot.shard.broadcastEval((client, context) => {
+                        if (!client.userGuilds) client.userGuilds = new Map()
+                        const guild = client.guilds.cache.get(context.guildId)
+                        client.userGuilds.set(context.userId, guild ? guild : { id: context.guildId, name: context.guildName })
+                    }, { context: { userId: member.user.id, guildId: member.guild.id, guildName: member.guild.name } })
+                }
+            } catch {}
             await sendVerifyMessage(member.guild, member.user, null, null, userGuilds, true)
         }
     })
@@ -173,6 +184,17 @@ bot.on("messageCreate", async (message) => {
 )
 
 bot.on('messageReactionAdd', async (reaction, user) => {
+    // Set mapping so that subsequent DMs are associated with the correct guild even across shards
+    try {
+        userGuilds.set(user.id, reaction.message.guild)
+        if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+            await bot.shard.broadcastEval((client, context) => {
+                if (!client.userGuilds) client.userGuilds = new Map()
+                const guild = client.guilds.cache.get(context.guildId)
+                client.userGuilds.set(context.userId, guild ? guild : { id: context.guildId, name: context.guildName })
+            }, { context: { userId: user.id, guildId: reaction.message.guild.id, guildName: reaction.message.guild.name } })
+        }
+    } catch {}
     await sendVerifyMessage(reaction.message.guild, user, reaction.message.channel.id, reaction.message.id, userGuilds)
 });
 
@@ -186,6 +208,16 @@ bot.on('interactionCreate', async interaction => {
                 return
             }
             userGuilds.set(interaction.user.id, guild)
+            // Broadcast mapping across shards so DM flow works globally
+            try {
+                if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+                    await bot.shard.broadcastEval((client, context) => {
+                        if (!client.userGuilds) client.userGuilds = new Map()
+                        const guild = client.guilds.cache.get(context.guildId)
+                        client.userGuilds.set(context.userId, guild ? guild : { id: context.guildId, name: context.guildName })
+                    }, { context: { userId: interaction.user.id, guildId: guild.id, guildName: guild.name } })
+                }
+            } catch {}
             // Start with ephemeral message containing instructions and an action button
             await database.getServerSettings(guild.id, async serverSettings => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
@@ -213,6 +245,16 @@ bot.on('interactionCreate', async interaction => {
                 return
             }
             userGuilds.set(interaction.user.id, guild)
+            // Broadcast mapping across shards so DM flow works globally
+            try {
+                if (bot.shard && typeof bot.shard.count === 'number' && bot.shard.count > 1) {
+                    await bot.shard.broadcastEval((client, context) => {
+                        if (!client.userGuilds) client.userGuilds = new Map()
+                        const guild = client.guilds.cache.get(context.guildId)
+                        client.userGuilds.set(context.userId, guild ? guild : { id: context.guildId, name: context.guildName })
+                    }, { context: { userId: interaction.user.id, guildId: guild.id, guildName: guild.name } })
+                }
+            } catch {}
             await database.getServerSettings(guild.id, async serverSettings => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
                 let instruction = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
