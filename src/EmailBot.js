@@ -336,7 +336,7 @@ bot.on('interactionCreate', async interaction => {
                         email: md5hash(email),
                         logEmail: email
                     })
-                }, { suppressReply: true })
+                }, { suppressReply: true, serverId: userGuild.id })
 
                 // Provide a minimal ephemeral message including original info and a button to open the code modal
                 const infoText = getLocale(serverSettings.language, 'mailPositive', emailText.toLowerCase())

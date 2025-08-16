@@ -35,9 +35,9 @@ module.exports = class MailSender {
         // message can be a DM Message or an Interaction (from modals/buttons)
         const isGuildInteraction = typeof message.guildId !== 'undefined' && message.guildId !== null;
         const userId = message.user ? message.user.id : message.author.id;
-        const serverId = isGuildInteraction ? message.guildId : this.userGuilds.get(userId).id;
+        const resolvedServerId = options.serverId ?? (isGuildInteraction ? message.guildId : (this.userGuilds.get(userId) ? this.userGuilds.get(userId).id : null));
 
-        await database.getServerSettings(serverId, serverSettings => {
+        await database.getServerSettings(resolvedServerId, serverSettings => {
             const mailOptions = {
                 from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,

@@ -108,7 +108,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                     code: code,
                     email: md5hash(email),
                     logEmail: email
-                }))
+                }), { serverId: userGuilds.get(message.author.id).id })
             }
         }
     })
