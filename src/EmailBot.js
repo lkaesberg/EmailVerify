@@ -19,7 +19,17 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 
-const bot = new Discord.Client({intents: [Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessageReactions, Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.GuildMembers]});
+const bot = new Discord.Client({
+    intents: [
+        Discord.GatewayIntentBits.DirectMessages,
+        Discord.GatewayIntentBits.GuildMessageReactions,
+        Discord.GatewayIntentBits.Guilds,
+        Discord.GatewayIntentBits.GuildMessages,
+        Discord.GatewayIntentBits.GuildMembers,
+        Discord.GatewayIntentBits.MessageContent
+    ],
+    partials: [Discord.Partials.Channel]
+});
 
 const serverStatsAPI = new ServerStatsAPI(bot, false)
 // expose for shard broadcast usage

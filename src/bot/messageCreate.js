@@ -8,9 +8,12 @@ const {ChannelType} = require("discord.js");
 
 module.exports = async function (message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify) {
 
-    if (message.channel.type !== ChannelType.DM || message.author.id === bot.user.id) {
+    // Ensure we can receive DM messages across shards
+    if (message.channel.type !== ChannelType.DM || message.author.bot) {
         return
     }
+    // Debug log for DM receipt
+    try { console.log(`[DM] From ${message.author.id}: ${message.content}`) } catch {}
     let userGuild = userGuilds.get(message.author.id)
     // If not on this shard, try to retrieve from other shards and mirror locally
     if (!userGuild && bot.shard) {
