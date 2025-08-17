@@ -79,7 +79,7 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |         `/domains`         |        **(domain name)**        |                                                         **()** -> returns registered domains<br>**(domain name)** -> register given domain                                                          |
 |      `/removedomain`      |         **domain name**         |                                                                                      remove registered domain                                                                                       |
 |         `/button`         | **channel,message, buttontext** |                                                                  creates a button in the channel with the message and button text                                                                   |
-|        `/message`         |       **channel,message**       |                                                sends a message to the channel to which the user can add a reaction to start the verification process                                                |
+|        `/message`         |               —                 |                                  Deprecated. Use `/button` instead. Ask an admin to create a new verification button message.                                  |
 |     `/verifymessage`      |          **(message)**          |                                                     **()** -> resets to default verify message <br> **(message)** -> set custom verify message                                                      |
 |      `/verifiedrole`      |    **(verified role name)**     |                                      **()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role                                       |
 |     `/unverifiedrole`     |   **(unverified role name)**    | **()** -> returns the name of the unverified role <br> **(unverified rolename)** -> set the role name for the unverified role <br> **(current unverified rolename)** -> deactivates unverified role |
@@ -89,7 +89,7 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |    `/delete_user_data`    |                                 |                                                                                  delete all the data from the user                                                                                  |
 |   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
 
-react := react to the message with an emoji
+Note: The legacy reaction-based flow is deprecated and disabled. If users react on an old message, they will be informed to contact an admin and request a new `/button` verification message.
 
 **The commands can only be used by an administrator**
 

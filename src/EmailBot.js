@@ -188,7 +188,27 @@ bot.on("messageCreate", async (message) => {
 )
 
 bot.on('messageReactionAdd', async (reaction, user) => {
-    await sendVerifyMessage(reaction.message.guild, user, reaction.message.channel.id, reaction.message.id, userGuilds)
+    try {
+        if (user.bot) return
+        // Ensure full reaction/message
+        if (reaction.partial) {
+            try { await reaction.fetch() } catch {}
+        }
+        const message = reaction.message
+        const guild = message.guild
+        if (!guild) return
+
+        await database.getServerSettings(guild.id, async serverSettings => {
+            if (
+                message.channel.id === serverSettings.channelID &&
+                message.id === serverSettings.messageID
+            ) {
+                try {
+                    await message.channel.send(`<@${user.id}> Reaction-based verification is deprecated. Please contact a server admin and ask them to create a new verification flow with the /button command. Once the button message is available, click it to begin verification.`)
+                } catch {}
+            }
+        })
+    } catch {}
 });
 
 bot.on('interactionCreate', async interaction => {
