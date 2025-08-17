@@ -3,6 +3,7 @@ const {ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = requi
 const database = require("../database/Database");
 const {getLocale} = require("../Language");
 const {userGuilds} = require("../EmailBot");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('verify').setDescription('verify on the server'),
@@ -17,7 +18,7 @@ module.exports = {
             const row = new (require('discord.js').ActionRowBuilder)().addComponents(
                 new (require('discord.js').ButtonBuilder)().setCustomId('openEmailModal').setLabel('Open Email Modal').setStyle(require('discord.js').ButtonStyle.Primary)
             )
-            await interaction.reply({ content: instruction, components: [row], ephemeral: true }).catch(() => {})
+            await interaction.reply({ content: instruction, components: [row], flags: MessageFlags.Ephemeral }).catch(() => {})
             setTimeout(() => {
                 interaction.deleteReply().catch(() => {})
             }, 300000)

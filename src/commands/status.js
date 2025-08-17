@@ -1,5 +1,6 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not').setDefaultMemberPermissions(0),
@@ -32,7 +33,7 @@ module.exports = {
             response += "Language: " + serverSettings.language + "\n"
             response += "Auto add unverified role: " + (serverSettings.autoAddUnverified ? "Enabled" : "Disabled") + "\n"
             response += "Auto verify: " + (serverSettings.autoVerify ? "Enabled" : "Disabled") + "\n"
-            await interaction.reply({content: response, ephemeral: true})
+            await interaction.reply({content: response, flags: MessageFlags.Ephemeral})
         })
     }
 }

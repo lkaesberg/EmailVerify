@@ -1,5 +1,6 @@
 const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('delete_user_data').setDescription('delete the stored data for the user').addStringOption(option => option.setName('verify').setDescription('type "delete" to remove the data').setRequired(true)),
@@ -19,10 +20,10 @@ module.exports = {
                         member.roles.add(roleUnverified)
                     }
                 }
-                await interaction.reply({content: "Data deleted and unverified!", ephemeral: true})
+                await interaction.reply({content: "Data deleted and unverified!", flags: MessageFlags.Ephemeral})
             })
         } else {
-            await interaction.reply({content: "Failed to verify!", ephemeral: true})
+            await interaction.reply({content: "Failed to verify!", flags: MessageFlags.Ephemeral})
         }
     }
 }

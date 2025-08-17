@@ -18,6 +18,7 @@ const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, Acti
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
+const { MessageFlags } = require('discord.js');
 
 const bot = new Discord.Client({
     intents: [
@@ -220,7 +221,7 @@ bot.on('interactionCreate', async interaction => {
             // (on a guild), set the mapping now.
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true }).catch(() => {})
+                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             userGuilds.set(interaction.user.id, guild)
@@ -234,7 +235,8 @@ bot.on('interactionCreate', async interaction => {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('openEmailModal').setLabel('Enter Email').setStyle(ButtonStyle.Primary)
                 )
-                const prompt = await interaction.reply({ content: instruction, components: [row], ephemeral: true, fetchReply: true }).catch(() => null)
+                await interaction.reply({ content: instruction, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
+                const prompt = await interaction.fetchReply().catch(() => null)
                 if (prompt && prompt.id) {
                     verifyPromptMessages.set(interaction.user.id, prompt.id)
                 }
@@ -247,7 +249,7 @@ bot.on('interactionCreate', async interaction => {
         if (interaction.customId === 'openEmailModal') {
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true }).catch(() => {})
+                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             userGuilds.set(interaction.user.id, guild)
@@ -319,21 +321,21 @@ bot.on('interactionCreate', async interaction => {
     if (interaction.isModalSubmit()) {
         // Email modal submit
         if (interaction.customId === 'emailModal') {
-            await interaction.deferReply({ ephemeral: true }).catch(() => {})
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
             const emailText = interaction.fields.getTextInputValue('emailInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.followUp({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true }).catch(() => {})
+                await interaction.followUp({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "userBotError"), ephemeral: true }).catch(() => {})
+                    await interaction.followUp({ content: getLocale(serverSettings.language, "userBotError"), flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Blacklist
                 if (serverSettings.blacklist.some((element) => emailText.includes(element))) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), ephemeral: true }).catch(() => {})
+                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Domain allowlist
@@ -348,7 +350,7 @@ bot.on('interactionCreate', async interaction => {
                     validEmail = false
                 }
                 if (emailText.includes(' ') || !validEmail) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailInvalid"), ephemeral: true }).catch(() => {})
+                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailInvalid"), flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Rate limit per user
@@ -359,7 +361,7 @@ bot.on('interactionCreate', async interaction => {
                 }
                 const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
                 if (timeoutMs > 0) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailTimeout", (timeoutMs / 1000).toFixed(2)), ephemeral: true }).catch(() => {})
+                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailTimeout", (timeoutMs / 1000).toFixed(2)), flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 userTimeout.timestamp = Date.now()
@@ -389,7 +391,8 @@ bot.on('interactionCreate', async interaction => {
                     interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
                 }
 
-                const follow = await interaction.followUp({ content: infoText, components: [row], ephemeral: true, fetchReply: true }).catch(() => null)
+                await interaction.followUp({ content: infoText, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
+                const follow = await interaction.fetchReply().catch(() => null)
                 if (follow && follow.id) {
                     // Track the code prompt so we can delete it after code submission
                     codePromptMessages.set(interaction.user.id + userGuild.id, follow.id)
@@ -405,7 +408,8 @@ bot.on('interactionCreate', async interaction => {
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                const sent = await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true, fetchReply: true }).catch(() => null)
+                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                const sent = await interaction.fetchReply().catch(() => null)
                 setTimeout(() => {
                     try { interaction.deleteReply().catch(() => {}) } catch {}
                     try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
@@ -414,7 +418,8 @@ bot.on('interactionCreate', async interaction => {
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
-                    const sent = await interaction.reply({ content: getLocale(serverSettings.language, "userBotError"), ephemeral: true, fetchReply: true }).catch(() => null)
+                    await interaction.reply({ content: getLocale(serverSettings.language, "userBotError"), flags: MessageFlags.Ephemeral }).catch(() => null)
+                    const sent = await interaction.fetchReply().catch(() => null)
                     setTimeout(() => {
                         try { interaction.deleteReply().catch(() => {}) } catch {}
                         try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
@@ -455,7 +460,7 @@ bot.on('interactionCreate', async interaction => {
                             await verifyMember.roles.remove(roleUnverified).catch(() => {})
                         }
                     } catch (e) {
-                        await interaction.reply({ content: getLocale(serverSettings.language, "userCantFindRole"), ephemeral: true }).catch(() => {})
+                        await interaction.reply({ content: getLocale(serverSettings.language, "userCantFindRole"), flags: MessageFlags.Ephemeral }).catch(() => {})
                         return
                     }
                     try {
@@ -463,7 +468,8 @@ bot.on('interactionCreate', async interaction => {
                             userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
                         }
                     } catch {}
-                    const sent = await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), ephemeral: true, fetchReply: true }).catch(() => null)
+                    await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), flags: MessageFlags.Ephemeral }).catch(() => null)
+                    const sent = await interaction.fetchReply().catch(() => null)
                     // Delete the code prompt message after successful verification
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
                     if (codePromptId) {
@@ -477,7 +483,8 @@ bot.on('interactionCreate', async interaction => {
                     }, 2500)
                     userCodes.delete(interaction.user.id + userGuild.id)
                 } else {
-                    const sent = await interaction.reply({ content: 'Invalid code. Please try again.', ephemeral: true, fetchReply: true }).catch(() => null)
+                    await interaction.reply({ content: 'Invalid code. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                    const sent = await interaction.fetchReply().catch(() => null)
                     // Delete the code prompt message after any code submission (even if invalid)
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
                     if (codePromptId) {
@@ -515,7 +522,7 @@ bot.on('interactionCreate', async interaction => {
             } else {
                 await interaction.reply({
                     content: getLocale(language, "invalidPermissions"),
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         } catch (error) {
@@ -523,13 +530,13 @@ bot.on('interactionCreate', async interaction => {
             try {
                 await interaction.reply({
                     content: getLocale(language, "commandFailed"),
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } catch {
                 try {
                     await interaction.editReply({
                         content: getLocale(language, "commandFailed"),
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 } catch {
                     console.log("ERROR: Can't reply")

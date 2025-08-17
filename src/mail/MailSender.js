@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
+const { MessageFlags } = require('discord.js');
 
 if (typeof username === 'undefined') {
     username = email;
@@ -62,9 +63,9 @@ module.exports = class MailSender {
                         const negative = getLocale(language, "mailNegative", toEmail)
                         if (isGuildInteraction) {
                             if (message.deferred || message.replied) {
-                                await message.followUp({ content: negative, ephemeral: true }).catch(() => {})
+                                await message.followUp({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
                             } else {
-                                await message.reply({ content: negative, ephemeral: true }).catch(() => {})
+                                await message.reply({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
                             }
                         } else {
                             await message.reply(negative).catch(() => {})
@@ -77,9 +78,9 @@ module.exports = class MailSender {
                         const positive = getLocale(language, "mailPositive", toEmail)
                         if (isGuildInteraction) {
                             if (message.deferred || message.replied) {
-                                await message.followUp({ content: positive, ephemeral: true }).catch(() => {})
+                                await message.followUp({ content: positive, flags: MessageFlags.Ephemeral }).catch(() => {})
                             } else {
-                                await message.reply({ content: positive, ephemeral: true }).catch(() => {})
+                                await message.reply({ content: positive, flags: MessageFlags.Ephemeral }).catch(() => {})
                             }
                         } else {
                             await message.reply(positive).catch(() => {})

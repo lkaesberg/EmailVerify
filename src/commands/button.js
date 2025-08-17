@@ -1,6 +1,7 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database");
 const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('button').setDescription("create button to react to in channel").addChannelOption(option => option.setName("channel").setRequired(true).setDescription("channel")).addStringOption(option => option.setName("message").setRequired(true).setDescription("message")).addStringOption(option => option.setName("buttontext").setRequired(true).setDescription("Button text")).setDefaultMemberPermissions(0),
@@ -9,7 +10,7 @@ module.exports = {
         const buttonText = interaction.options.getString("buttontext", true)
         const channel = interaction.options.getChannel("channel", true)
 
-        await interaction.deferReply({ephemeral: true})
+        await interaction.deferReply({flags: MessageFlags.Ephemeral})
         const button = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -25,6 +26,6 @@ module.exports = {
             return
         }
 
-        await interaction.editReply({content: 'Button created', ephemeral: true})
+        await interaction.editReply({content: 'Button created', flags: MessageFlags.Ephemeral})
     }
 }
