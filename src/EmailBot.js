@@ -25,8 +25,7 @@ const bot = new Discord.Client({
         Discord.GatewayIntentBits.GuildMessageReactions,
         Discord.GatewayIntentBits.Guilds,
         Discord.GatewayIntentBits.GuildMessages,
-        Discord.GatewayIntentBits.GuildMembers,
-        Discord.GatewayIntentBits.MessageContent
+        Discord.GatewayIntentBits.GuildMembers
     ],
     partials: [Discord.Partials.Channel]
 });
