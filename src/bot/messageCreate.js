@@ -11,7 +11,23 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
     if (message.channel.type !== ChannelType.DM || message.author.id === bot.user.id) {
         return
     }
-    const userGuild = userGuilds.get(message.author.id)
+    let userGuild = userGuilds.get(message.author.id)
+    // If not on this shard, try to retrieve from other shards and mirror locally
+    if (!userGuild && bot.shard) {
+        try {
+            const results = await bot.shard.broadcastEval(c => {
+                const g = c.userGuilds ? c.userGuilds.get?.(message.author.id) : null;
+                return g ? { id: g.id, name: g.name } : null;
+            });
+            const found = results.find(r => r);
+            if (found) {
+                try {
+                    userGuild = await bot.guilds.fetch(found.id);
+                    userGuilds.set(message.author.id, userGuild);
+                } catch {}
+            }
+        } catch {}
+    }
     if (!userGuild) {
         return
     }
@@ -29,6 +45,20 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             userTimeouts.set(message.author.id, userTimeout)
         }
         let userCode = userCodes.get(message.author.id + userGuilds.get(message.author.id).id)
+        // If missing, attempt to pull code from other shards
+        if (!userCode && bot.shard) {
+            try {
+                const results = await bot.shard.broadcastEval(c => {
+                    const key = message.author.id + (c.userGuilds?.get?.(message.author.id)?.id || '');
+                    const value = c.userCodes?.get?.(key);
+                    return value || null;
+                });
+                userCode = results.find(r => r);
+                if (userCode) {
+                    userCodes.set(message.author.id + userGuild.id, userCode);
+                }
+            } catch {}
+        }
         if (userCode && userCode.code === text) {
             userTimeout.resetWaitTime()
             const roleVerified = userGuilds.get(message.author.id).roles.cache.find(role => role.id === serverSettings.verifiedRoleName);

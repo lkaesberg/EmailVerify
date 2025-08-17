@@ -35,6 +35,12 @@ let userTimeouts = new Map()
 
 const mailSender = new MailSender(userGuilds, serverStatsAPI)
 
+// Expose cross-shard state on the client for broadcastEval access
+bot.userGuilds = userGuilds
+bot.userCodes = userCodes
+bot.userTimeouts = userTimeouts
+bot.serverStatsAPI = serverStatsAPI
+
 // Track ephemeral prompt messages so we can delete them at the right time
 const verifyPromptMessages = new Map() // key: userId, value: messageId for "Enter Email" prompt
 const codePromptMessages = new Map()   // key: userId+guildId, value: messageId for "Enter Code" prompt
@@ -180,6 +186,9 @@ bot.on('interactionCreate', async interaction => {
     // Button: open email modal or open code modal
     if (interaction.isButton()) {
         if (interaction.customId === 'verifyButton') {
+            // DM flow relies on mapping user -> guild; if inter-shard, we need to ensure
+            // that mapping exists on the shard handling the DM. When the interaction occurs
+            // (on a guild), set the mapping now.
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!guild) {
                 await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', ephemeral: true }).catch(() => {})
