@@ -14,6 +14,9 @@ module.exports = class MailSender {
     constructor(userGuilds, serverStatsAPI) {
         this.userGuilds = userGuilds
         this.serverStatsAPI = serverStatsAPI
+        this.lastEmailTime = 0
+        this.emailDelay = 1000
+        
         let nodemailerOptions = {
             host: smtpHost,
             auth: {
@@ -21,10 +24,19 @@ module.exports = class MailSender {
                 pass: password
             },
             tls: {
-              rejectUnauthorized: false
+              rejectUnauthorized: false,
+              ciphers: 'SSLv3'
+            },
+            connectionTimeout: 60000,
+            greetingTimeout: 30000,
+            socketTimeout: 60000
+        }
+        if (isGoogle) {
+            nodemailerOptions["service"] = "gmail"
+            nodemailerOptions.tls = {
+                rejectUnauthorized: true
             }
         }
-        if (isGoogle) nodemailerOptions["service"] = "gmail"
         if (isSecure) nodemailerOptions["secure"] = isSecure
         if (smtpPort) nodemailerOptions["port"] = smtpPort
 
@@ -33,7 +45,13 @@ module.exports = class MailSender {
     }
 
     async sendEmail(toEmail, code, name, message, emailNotify, callback, options = {}) {
-        // message can be a DM Message or an Interaction (from modals/buttons)
+        const now = Date.now()
+        const timeSinceLastEmail = now - this.lastEmailTime
+        if (timeSinceLastEmail < this.emailDelay) {
+            await new Promise(resolve => setTimeout(resolve, this.emailDelay - timeSinceLastEmail))
+        }
+        this.lastEmailTime = Date.now()
+        
         const isGuildInteraction = typeof message.guildId !== 'undefined' && message.guildId !== null;
         const userId = message.user ? message.user.id : message.author.id;
         const serverId = isGuildInteraction ? message.guildId : this.userGuilds.get(userId).id;
@@ -43,7 +61,15 @@ module.exports = class MailSender {
                 from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,
                 subject: name + ' Discord Email Verification',
-                text: getLocale(serverSettings.language, "emailText", name, code)
+                text: getLocale(serverSettings.language, "emailText", name, code),
+                headers: {
+                    'X-Mailer': 'Discord Email Verification Bot',
+                    'X-Priority': '1',
+                    'X-MSMail-Priority': 'High',
+                    'Importance': 'high',
+                    'List-Unsubscribe': '<mailto:' + email + '?subject=unsubscribe>',
+                    'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
+                }
             };
 
             if (!isGoogle) mailOptions["bcc"] = email
@@ -57,7 +83,14 @@ module.exports = class MailSender {
             this.transporter.sendMail(mailOptions, async (error, info) => {
                 if (error || info.rejected.length > 0) {
                     if (emailNotify) {
-                        console.log(error);
+                        console.log('EMAIL ERROR for:', toEmail);
+                        console.log('Error details:', error);
+                        if (info && info.rejected.length > 0) {
+                            console.log('Rejected emails:', info.rejected);
+                        }
+                        if (info && info.response) {
+                            console.log('SMTP Response:', info.response);
+                        }
                     }
                     if (!options.suppressReply) {
                         const negative = getLocale(language, "mailNegative", toEmail)
@@ -87,7 +120,10 @@ module.exports = class MailSender {
                         }
                     }
                     if (emailNotify) {
-                        console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
+                        console.log('EMAIL SUCCESS for:', toEmail);
+                        console.log('Accepted emails:', info.accepted);
+                        console.log('Message ID:', info.messageId);
+                        console.log('SMTP Response:', info.response);
                     }
                 }
             });
