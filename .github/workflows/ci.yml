@@ -1,10 +1,6 @@
 name: ci
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "*"
+  workflow_dispatch:
 jobs:
   build_and_push_docker_image:
     runs-on: ubuntu-latest
