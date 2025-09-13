@@ -4,14 +4,14 @@ on:
     branches:
       - main
     tags:
-      - '*' 
+      - "*"
 jobs:
   build_and_push_docker_image:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v1
@@ -31,8 +31,8 @@ jobs:
   pages:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.x
       - run: pip install mkdocs-material
