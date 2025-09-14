@@ -1,6 +1,10 @@
 name: ci
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - '*' 
 jobs:
   build_and_push_docker_image:
     runs-on: ubuntu-latest
@@ -14,7 +18,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
@@ -22,8 +26,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/salmanmkc/emailverify:latest
-            ghcr.io/salmanmkc/emailverify:${{ github.ref_name }}
+            ghcr.io/lkaesberg/emailverify:latest
+            ghcr.io/lkaesberg/emailverify:${{ github.ref_name }}
   pages:
     runs-on: ubuntu-latest
     steps:
