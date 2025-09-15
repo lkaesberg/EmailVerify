@@ -43,7 +43,15 @@ module.exports = class MailSender {
                 from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,
                 subject: name + ' Discord Email Verification',
-                text: getLocale(serverSettings.language, "emailText", name, code)
+                text: getLocale(serverSettings.language, "emailText", name, code),
+                headers: {
+                    'X-Mailer': 'Discord Email Verification Bot',
+                    'X-Priority': '1',
+                    'X-MSMail-Priority': 'High',
+                    'Importance': 'high',
+                    'List-Unsubscribe': '<mailto:' + email + '?subject=unsubscribe>',
+                    'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
+                }
             };
 
             if (!isGoogle) mailOptions["bcc"] = email
@@ -57,7 +65,14 @@ module.exports = class MailSender {
             this.transporter.sendMail(mailOptions, async (error, info) => {
                 if (error || info.rejected.length > 0) {
                     if (emailNotify) {
-                        console.log(error);
+                        console.log('EMAIL ERROR for:', toEmail);
+                        console.log('Error details:', error);
+                        if (info && info.rejected.length > 0) {
+                            console.log('Rejected emails:', info.rejected);
+                        }
+                        if (info && info.response) {
+                            console.log('SMTP Response:', info.response);
+                        }
                     }
                     if (!options.suppressReply) {
                         const negative = getLocale(language, "mailNegative", toEmail)
@@ -87,7 +102,10 @@ module.exports = class MailSender {
                         }
                     }
                     if (emailNotify) {
-                        console.log('Email sent to: ' + toEmail + ", Info: " + info.response);
+                        console.log('EMAIL SUCCESS for:', toEmail);
+                        console.log('Accepted emails:', info.accepted);
+                        console.log('Message ID:', info.messageId);
+                        console.log('SMTP Response:', info.response);
                     }
                 }
             });
