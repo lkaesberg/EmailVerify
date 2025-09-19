@@ -14,16 +14,20 @@ module.exports = {
         const blacklist = interaction.options.getString('email');
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!blacklist) {
-                await interaction.reply("Blacklisted emails:\n" + serverSettings.blacklist.join(", "));
+                await interaction.reply(
+                    "Blacklisted emails:\n" +
+                    serverSettings.blacklist.join(", ").replaceAll("*", "\\*")
+                );
             } else if (blacklist === "-") {
                 serverSettings.blacklist=[];
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 await interaction.reply("Blacklist cleared!");
             }
             else {
-                const newBlacklists = blacklist.split(",").map(name=> name.trim())
-                const blacklistedNames = (format = false) => serverSettings.blacklist
-                    .concat(format ? newBlacklists.map(v=> `**${v}**`) : newBlacklists);
+                const newBlacklists = blacklist.split(",").map(name => name.trim())
+                const blacklistedNames = (format = false) =>
+                    (format ? serverSettings.blacklist.map(b => b.replaceAll("*", "\\*")) : serverSettings.blacklist)
+                        .concat(format ? newBlacklists.map(v => `**${v.replaceAll("*", "\\*")}**`) : newBlacklists);
                 await interaction.reply("Added:\n" + blacklistedNames(true).join(", "));
                 serverSettings.blacklist = blacklistedNames();
                 database.updateServerSettings(interaction.guildId, serverSettings);

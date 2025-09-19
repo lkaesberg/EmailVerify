@@ -334,10 +334,16 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
                 // Blacklist
-                if (serverSettings.blacklist.some((element) => emailText.includes(element))) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), flags: MessageFlags.Ephemeral }).catch(() => {})
-                    return
-                }
+                let isBlacklisted = serverSettings.blacklist.some((pattern) => {
+                    const regexPattern = pattern
+                        .split('*')
+                        .map(part => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+                        .join('.*');
+                    const regex = new RegExp(`^${regexPattern}$`);
+                    return regex.test(emailText);
+                });
+                if (isBlacklisted)
+                    return await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), flags: MessageFlags.Ephemeral }).catch(() => {});
                 // Domain allowlist
                 let validEmail = false
                 for (const domain of serverSettings.domains) {
