@@ -68,23 +68,93 @@ for (const file of commandFiles) {
     commands.push(command.data.toJSON())
 }
 
-function registerCommands(guild, count = 0, total = 0) {
-    rest.put(Discord.Routes.applicationGuildCommands(clientId, guild.id), {body: commands})
-        .then(() => console.log(`Successfully registered application commands for ${guild.name}: ${count}/${total}`))
-        .catch(async () => {
-            const errorChannel = guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
-            if (errorChannel) {
-                try {
-                    await errorChannel.send("No permissions to create Commands. Please visit: https://emailbot.larskaesberg.de/")
-                } catch (e) {
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 5000; // 5 seconds
 
-                }
-            }
-            await bot.guilds.cache.get(guild.id).leave()
-        });
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-bot.once('ready', async () => {
+async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
+    try {
+        await rest.put(
+            Discord.Routes.applicationGuildCommands(clientId, guild.id),
+            { body: commands }
+        );
+
+        console.log(
+            `Successfully registered application commands for ${guild.name}: ${count}/${total}`
+        );
+    } catch (err) {
+        const code = err?.code || err?.cause?.code;
+        const status = err?.status ?? err?.statusCode;
+        const discordCode = err?.rawError?.code;
+
+        console.error(
+            `Failed to register commands for ${guild.name} ` +
+            `(attempt ${attempt}/${MAX_RETRIES}) – code=${code}, status=${status}, discordCode=${discordCode}`
+        );
+
+        const isTimeout =
+            code === 'UND_ERR_CONNECT_TIMEOUT' ||
+            err?.message?.includes('Connect Timeout Error');
+
+        // 1) Retry on transient timeouts
+        if (isTimeout && attempt < MAX_RETRIES) {
+            console.log(
+                `Timeout while registering commands for ${guild.name}, ` +
+                `retrying in ${RETRY_DELAY_MS}ms...`
+            );
+            await sleep(RETRY_DELAY_MS);
+            return registerCommands(guild, count, total, attempt + 1);
+        }
+
+        // 2) Handle real "missing permissions" cases → notify + leave
+        const missingPerms =
+            status === 403 ||          // HTTP Forbidden
+            discordCode === 50013;     // Discord: Missing Permissions
+
+        if (missingPerms) {
+            try {
+                const errorChannel = guild.channels.cache.find(channel =>
+                    channel.type === 'GUILD_TEXT' &&
+                    channel.permissionsFor(bot.user).has('SEND_MESSAGES')
+                );
+
+                if (errorChannel) {
+                    await errorChannel.send(
+                        'No permissions to create Commands. Please visit: ' +
+                        'https://emailbot.larskaesberg.de/'
+                    );
+                }
+            } catch (e) {
+                console.error(
+                    `Failed to send error message in ${guild.name} before leaving:`,
+                    e
+                );
+            }
+
+            try {
+                await bot.guilds.cache.get(guild.id)?.leave();
+                console.log(`Left guild ${guild.name} due to missing permissions.`);
+            } catch (e) {
+                console.error(`Failed to leave guild ${guild.name}:`, e);
+            }
+
+            return;
+        }
+
+        // 3) Other errors: log and continue, don't crash or leave
+        console.warn(
+            `Non-fatal error while registering commands for ${guild.name}. ` +
+            `Not leaving guild; continuing.`
+        );
+    }
+}
+
+
+
+bot.once('clientReady', async () => {
     // Determine primary shard at runtime per discord.js docs
     const isPrimary = !bot.shard || bot.shard.ids.includes(0)
     if (isPrimary) {
