@@ -152,6 +152,43 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
     }
 }
 
+async function registerAllGuilds(bot) {
+    const guilds = Array.from(bot.guilds.cache.values());
+    const total = guilds.length;
+    const concurrency = 5;
+    let index = 0;
+
+    async function worker() {
+        while (true) {
+            const i = index++;
+            if (i >= total) break;
+
+            const guild = guilds[i];
+            const count = i + 1;
+
+            await registerCommands(guild, count, total);
+
+            registerRemoveDomain(guild.id);
+            database.getServerSettings(guild.id, async serverSettings => {
+                try {
+                    await bot.guilds.cache
+                        .get(guild.id)
+                        ?.channels.cache
+                        .get(serverSettings.channelID)
+                        ?.messages.fetch(serverSettings.messageID);
+                } catch (e) {
+                    // ignore
+                }
+            });
+        }
+    }
+
+    await Promise.all(
+        Array.from({ length: concurrency }, () => worker())
+    );
+
+    console.log('Finished registering commands for all guilds');
+}
 
 
 bot.once('clientReady', async () => {
@@ -190,29 +227,18 @@ bot.once('clientReady', async () => {
     // Only in unsharded mode, post TopGG stats from client
     if (!bot.shard) {
         try {
-            topggAPI(bot)
+            topggAPI(bot);
         } catch (e) {
             console.error('Failed to start TopGG API:', e);
         }
     }
-    let guilds = await bot.guilds.cache
-    let counter = 0
-    guilds.forEach((guild) => {
-        counter += 1
-        registerCommands(guild, counter, guilds.size)
-        registerRemoveDomain(guild.id)
-        database.getServerSettings(guild.id, async serverSettings => {
-            try {
-                await bot.guilds.cache.get(guild.id).channels.cache.get(serverSettings.channelID).messages.fetch(serverSettings.messageID)
-            } catch (e) {
 
-            }
+    await registerAllGuilds(bot);
 
-        })
-    })
     bot.user.setActivity("/verify | Website", {
-        type: "PLAYING", url: "https://emailbot.larskaesberg.de"
-    })
+        type: "PLAYING",
+        url: "https://emailbot.larskaesberg.de"
+    });
 });
 
 setInterval(function () {
