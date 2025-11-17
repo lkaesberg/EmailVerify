@@ -189,7 +189,11 @@ bot.once('clientReady', async () => {
     }
     // Only in unsharded mode, post TopGG stats from client
     if (!bot.shard) {
-        topggAPI(bot)
+        try {
+            topggAPI(bot)
+        } catch (e) {
+            console.error('Failed to start TopGG API:', e);
+        }
     }
     let guilds = await bot.guilds.cache
     let counter = 0
