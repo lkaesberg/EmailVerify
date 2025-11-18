@@ -20,7 +20,7 @@ module.exports = async function sendVerifyMessage(guild, user, channelId, messag
                     const {getLocale} = require("../Language");
                     let message = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "\\*") + ")"))
                     if (serverSettings.logChannel !== "") {
-                        message += " Caution: The admin can see the used email address"
+                        message += " Attention : L'admin peut voir l'adresse email utilisée"
                     }
                     await user.send(message).catch(() => {})
                 } catch {}

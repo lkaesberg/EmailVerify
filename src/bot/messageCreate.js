@@ -82,7 +82,7 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                         console.log(e)
                     }
                     try {
-                        await member.send("You got unverified on " + userGuilds.get(message.author.id).name + " because somebody else used that email!")
+                        await member.send("T'as été dévérifié sur " + userGuilds.get(message.author.id).name + " parce que quelqu'un d'autre a utilisé cet email !")
                     } catch {
                     }
                 }

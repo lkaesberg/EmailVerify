@@ -123,7 +123,7 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
 
                 if (errorChannel) {
                     await errorChannel.send(
-                        'No permissions to create Commands. Please visit: ' +
+                        'J\'ai pas les permissions pour créer les commandes. Va voir : ' +
                         'https://emailbot.larskaesberg.de/'
                     );
                 }
@@ -263,7 +263,7 @@ bot.on("guildMemberAdd", async member => {
                     const errorChannel = member.guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
                     if (errorChannel) {
                         try {
-                            await errorChannel.send("Cant add unverified role to new member. Help: Ensure that the bot role is higher in the serversettings role menu then the verified and unverified role.")
+                            await errorChannel.send("Je peux pas ajouter le rôle non vérifié au nouveau membre. Aide : Vérifie que le rôle du bot est plus haut dans le menu des rôles du serveur que les rôles vérifié et non vérifié.")
                         } catch (e) {
 
                         }
@@ -305,7 +305,7 @@ bot.on('messageReactionAdd', async (reaction, user) => {
                 message.id === serverSettings.messageID
             ) {
                 try {
-                    await message.channel.send(`<@${user.id}> Reaction-based verification is deprecated. Please contact a server admin and ask them to create a new verification flow with the /button command. Once the button message is available, click it to begin verification.`)
+                    await message.channel.send(`<@${user.id}> La vérification par réaction est dépréciée. Contacte un admin du serveur et demande-lui de créer un nouveau système de vérification avec la commande /button. Une fois que le message avec le bouton est disponible, clique dessus pour commencer la vérification.`)
                 } catch {}
             }
         })
@@ -321,7 +321,7 @@ bot.on('interactionCreate', async interaction => {
             // (on a guild), set the mapping now.
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                await interaction.reply({ content: 'Pas lié à un serveur. Réessaye en utilisant le bouton dans le serveur.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             userGuilds.set(interaction.user.id, guild)
@@ -330,10 +330,10 @@ bot.on('interactionCreate', async interaction => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
                 let instruction = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
                 if (serverSettings.logChannel !== "") {
-                    instruction += " Caution: The admin can see the used email address"
+                    instruction += " Attention : L'admin peut voir l'adresse email utilisée"
                 }
                 const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('openEmailModal').setLabel('Enter Email').setStyle(ButtonStyle.Primary)
+                    new ButtonBuilder().setCustomId('openEmailModal').setLabel('Entre ton email').setStyle(ButtonStyle.Primary)
                 )
                 await interaction.reply({ content: instruction, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
                 const prompt = await interaction.fetchReply().catch(() => null)
@@ -349,7 +349,7 @@ bot.on('interactionCreate', async interaction => {
         if (interaction.customId === 'openEmailModal') {
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                await interaction.reply({ content: 'Pas lié à un serveur. Réessaye en utilisant le bouton dans le serveur.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             userGuilds.set(interaction.user.id, guild)
@@ -357,12 +357,12 @@ bot.on('interactionCreate', async interaction => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
                 let instruction = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
                 if (serverSettings.logChannel !== "") {
-                    instruction += " Caution: The admin can see the used email address"
+                    instruction += " Attention : L'admin peut voir l'adresse email utilisée"
                 }
                 const modal = new ModalBuilder().setCustomId('emailModal').setTitle('Email Verification')
                 const emailInput = new TextInputBuilder()
                     .setCustomId('emailInput')
-                    .setLabel('Enter your email address')
+                    .setLabel('Entre ton adresse email')
                     .setPlaceholder(instruction.substring(0, 100))
                     .setStyle(TextInputStyle.Short)
                     .setRequired(true)
@@ -387,14 +387,14 @@ bot.on('interactionCreate', async interaction => {
             const key = interaction.user.id + userGuild.id
             const userCode = userCodes.get(key)
             await database.getServerSettings(userGuild.id, async serverSettings => {
-                const modal = new ModalBuilder().setCustomId('codeModal').setTitle('Enter Verification Code')
-                let placeholder = 'Enter the 6-digit code'
+                const modal = new ModalBuilder().setCustomId('codeModal').setTitle('Entre le code de vérification')
+                let placeholder = 'Entre le code à 6 chiffres'
                 if (userCode && userCode.logEmail) {
                     placeholder = getLocale(serverSettings.language, 'mailPositive', userCode.logEmail).substring(0, 100)
                 }
                 const codeInput = new TextInputBuilder()
                     .setCustomId('codeInput')
-                    .setLabel('Verification code')
+                    .setLabel('Code de vérification')
                     .setPlaceholder(placeholder)
                     .setStyle(TextInputStyle.Short)
                     .setRequired(true)
@@ -425,7 +425,7 @@ bot.on('interactionCreate', async interaction => {
             const emailText = interaction.fields.getTextInputValue('emailInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.followUp({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                await interaction.followUp({ content: 'Pas lié à un serveur. Réessaye en utilisant le bouton dans le serveur.', flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
@@ -481,7 +481,7 @@ bot.on('interactionCreate', async interaction => {
                 // Provide a minimal ephemeral message including original info and a button to open the code modal
                 const infoText = getLocale(serverSettings.language, 'mailPositive', emailText.toLowerCase())
                 const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('openCodeModal').setLabel('Enter Code').setStyle(ButtonStyle.Success)
+                    new ButtonBuilder().setCustomId('openCodeModal').setLabel('Entre le code').setStyle(ButtonStyle.Success)
                 )
                 // Delete the initial verify prompt ("Enter Email") once email has been submitted
                 const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
@@ -508,7 +508,7 @@ bot.on('interactionCreate', async interaction => {
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                await interaction.reply({ content: 'Pas lié à un serveur. Réessaye en utilisant le bouton dans le serveur.', flags: MessageFlags.Ephemeral }).catch(() => null)
                 const sent = await interaction.fetchReply().catch(() => null)
                 setTimeout(() => {
                     try { interaction.deleteReply().catch(() => {}) } catch {}
@@ -546,7 +546,7 @@ bot.on('interactionCreate', async interaction => {
                                 console.log(e)
                             }
                             try {
-                                await member.send("You got unverified on " + userGuild.name + " because somebody else used that email!").catch(() => {})
+                                await member.send("T'as été dévérifié sur " + userGuild.name + " parce que quelqu'un d'autre a utilisé cet email !").catch(() => {})
                             } catch {}
                         }
                     })
@@ -583,7 +583,7 @@ bot.on('interactionCreate', async interaction => {
                     }, 2500)
                     userCodes.delete(interaction.user.id + userGuild.id)
                 } else {
-                    await interaction.reply({ content: 'Invalid code. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                    await interaction.reply({ content: 'Code invalide. Réessaye.', flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
                     // Delete the code prompt message after any code submission (even if invalid)
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)

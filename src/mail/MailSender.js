@@ -184,7 +184,7 @@ module.exports = class MailSender {
               </td>
             </tr>
           </table>
-          <div style="font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial; color:#9ca3af; font-size:12px; margin-top:12px;">If you didn’t request this, you can ignore this email.</div>
+          <div style="font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial; color:#9ca3af; font-size:12px; margin-top:12px;">Si t'as pas demandé ça, tu peux ignorer cet email.</div>
         </td>
       </tr>
     </table>
