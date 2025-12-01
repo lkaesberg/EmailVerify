@@ -16,7 +16,7 @@ module.exports = {
                 response += "Message Found: \:x: \n"
             }
             response += "Domains: " + serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "\\*") + "\n"
-            response += "Blacklisted: " + serverSettings.blacklist.toString().replaceAll(",", "|") + "\n"
+            response += "Blacklisted: " + serverSettings.blacklist.toString().replaceAll(",", "|").replaceAll("*", "\\*") + "\n"
             let roleVerified = interaction.guild.roles.cache.find(r => r.id === serverSettings.verifiedRoleName)
             if (roleVerified === undefined) {
                 response += "Verified role can not be found!\n"

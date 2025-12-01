@@ -40,8 +40,18 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
             return
         }
         const text = message.content
-        if (serverSettings.blacklist.some((element) => text.includes(element)))
+
+        let isBlacklisted = serverSettings.blacklist.some((pattern) => {
+            const regexPattern = pattern
+                .split('*')
+                .map(part => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+                .join('.*');
+            const regex = new RegExp(`^${regexPattern}$`);
+            return regex.test(text);
+        });
+        if (isBlacklisted)
             return await message.reply(getLocale(serverSettings.language, "mailBlacklisted"));
+
         let userTimeout = userTimeouts.get(message.author.id)
         if (!userTimeout) {
             userTimeout = new UserTimeout()
