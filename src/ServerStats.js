@@ -1,11 +1,13 @@
 'use strict';
 const fs = require("fs");
 module.exports = class ServerStats {
-    constructor() {
+    constructor(getServerCountFn = null) {
         this.mailsSendAll = 0
         this.mailsSendToday = 0
         this.lastDate = new Date()
         this.fileName = "config/ServerStats.json"
+        this.historyFileName = "config/ServerStatsHistory.log"
+        this.getServerCount = getServerCountFn
         if (!fs.existsSync(this.fileName)) {
             this.updateFile()
         }
@@ -15,6 +17,9 @@ module.exports = class ServerStats {
             let serverStats = JSON.parse(data);
             this.mailsSendAll = serverStats.mailsSendAll
             this.mailsSendToday = serverStats.mailsSendToday
+            if (serverStats.lastDate) {
+                this.lastDate = new Date(serverStats.lastDate)
+            }
         } catch {
             this.updateFile()
         }
@@ -30,6 +35,8 @@ module.exports = class ServerStats {
     testDate() {
         const date = new Date();
         if (date.getUTCDate() !== this.lastDate.getUTCDate()) {
+            // Save yesterday's stats to history before resetting
+            this.appendDailyStats()
             this.lastDate = date
             this.mailsSendToday = 0
             console.log("RESET")
@@ -37,10 +44,24 @@ module.exports = class ServerStats {
         }
     }
 
+    async appendDailyStats() {
+        const dateStr = this.lastDate.toISOString().split('T')[0]
+        let serverCount = 0
+        if (this.getServerCount) {
+            try {
+                serverCount = await this.getServerCount()
+            } catch {}
+        }
+        const logLine = `${dateStr},${this.mailsSendToday},${this.mailsSendAll},${serverCount}\n`
+        fs.appendFileSync(this.historyFileName, logLine)
+        console.log(`Saved daily stats: ${logLine.trim()}`)
+    }
+
     updateFile() {
         fs.writeFileSync(this.fileName, JSON.stringify({
             mailsSendAll: this.mailsSendAll,
-            mailsSendToday: this.mailsSendToday
+            mailsSendToday: this.mailsSendToday,
+            lastDate: this.lastDate.toISOString()
         }))
     }
 }

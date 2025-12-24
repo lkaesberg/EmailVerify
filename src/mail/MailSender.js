@@ -54,8 +54,6 @@ module.exports = class MailSender {
                 }
             };
 
-            if (!isGoogle) mailOptions["bcc"] = email
-
             let language = ""
             try {
                 language = serverSettings.language
@@ -80,17 +78,16 @@ module.exports = class MailSender {
                             console.log('SMTP Response:', info.response);
                         }
                     }
-                    if (!options.suppressReply) {
-                        const negative = getLocale(language, "mailNegative", toEmail)
-                        if (isGuildInteraction) {
-                            if (message.deferred || message.replied) {
-                                await message.followUp({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
-                            } else {
-                                await message.reply({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
-                            }
+                    // Always show error messages to the user regardless of suppressReply
+                    const negative = getLocale(language, "mailNegative", toEmail)
+                    if (isGuildInteraction) {
+                        if (message.deferred || message.replied) {
+                            await message.followUp({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
                         } else {
-                            await message.reply(negative).catch(() => {})
+                            await message.reply({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
                         }
+                    } else {
+                        await message.reply(negative).catch(() => {})
                     }
                 } else {
                     this.serverStatsAPI.increaseMailSend()

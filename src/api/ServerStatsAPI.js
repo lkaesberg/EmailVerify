@@ -4,15 +4,27 @@ const cors = require("cors");
 
 class ServerStatsAPI {
     constructor(bot, startServer = true) {
-        this.serverStats = new ServerStats()
         this.app = express();
         this.port = 8181;
         this.bot = bot
         this.started = false;
 
+        this.serverStats = new ServerStats(() => this.getServerCount())
+
         this.registerEndpoints()
         if (startServer) this.start()
 
+    }
+
+    async getServerCount() {
+        try {
+            const shardUtil = this.bot.shard;
+            if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
+                const counts = await shardUtil.fetchClientValues('guilds.cache.size');
+                return counts.reduce((sum, count) => sum + Number(count || 0), 0);
+            }
+        } catch {}
+        return this.bot.guilds.cache.size;
     }
 
     registerEndpoints() {
@@ -30,17 +42,8 @@ class ServerStatsAPI {
         });
 
         this.app.get('/serverCount', async (req, res) => {
-            try {
-                const shardUtil = this.bot.shard;
-                if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
-                    const counts = await shardUtil.fetchClientValues('guilds.cache.size');
-                    const total = counts.reduce((sum, count) => sum + Number(count || 0), 0);
-                    res.send(total.toString());
-                    return;
-                }
-            } catch {}
-            const servers = this.bot.guilds.cache;
-            res.send(servers.size.toString())
+            const count = await this.getServerCount();
+            res.send(count.toString());
         });
     }
 

@@ -469,37 +469,37 @@ bot.on('interactionCreate', async interaction => {
 
                 const code = Math.floor((Math.random() + 1) * 100000).toString()
                 // Send email and store code on success
-                // suppressReply to reduce chat noise; we'll present the code modal button separately
-                await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, (email) => {
+                // suppressReply to reduce chat noise; we'll present the code modal button separately on success
+                await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, async (email) => {
                     userCodes.set(interaction.user.id + userGuild.id, {
                         code: code,
                         email: md5hash(email),
                         logEmail: email
                     })
+
+                    // Only show the code prompt if email was successfully sent
+                    const infoText = getLocale(serverSettings.language, 'mailPositive', emailText.toLowerCase())
+                    const row = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder().setCustomId('openCodeModal').setLabel('Enter Code').setStyle(ButtonStyle.Success)
+                    )
+                    // Delete the initial verify prompt ("Enter Email") once email has been submitted
+                    const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
+                    if (prevVerifyPromptId) {
+                        verifyPromptMessages.delete(interaction.user.id)
+                        // Try both deletion methods for reliability with ephemeral messages
+                        interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
+                    }
+
+                    await interaction.followUp({ content: infoText, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
+                    const follow = await interaction.fetchReply().catch(() => null)
+                    if (follow && follow.id) {
+                        // Track the code prompt so we can delete it after code submission
+                        codePromptMessages.set(interaction.user.id + userGuild.id, follow.id)
+                        setTimeout(() => {
+                            interaction.webhook.deleteMessage(follow.id).catch(() => {})
+                        }, 300000)
+                    }
                 }, { suppressReply: true })
-
-                // Provide a minimal ephemeral message including original info and a button to open the code modal
-                const infoText = getLocale(serverSettings.language, 'mailPositive', emailText.toLowerCase())
-                const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('openCodeModal').setLabel('Enter Code').setStyle(ButtonStyle.Success)
-                )
-                // Delete the initial verify prompt ("Enter Email") once email has been submitted
-                const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
-                if (prevVerifyPromptId) {
-                    verifyPromptMessages.delete(interaction.user.id)
-                    // Try both deletion methods for reliability with ephemeral messages
-                    interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
-                }
-
-                await interaction.followUp({ content: infoText, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
-                const follow = await interaction.fetchReply().catch(() => null)
-                if (follow && follow.id) {
-                    // Track the code prompt so we can delete it after code submission
-                    codePromptMessages.set(interaction.user.id + userGuild.id, follow.id)
-                    setTimeout(() => {
-                        interaction.webhook.deleteMessage(follow.id).catch(() => {})
-                    }, 300000)
-                }
             })
             return
         }
