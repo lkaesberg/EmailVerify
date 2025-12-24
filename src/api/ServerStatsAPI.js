@@ -36,8 +36,8 @@ class ServerStatsAPI {
             res.send(this.serverStats.mailsSendAll.toString())
         });
 
-        this.app.get('/mailsSendToday', (req, res) => {
-            this.serverStats.testDate()
+        this.app.get('/mailsSendToday', async (req, res) => {
+            await this.serverStats.testDate()
             res.send(this.serverStats.mailsSendToday.toString())
         });
 
@@ -55,15 +55,15 @@ class ServerStatsAPI {
         });
     }
 
-    increaseMailSend() {
+    async increaseMailSend() {
         try {
             const shardUtil = this.bot.shard;
             if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
                 // If this is NOT the primary shard (id 0), forward the increment to shard 0
                 if (!shardUtil.ids.includes(0)) {
-                    shardUtil.broadcastEval((client) => {
+                    shardUtil.broadcastEval(async (client) => {
                         if (client.shard && client.shard.ids.includes(0) && client.serverStatsAPI) {
-                            client.serverStatsAPI.serverStats.increaseMailSend();
+                            await client.serverStatsAPI.serverStats.increaseMailSend();
                         }
                     }).catch(() => {});
                     return;
@@ -71,7 +71,7 @@ class ServerStatsAPI {
             }
         } catch {}
         // Unsharded or primary shard: update locally
-        this.serverStats.increaseMailSend()
+        await this.serverStats.increaseMailSend()
     }
 
 }

@@ -25,18 +25,18 @@ module.exports = class ServerStats {
         }
     }
 
-    increaseMailSend() {
-        this.testDate()
+    async increaseMailSend() {
+        await this.testDate()
         this.mailsSendAll += 1
         this.mailsSendToday += 1
         this.updateFile()
     }
 
-    testDate() {
+    async testDate() {
         const date = new Date();
         if (date.getUTCDate() !== this.lastDate.getUTCDate()) {
             // Save yesterday's stats to history before resetting
-            this.appendDailyStats()
+            await this.appendDailyStats()
             this.lastDate = date
             this.mailsSendToday = 0
             console.log("RESET")
