@@ -12,7 +12,7 @@ module.exports = {
             const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
             let instruction = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
             if (serverSettings.logChannel !== "") {
-                instruction += " ⚠️ The admin can see the used email address"
+                instruction += " Caution: The admin can see the used email address"
             }
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('openEmailModal').setLabel('Enter Email').setStyle(ButtonStyle.Primary)

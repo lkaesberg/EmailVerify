@@ -363,7 +363,7 @@ bot.on('interactionCreate', async interaction => {
                 const emailInput = new TextInputBuilder()
                     .setCustomId('emailInput')
                     .setStyle(TextInputStyle.Short)
-                    .setPlaceholder('your.name@' + (serverSettings.domains[0] || 'example.com').replace('*', 'domain'))
+                    .setPlaceholder('your.name' + (serverSettings.domains[0] || 'example.com').replace('*', 'domain'))
                     .setRequired(true)
                 const emailLabel = new LabelBuilder()
                     .setLabel('Enter your email address')
