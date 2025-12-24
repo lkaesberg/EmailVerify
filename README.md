@@ -88,6 +88,7 @@ https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permission
 |     `/verify_on_join`     |           **enable**            |                                                                **(enable/disable)** -> automatically asks every new member to verify                                                                |
 |    `/delete_user_data`    |                                 |                                                                                  delete all the data from the user                                                                                  |
 |   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
+|     `/manualverify`       |         **user, email**         |                                                          manually verify a user without email confirmation (Admin only)                                                                             |
 
 Note: The legacy reaction-based flow is deprecated and disabled. If users react on an old message, they will be informed to contact an admin and request a new `/button` verification message.
 

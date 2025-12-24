@@ -26,6 +26,7 @@
 |   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
 |    `/set_log_channel`     |        **(logchannel)**         |                                                               **()** -> disable log channel <br> **(log channel)** -> set log channel                                                               |
 |       `/blacklist`        |          **(emails)**           |       **()** -> returns a comma-separated list of emails that are blocked from being verified <br> **(emails)** -> set a comma-separated list of emails that are blocked from being verified        |
+|     `/manualverify`       |         **user, email**         |                                                          manually verify a user without email confirmation (Admin only)                                                                             |
 
 react := react to the message with an emoji
 
