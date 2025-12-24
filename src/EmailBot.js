@@ -357,7 +357,7 @@ bot.on('interactionCreate', async interaction => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
                 let description = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
                 if (serverSettings.logChannel !== "") {
-                    description += " ⚠️ Admin can see the email"
+                    description += " Caution: The admin can see the used email address"
                 }
                 const modal = new ModalBuilder().setCustomId('emailModal').setTitle('Email Verification')
                 const emailInput = new TextInputBuilder()
