@@ -63,6 +63,7 @@ class ServerStatsAPI {
                 if (!shardUtil.ids.includes(0)) {
                     shardUtil.broadcastEval(async (client) => {
                         if (client.shard && client.shard.ids.includes(0) && client.serverStatsAPI) {
+                            console.log("increasing mail send on shard " + client.shard.ids)
                             await client.serverStatsAPI.serverStats.increaseMailSend();
                         }
                     }).catch(() => {});
@@ -71,6 +72,7 @@ class ServerStatsAPI {
             }
         } catch {}
         // Unsharded or primary shard: update locally
+        console.log("increasing mail send on shard " + this.bot.shard.ids)
         await this.serverStats.increaseMailSend()
     }
 
