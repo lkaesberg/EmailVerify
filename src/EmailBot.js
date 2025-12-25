@@ -12,6 +12,7 @@ const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
 const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
+const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
 const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder} = require("discord.js");
@@ -83,7 +84,7 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
         );
 
         console.log(
-            `Successfully registered application commands for ${guild.name}: ${count}/${total}`
+            `[Shard ${bot.shard?.ids ?? 'N/A'}] Successfully registered application commands for ${guild.name}: ${count}/${total}`
         );
     } catch (err) {
         const code = err?.code || err?.cause?.code;
@@ -91,7 +92,7 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
         const discordCode = err?.rawError?.code;
 
         console.error(
-            `Failed to register commands for ${guild.name} ` +
+            `[Shard ${bot.shard?.ids ?? 'N/A'}] Failed to register commands for ${guild.name} ` +
             `(attempt ${attempt}/${MAX_RETRIES}) – code=${code}, status=${status}, discordCode=${discordCode}`
         );
 
@@ -187,7 +188,7 @@ async function registerAllGuilds(bot) {
         Array.from({ length: concurrency }, () => worker())
     );
 
-    console.log('Finished registering commands for all guilds');
+    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Finished registering commands for all guilds`);
 }
 
 
@@ -279,7 +280,7 @@ bot.on("guildMemberAdd", async member => {
 })
 
 bot.on('guildCreate', guild => {
-    console.log(guild.name)
+    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] New guild: ${guild.name}`)
     registerCommands(guild)
 })
 
@@ -315,72 +316,9 @@ bot.on('messageReactionAdd', async (reaction, user) => {
 bot.on('interactionCreate', async interaction => {
     // Button: open email modal or open code modal
     if (interaction.isButton()) {
-        if (interaction.customId === 'verifyButton') {
-            // DM flow relies on mapping user -> guild; if inter-shard, we need to ensure
-            // that mapping exists on the shard handling the DM. When the interaction occurs
-            // (on a guild), set the mapping now.
+        if (interaction.customId === 'verifyButton' || interaction.customId === 'openEmailModal') {
             const guild = interaction.guild || userGuilds.get(interaction.user.id)
-            if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
-                return
-            }
-            userGuilds.set(interaction.user.id, guild)
-            // Start with ephemeral message containing instructions and an action button
-            await database.getServerSettings(guild.id, async serverSettings => {
-                const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
-                let instruction = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
-                if (serverSettings.logChannel !== "") {
-                    instruction += " Caution: The admin can see the used email address"
-                }
-                const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('openEmailModal').setLabel('Enter Email').setStyle(ButtonStyle.Primary)
-                )
-                await interaction.reply({ content: instruction, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
-                const prompt = await interaction.fetchReply().catch(() => null)
-                if (prompt && prompt.id) {
-                    verifyPromptMessages.set(interaction.user.id, prompt.id)
-                }
-                setTimeout(() => {
-                    interaction.deleteReply().catch(() => {})
-                }, 300000)
-            })
-            return
-        }
-        if (interaction.customId === 'openEmailModal') {
-            const guild = interaction.guild || userGuilds.get(interaction.user.id)
-            if (!guild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
-                return
-            }
-            userGuilds.set(interaction.user.id, guild)
-            await database.getServerSettings(guild.id, async serverSettings => {
-                const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
-                let description = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
-                if (serverSettings.logChannel !== "") {
-                    description += "\n-# Caution: The admin can see the used email address"
-                }
-                const modal = new ModalBuilder().setCustomId('emailModal').setTitle('Email Verification')
-                const emailInput = new TextInputBuilder()
-                    .setCustomId('emailInput')
-                    .setStyle(TextInputStyle.Short)
-                    .setPlaceholder('your.name' + (serverSettings.domains[0] || 'example.com').replace('*', 'domain'))
-                    .setRequired(true)
-                const emailLabel = new LabelBuilder()
-                    .setLabel('Enter your email address')
-                    .setTextInputComponent(emailInput)
-                const instructionText = new TextDisplayBuilder().setContent(description)
-                modal.addLabelComponents(emailLabel).addTextDisplayComponents(instructionText)
-                await interaction.showModal(modal).catch(() => {})
-                // After opening the email modal, delete the preceding ephemeral verify prompt (the one with the button)
-                setTimeout(() => {
-                    try {
-                        if (interaction.message && interaction.message.id) {
-                            interaction.message.delete().catch(() => {})
-                            interaction.webhook.deleteMessage(interaction.message.id).catch(() => {})
-                        }
-                    } catch {}
-                }, 0)
-            })
+            await showEmailModal(interaction, guild, userGuilds)
             return
         }
         if (interaction.customId === 'openCodeModal') {
@@ -405,7 +343,7 @@ bot.on('interactionCreate', async interaction => {
                     .setLabel('Verification code')
                     .setTextInputComponent(codeInput)
                 const instructionText = new TextDisplayBuilder().setContent(description)
-                modal.addLabelComponents(codeLabel).addTextDisplayComponents(instructionText)
+                modal.addTextDisplayComponents(instructionText).addLabelComponents(codeLabel)
                 // Show code modal
                 await interaction.showModal(modal).catch(() => {})
                 // After opening the code modal, delete the preceding ephemeral code prompt (the one with the button)

@@ -61,9 +61,10 @@ class ServerStatsAPI {
             if (shardUtil && typeof shardUtil.count === 'number' && shardUtil.count > 1) {
                 // If this is NOT the primary shard (id 0), forward the increment to shard 0
                 if (!shardUtil.ids.includes(0)) {
+                    console.log(`[Shard ${shardUtil.ids}] Forwarding mail count to shard 0`)
                     shardUtil.broadcastEval(async (client) => {
                         if (client.shard && client.shard.ids.includes(0) && client.serverStatsAPI) {
-                            console.log("increasing mail send on shard " + client.shard.ids)
+                            console.log(`[Shard ${client.shard.ids}] Received mail count from another shard`)
                             await client.serverStatsAPI.serverStats.increaseMailSend();
                         }
                     }).catch(() => {});
@@ -72,7 +73,7 @@ class ServerStatsAPI {
             }
         } catch {}
         // Unsharded or primary shard: update locally
-        console.log("increasing mail send on shard " + this.bot.shard.ids)
+        console.log(`[Shard ${this.bot.shard?.ids ?? 'N/A'}] Increasing mail send locally`)
         await this.serverStats.increaseMailSend()
     }
 

@@ -1,6 +1,6 @@
 const database = require("../database/Database");
 const {getLocale} = require("../Language");
-const {ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder} = require('discord.js');
+const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require('discord.js');
 
 module.exports = async function sendVerifyMessage(guild, user, channelId, messageId, userGuilds, interaction = false) {
     await database.getServerSettings(guild.id, (async serverSettings => {
@@ -14,16 +14,15 @@ module.exports = async function sendVerifyMessage(guild, user, channelId, messag
         try {
             if (serverSettings.status) {
                 userGuilds.set(user.id, guild)
-                // Prefer modal-driven flow; keep DM as fallback
-                try {
-                    // Restore original DM-based flow for reactions
-                    const {getLocale} = require("../Language");
-                    let message = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "\\*") + ")"))
-                    if (serverSettings.logChannel !== "") {
-                        message += " Caution: The admin can see the used email address"
-                    }
-                    await user.send(message).catch(() => {})
-                } catch {}
+                const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "\\*")
+                let message = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", ("(<name>" + domainsText + ")"))
+                if (serverSettings.logChannel !== "") {
+                    message += "\n-# Caution: The admin can see the used email address"
+                }
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('openEmailModal').setLabel('Start Verification').setStyle(ButtonStyle.Primary)
+                )
+                await user.send({ content: message, components: [row] }).catch(() => {})
             }
         } catch {
             try { await user.send(getLocale(serverSettings.language, "userRetry")) } catch {}
