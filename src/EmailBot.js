@@ -323,7 +323,11 @@ bot.on('interactionCreate', async interaction => {
         }
         if (interaction.customId === 'openCodeModal') {
             // Open code modal, include instruction with email
-            const userGuild = interaction.guild
+            const userGuild = interaction.guild || userGuilds.get(interaction.user.id)
+            if (!userGuild) {
+                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                return
+            }
             const key = interaction.user.id + userGuild.id
             const userCode = userCodes.get(key)
             await database.getServerSettings(userGuild.id, async serverSettings => {
@@ -477,7 +481,7 @@ bot.on('interactionCreate', async interaction => {
                     const roleUnverified = userGuild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
 
                     database.getEmailUser(userCode.email, userGuild.id, async (currentUserEmail) => {
-                        let member = await interaction.guild.members.fetch(currentUserEmail.userID).catch(() => null)
+                        let member = await userGuild.members.fetch(currentUserEmail.userID).catch(() => null)
                         if (interaction.user.id === currentUserEmail.userID) {
                             // same user, nothing to unverify
                         } else if (member) {
