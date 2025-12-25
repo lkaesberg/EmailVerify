@@ -6,3 +6,4 @@ config/bot.db
 src/bot.db
 config/ServerStats.json
 discord-verify.txt
+config/ServerStatsHistory.log

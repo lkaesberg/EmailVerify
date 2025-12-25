@@ -14,7 +14,7 @@ const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
-const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder} = require("discord.js");
+const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder} = require("discord.js");
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
@@ -357,7 +357,7 @@ bot.on('interactionCreate', async interaction => {
                 const domainsText = serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "*")
                 let description = serverSettings.verifyMessage !== "" ? serverSettings.verifyMessage : getLocale(serverSettings.language, "userEnterEmail", "(<name>" + domainsText + ")")
                 if (serverSettings.logChannel !== "") {
-                    description += " Caution: The admin can see the used email address"
+                    description += "\n-# Caution: The admin can see the used email address"
                 }
                 const modal = new ModalBuilder().setCustomId('emailModal').setTitle('Email Verification')
                 const emailInput = new TextInputBuilder()
@@ -367,9 +367,9 @@ bot.on('interactionCreate', async interaction => {
                     .setRequired(true)
                 const emailLabel = new LabelBuilder()
                     .setLabel('Enter your email address')
-                    .setDescription(description.substring(0, 100))
                     .setTextInputComponent(emailInput)
-                modal.addLabelComponents(emailLabel)
+                const instructionText = new TextDisplayBuilder().setContent(description)
+                modal.addLabelComponents(emailLabel).addTextDisplayComponents(instructionText)
                 await interaction.showModal(modal).catch(() => {})
                 // After opening the email modal, delete the preceding ephemeral verify prompt (the one with the button)
                 setTimeout(() => {
@@ -390,9 +390,9 @@ bot.on('interactionCreate', async interaction => {
             const userCode = userCodes.get(key)
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 const modal = new ModalBuilder().setCustomId('codeModal').setTitle('Enter Verification Code')
-                let description = 'Check your inbox for a 6-digit code'
+                let description = '-# Check your inbox for a 6-digit code'
                 if (userCode && userCode.logEmail) {
-                    description = getLocale(serverSettings.language, 'mailPositive', userCode.logEmail).substring(0, 100)
+                    description = getLocale(serverSettings.language, 'mailPositive', userCode.logEmail)
                 }
                 const codeInput = new TextInputBuilder()
                     .setCustomId('codeInput')
@@ -403,9 +403,9 @@ bot.on('interactionCreate', async interaction => {
                     .setRequired(true)
                 const codeLabel = new LabelBuilder()
                     .setLabel('Verification code')
-                    .setDescription(description)
                     .setTextInputComponent(codeInput)
-                modal.addLabelComponents(codeLabel)
+                const instructionText = new TextDisplayBuilder().setContent(description)
+                modal.addLabelComponents(codeLabel).addTextDisplayComponents(instructionText)
                 // Show code modal
                 await interaction.showModal(modal).catch(() => {})
                 // After opening the code modal, delete the preceding ephemeral code prompt (the one with the button)
