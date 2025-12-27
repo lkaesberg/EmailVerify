@@ -518,6 +518,8 @@ bot.on('interactionCreate', async interaction => {
                     } catch {}
                     await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
+                    // Track successful verification
+                    serverStatsAPI.increaseVerifiedUsers()
                     // Delete the code prompt message after successful verification
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
                     if (codePromptId) {

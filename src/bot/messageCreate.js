@@ -112,6 +112,10 @@ module.exports = async function (message, bot, userGuilds, userCodes, userTimeou
                 }
             } catch {
             }
+            // Track successful verification
+            if (bot.serverStatsAPI) {
+                bot.serverStatsAPI.increaseVerifiedUsers()
+            }
             await message.reply(getLocale(serverSettings.language, "roleAdded", roleVerified.name))
             userCodes.delete(message.author.id + userGuilds.get(message.author.id).id)
         } else {

@@ -16,8 +16,11 @@
 ## Statistics
 
 EmailVerify server count: <strong id="serverCount">0</strong><br>
-Users verified today: <strong id="todayMails">0</strong><br>
-Users verified all time: <strong id="allMails">0</strong>
+Users verified today: <strong id="verifiedToday">0</strong><br>
+Users verified all time: <strong id="verifiedAll">0</strong><br>
+Emails sent all time: <strong id="emailsAll">0</strong>
+
+[View detailed statistics →](statistics.md)
 
 ## Description
 
@@ -39,22 +42,21 @@ to invite the bot to your server
 
 <script>
 const serverCount = document.getElementById("serverCount");
-const mailsSendToday = document.getElementById("todayMails");
-const mailsSendAll = document.getElementById("allMails");
+const verifiedToday = document.getElementById("verifiedToday");
+const verifiedAll = document.getElementById("verifiedAll");
+const emailsAll = document.getElementById("emailsAll");
+
 function refreshData(){
-fetch('https://emailbotstats.larskaesberg.de/serverCount')
-  .then(response => response.json())
-  .then(data => serverCount.textContent = data);
-fetch('https://emailbotstats.larskaesberg.de/mailsSendToday')
-  .then(response => response.json())
-  .then(data => mailsSendToday.textContent = data);
-fetch('https://emailbotstats.larskaesberg.de/mailsSendAll')
-  .then(response => response.json())
-  .then(data => mailsSendAll.textContent = data);
+  fetch('https://emailbotstats.larskaesberg.de/stats/current')
+    .then(response => response.json())
+    .then(data => {
+      serverCount.textContent = data.serverCount;
+      verifiedToday.textContent = data.usersVerifiedToday;
+      verifiedAll.textContent = data.usersVerifiedAll;
+      emailsAll.textContent = data.mailsSendAll;
+    })
+    .catch(() => {});
 }
 refreshData();
-setInterval(function (){
-refreshData();
-},10000);
-
+setInterval(refreshData, 10000);
 </script>
