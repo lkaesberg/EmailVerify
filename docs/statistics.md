@@ -200,13 +200,16 @@
 </div>
 
 <div class="chart-section">
-    <div class="chart-title">📈 Cumulative Totals</div>
+    <div class="chart-title">📈 Total Users Verified</div>
     <div class="chart-wrapper">
-        <canvas id="totalsChart"></canvas>
+        <canvas id="verifiedTotalChart"></canvas>
     </div>
-    <div class="legend">
-        <div class="legend-item"><span class="legend-dot gold"></span> Total Verified</div>
-        <div class="legend-item"><span class="legend-dot teal"></span> Total Emails</div>
+</div>
+
+<div class="chart-section">
+    <div class="chart-title">✉️ Total Emails Sent</div>
+    <div class="chart-wrapper">
+        <canvas id="emailsTotalChart"></canvas>
     </div>
 </div>
 
@@ -290,7 +293,7 @@ const autoScaleOptions = {
     }
 };
 
-let dailyChart, totalsChart, serversChart;
+let dailyChart, verifiedTotalChart, emailsTotalChart, serversChart;
 let currentDays = 7;
 
 function formatNumber(num) {
@@ -358,7 +361,8 @@ async function updateCharts(days) {
     
     // Destroy existing charts
     if (dailyChart) dailyChart.destroy();
-    if (totalsChart) totalsChart.destroy();
+    if (verifiedTotalChart) verifiedTotalChart.destroy();
+    if (emailsTotalChart) emailsTotalChart.destroy();
     if (serversChart) serversChart.destroy();
     
     // Daily Activity Chart
@@ -374,13 +378,24 @@ async function updateCharts(days) {
         options: baseOptions
     });
     
-    // Cumulative Totals Chart (auto-scale, not starting at 0)
-    totalsChart = new Chart(document.getElementById('totalsChart'), {
+    // Total Users Verified Chart (auto-scale, not starting at 0)
+    verifiedTotalChart = new Chart(document.getElementById('verifiedTotalChart'), {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                createDataset(verifiedTotal, 'rgba(212, 148, 10, 1)', 'Total Verified'),
+                createDataset(verifiedTotal, 'rgba(212, 148, 10, 1)', 'Total Verified')
+            ]
+        },
+        options: autoScaleOptions
+    });
+    
+    // Total Emails Sent Chart (auto-scale, not starting at 0)
+    emailsTotalChart = new Chart(document.getElementById('emailsTotalChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
                 createDataset(emailsTotal, 'rgba(13, 148, 136, 1)', 'Total Emails')
             ]
         },
