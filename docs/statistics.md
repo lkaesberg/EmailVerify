@@ -250,7 +250,8 @@ const baseOptions = {
                 color: 'rgba(0, 0, 0, 0.06)'
             },
             ticks: {
-                color: '#6b7280'
+                color: '#6b7280',
+                precision: 0
             }
         }
     }
@@ -282,7 +283,8 @@ const autoScaleOptions = {
                 color: 'rgba(0, 0, 0, 0.06)'
             },
             ticks: {
-                color: '#6b7280'
+                color: '#6b7280',
+                precision: 0
             }
         }
     }
