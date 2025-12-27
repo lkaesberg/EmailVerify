@@ -17,23 +17,56 @@
     --shadow-hover: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
+.stats-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     margin-bottom: 32px;
 }
 
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.stats-hero {
+    display: flex;
+    justify-content: center;
 }
 
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.stats-hero .stat-card {
+    padding: 24px 48px;
+}
+
+.stats-hero .stat-value {
+    font-size: 2.5rem;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.stat-group {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.stat-group-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stat-group-content {
+    display: flex;
+    gap: 32px;
+    flex: 1;
+}
+
+.stat-item {
+    text-align: center;
 }
 
 .stat-card {
@@ -46,13 +79,13 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-card:hover {
+.stat-card:hover, .stat-group:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
 }
 
 .stat-value {
-    font-size: 1.875rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--accent-gold);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -63,11 +96,23 @@
 .stat-value.blue { color: var(--accent-blue); }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 500;
+}
+
+@media (max-width: 600px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    .stat-group-content {
+        gap: 16px;
+    }
+    .stats-hero .stat-card {
+        padding: 20px 32px;
+    }
 }
 
 .chart-section {
@@ -158,26 +203,40 @@
 }
 </style>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-value blue" id="serverCount">-</div>
-        <div class="stat-label">Discord Servers</div>
+<div class="stats-wrapper">
+    <div class="stats-hero">
+        <div class="stat-card">
+            <div class="stat-value blue" id="serverCount">-</div>
+            <div class="stat-label">Discord Servers</div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value" id="verifiedToday">-</div>
-        <div class="stat-label">Verified Today</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="verifiedAll">-</div>
-        <div class="stat-label">Total Verified</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value teal" id="emailsToday">-</div>
-        <div class="stat-label">Emails Today</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value teal" id="emailsAll">-</div>
-        <div class="stat-label">Total Emails</div>
+    <div class="stats-row">
+        <div class="stat-group">
+            <div class="stat-group-icon">✓</div>
+            <div class="stat-group-content">
+                <div class="stat-item">
+                    <div class="stat-value" id="verifiedToday">-</div>
+                    <div class="stat-label">Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="verifiedAll">-</div>
+                    <div class="stat-label">All Time</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-group-icon">✉</div>
+            <div class="stat-group-content">
+                <div class="stat-item">
+                    <div class="stat-value teal" id="emailsToday">-</div>
+                    <div class="stat-label">Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value teal" id="emailsAll">-</div>
+                    <div class="stat-label">All Time</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
