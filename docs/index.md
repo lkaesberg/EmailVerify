@@ -7,11 +7,11 @@
 ## Built With
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 24px; margin: 20px 0;">
-<a href="https://discord.com/"><img src="../images/discord.png" alt="Discord" height="56" title="Discord"></a>
-<a href="https://nodejs.org/"><img src="../images/node.png" alt="Node.js" height="56" title="Node.js"></a>
-<a href="https://www.npmjs.com/"><img src="../images/npm.png" alt="npm" height="40" title="npm"></a>
-<a href="https://discord.js.org/"><img src="../images/discordjs.png" alt="Discord.js" height="56" title="Discord.js"></a>
-<a href="https://nodemailer.com/"><img src="../images/nodemailer.webp" alt="Nodemailer" height="48" title="Nodemailer"></a>
+<a href="https://discord.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/discord.png" alt="Discord" height="56" title="Discord"></a>
+<a href="https://nodejs.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/node.png" alt="Node.js" height="56" title="Node.js"></a>
+<a href="https://www.npmjs.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/npm.png" alt="npm" height="40" title="npm"></a>
+<a href="https://discord.js.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/discordjs.png" alt="Discord.js" height="56" title="Discord.js"></a>
+<a href="https://nodemailer.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/nodemailer.webp" alt="Nodemailer" height="48" title="Nodemailer"></a>
 </div>
 
 ## Statistics
