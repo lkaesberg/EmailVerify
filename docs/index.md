@@ -16,11 +16,9 @@
 
 ## Statistics
 
-EmailVerify server count: <strong id="serverCount">0</strong><br>
-Users verified today: <strong id="verifiedToday">0</strong><br>
-Users verified all time: <strong id="verifiedAll">0</strong><br>
-Emails sent today: <strong id="emailsToday">0</strong><br>
-Emails sent all time: <strong id="emailsAll">0</strong>
+Server count: <strong id="serverCount">0</strong><br>
+Users verified: <strong id="verifiedToday">0</strong> today / <strong id="verifiedAll">0</strong> all time<br>
+Emails sent: <strong id="emailsToday">0</strong> today / <strong id="emailsAll">0</strong> all time
 
 [View detailed statistics →](statistics.md)
 
