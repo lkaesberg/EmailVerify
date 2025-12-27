@@ -18,50 +18,58 @@
 }
 
 .stats-wrapper {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-bottom: 32px;
 }
 
 .stats-hero {
     display: flex;
-    justify-content: center;
 }
 
 .stats-hero .stat-card {
-    padding: 24px 48px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px;
 }
 
 .stats-hero .stat-value {
-    font-size: 2.5rem;
+    font-size: 3.5rem;
 }
 
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+.stats-hero .stat-label {
+    font-size: 0.85rem;
+}
+
+.stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .stat-group {
     background: var(--bg-card);
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px 20px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow);
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 16px;
+    flex: 1;
 }
 
 .stat-group-icon {
-    font-size: 2rem;
-    opacity: 0.8;
+    font-size: 1.5rem;
+    opacity: 0.7;
 }
 
 .stat-group-content {
     display: flex;
-    gap: 32px;
+    gap: 24px;
     flex: 1;
 }
 
@@ -85,18 +93,18 @@
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--accent-gold);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .stat-value.teal { color: var(--accent-teal); }
 .stat-value.blue { color: var(--accent-blue); }
 
 .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -104,14 +112,14 @@
 }
 
 @media (max-width: 600px) {
-    .stats-row {
+    .stats-wrapper {
         grid-template-columns: 1fr;
+    }
+    .stats-hero .stat-value {
+        font-size: 2.5rem;
     }
     .stat-group-content {
         gap: 16px;
-    }
-    .stats-hero .stat-card {
-        padding: 20px 32px;
     }
 }
 
@@ -210,7 +218,7 @@
             <div class="stat-label">Discord Servers</div>
         </div>
     </div>
-    <div class="stats-row">
+    <div class="stats-column">
         <div class="stat-group">
             <div class="stat-group-icon">✓</div>
             <div class="stat-group-content">
