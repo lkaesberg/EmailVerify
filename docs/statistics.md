@@ -19,9 +19,21 @@
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
     margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .stat-card {
@@ -244,6 +256,38 @@ const baseOptions = {
     }
 };
 
+const autoScaleOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+        mode: 'index',
+        intersect: false
+    },
+    plugins: {
+        legend: {
+            display: false
+        }
+    },
+    scales: {
+        x: {
+            grid: {
+                color: 'rgba(0, 0, 0, 0.06)'
+            },
+            ticks: {
+                color: '#6b7280'
+            }
+        },
+        y: {
+            grid: {
+                color: 'rgba(0, 0, 0, 0.06)'
+            },
+            ticks: {
+                color: '#6b7280'
+            }
+        }
+    }
+};
+
 let dailyChart, totalsChart, serversChart;
 let currentDays = 7;
 
@@ -328,7 +372,7 @@ async function updateCharts(days) {
         options: baseOptions
     });
     
-    // Cumulative Totals Chart
+    // Cumulative Totals Chart (auto-scale, not starting at 0)
     totalsChart = new Chart(document.getElementById('totalsChart'), {
         type: 'line',
         data: {
@@ -338,10 +382,10 @@ async function updateCharts(days) {
                 createDataset(emailsTotal, 'rgba(13, 148, 136, 1)', 'Total Emails')
             ]
         },
-        options: baseOptions
+        options: autoScaleOptions
     });
     
-    // Server Growth Chart
+    // Server Growth Chart (auto-scale, not starting at 0)
     serversChart = new Chart(document.getElementById('serversChart'), {
         type: 'line',
         data: {
@@ -350,7 +394,7 @@ async function updateCharts(days) {
                 createDataset(servers, 'rgba(37, 99, 235, 1)', 'Servers')
             ]
         },
-        options: baseOptions
+        options: autoScaleOptions
     });
 }
 
