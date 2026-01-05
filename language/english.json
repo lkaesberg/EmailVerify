@@ -13,7 +13,7 @@
   "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
   "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%",
   "verifyEmbedTitle": "✉️ Email Verification",
-  "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.",
+  "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.\n\nAlready have a code? Use the **Enter Code** button.",
   "verifyEmbedFooter": "Verification System",
   "buttonCreated": "✅ Verification button created successfully!",
   "emailModalTitle": "📧 Email Verification",
@@ -27,5 +27,14 @@
   "codeModalTitle": "🔐 Enter Verification Code",
   "codeModalHeader": "## Almost There!\nCheck your inbox for the 6-digit verification code.",
   "codeModalLabel": "Verification Code",
-  "codeModalPlaceholder": "Enter 6-digit code"
+  "codeModalPlaceholder": "Enter 6-digit code",
+  "enterCodeButton": "Enter Code",
+  "codePromptTitle": "📬 Code Sent!",
+  "codePromptDescription": "A verification code has been sent to:\n`%VAR%`\n\nClick the button below to enter your code.",
+  "codePromptTip": "💡 Didn't receive it?",
+  "codePromptTipValue": "Check your spam/junk folder. The email may take a few minutes to arrive.",
+  "mailInvalidTitle": "❌ Invalid Email",
+  "mailInvalidDescription": "The email address you entered is not valid.\n\nPlease make sure:\n• The email has the correct format (name@domain.com)\n• You're using an allowed email domain\n• There are no spaces in the address",
+  "verificationSuccessTitle": "✅ Verification Complete!",
+  "verificationSuccessDescription": "Welcome! You have been successfully verified.\n\n**Role assigned:** %VAR%\n**Server:** %VAR%\n\nYou now have full access to the server."
 }

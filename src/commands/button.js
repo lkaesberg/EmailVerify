@@ -65,16 +65,21 @@ module.exports = {
                     iconURL: interaction.guild.iconURL({ dynamic: true })
                 })
 
-            const button = new ActionRowBuilder()
+            const buttons = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId("verifyButton")
                         .setLabel(buttonText)
                         .setEmoji("📧")
                         .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId("openCodeModal")
+                        .setLabel(getLocale(language, "enterCodeButton"))
+                        .setEmoji("🔑")
+                        .setStyle(ButtonStyle.Secondary),
                 );
 
-            const message = await channel.send({embeds: [embed], components: [button]}).catch(async _ => {
+            const message = await channel.send({embeds: [embed], components: [buttons]}).catch(async _ => {
                 await interaction.user.send("No permissions to write in that channel!").catch(async _ => {
                 })
             })

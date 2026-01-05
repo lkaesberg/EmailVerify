@@ -13,7 +13,7 @@
   "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle.",
   "emailText": "Willkommen bei %VAR%!\nHier ist Ihr Zugangscode: %VAR%\n\nTeilen Sie diesen Code mit niemandem.",
   "verifyEmbedTitle": "✉️ E-Mail Verifizierung",
-  "verifyEmbedInstructions": "Klicke auf den Button unten, um den Verifizierungsprozess zu starten. Du erhältst einen Code per E-Mail.",
+  "verifyEmbedInstructions": "Klicke auf den Button unten, um den Verifizierungsprozess zu starten. Du erhältst einen Code per E-Mail.\n\nDu hast bereits einen Code? Nutze den **Code eingeben** Button.",
   "verifyEmbedFooter": "Verifizierungssystem",
   "buttonCreated": "✅ Verifizierungs-Button erfolgreich erstellt!",
   "emailModalTitle": "📧 E-Mail Verifizierung",
@@ -27,5 +27,14 @@
   "codeModalTitle": "🔐 Verifizierungscode eingeben",
   "codeModalHeader": "## Fast geschafft!\nPrüfe deinen Posteingang auf den 6-stelligen Verifizierungscode.",
   "codeModalLabel": "Verifizierungscode",
-  "codeModalPlaceholder": "6-stelligen Code eingeben"
+  "codeModalPlaceholder": "6-stelligen Code eingeben",
+  "enterCodeButton": "Code eingeben",
+  "codePromptTitle": "📬 Code gesendet!",
+  "codePromptDescription": "Ein Verifizierungscode wurde gesendet an:\n`%VAR%`\n\nKlicke auf den Button unten, um deinen Code einzugeben.",
+  "codePromptTip": "💡 Nicht erhalten?",
+  "codePromptTipValue": "Prüfe deinen Spam-/Junk-Ordner. Die E-Mail kann einige Minuten dauern.",
+  "mailInvalidTitle": "❌ Ungültige E-Mail",
+  "mailInvalidDescription": "Die eingegebene E-Mail-Adresse ist ungültig.\n\nBitte stelle sicher:\n• Die E-Mail hat das richtige Format (name@domain.com)\n• Du verwendest eine erlaubte E-Mail-Domain\n• Es sind keine Leerzeichen in der Adresse",
+  "verificationSuccessTitle": "✅ Verifizierung abgeschlossen!",
+  "verificationSuccessDescription": "Willkommen! Du wurdest erfolgreich verifiziert.\n\n**Rolle zugewiesen:** %VAR%\n**Server:** %VAR%\n\nDu hast jetzt vollen Zugriff auf den Server."
 }

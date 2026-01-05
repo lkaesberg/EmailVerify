@@ -15,7 +15,7 @@ const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
-const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder} = require("discord.js");
+const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder, EmbedBuilder} = require("discord.js");
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
@@ -365,9 +365,10 @@ bot.on('interactionCreate', async interaction => {
                 // Show code modal
                 await interaction.showModal(modal).catch(() => {})
                 // After opening the code modal, delete the preceding ephemeral code prompt (the one with the button)
+                // Only delete if it's an ephemeral message (not the permanent verification embed)
                 setTimeout(() => {
                     try {
-                        if (interaction.message && interaction.message.id) {
+                        if (interaction.message && interaction.message.id && interaction.message.flags?.has(MessageFlags.Ephemeral)) {
                             interaction.message.delete().catch(() => {})
                             interaction.webhook.deleteMessage(interaction.message.id).catch(() => {})
                         }
@@ -412,7 +413,11 @@ bot.on('interactionCreate', async interaction => {
                     validEmail = false
                 }
                 if (emailText.includes(' ') || !validEmail) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailInvalid"), flags: MessageFlags.Ephemeral }).catch(() => {})
+                    const invalidEmailEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "mailInvalidTitle"))
+                        .setDescription(getLocale(serverSettings.language, "mailInvalidDescription"))
+                        .setColor(0xED4245)
+                    await interaction.followUp({ embeds: [invalidEmailEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Rate limit per user
@@ -440,9 +445,21 @@ bot.on('interactionCreate', async interaction => {
                     })
 
                     // Only show the code prompt if email was successfully sent
-                    const infoText = getLocale(serverSettings.language, 'mailPositive', emailText.toLowerCase())
+                    const codePromptEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, 'codePromptTitle'))
+                        .setDescription(getLocale(serverSettings.language, 'codePromptDescription', emailText.toLowerCase()))
+                        .setColor(0x57F287)
+                        .addFields({
+                            name: getLocale(serverSettings.language, 'codePromptTip'),
+                            value: getLocale(serverSettings.language, 'codePromptTipValue')
+                        })
+                    
                     const row = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder().setCustomId('openCodeModal').setLabel('Enter Code').setStyle(ButtonStyle.Success)
+                        new ButtonBuilder()
+                            .setCustomId('openCodeModal')
+                            .setLabel(getLocale(serverSettings.language, 'enterCodeButton'))
+                            .setEmoji('🔑')
+                            .setStyle(ButtonStyle.Success)
                     )
                     // Delete the initial verify prompt ("Enter Email") once email has been submitted
                     const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
@@ -452,7 +469,7 @@ bot.on('interactionCreate', async interaction => {
                         interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
                     }
 
-                    await interaction.followUp({ content: infoText, components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
+                    await interaction.followUp({ embeds: [codePromptEmbed], components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const follow = await interaction.fetchReply().catch(() => null)
                     if (follow && follow.id) {
                         // Track the code prompt so we can delete it after code submission
@@ -530,7 +547,12 @@ bot.on('interactionCreate', async interaction => {
                             userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
                         }
                     } catch {}
-                    await interaction.reply({ content: getLocale(serverSettings.language, "roleAdded", roleVerified.name), flags: MessageFlags.Ephemeral }).catch(() => null)
+                    const successEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "verificationSuccessTitle"))
+                        .setDescription(getLocale(serverSettings.language, "verificationSuccessDescription", roleVerified.name, userGuild.name))
+                        .setColor(0x57F287)
+                        .setThumbnail(userGuild.iconURL({ dynamic: true }))
+                    await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
                     // Track successful verification
                     serverStatsAPI.increaseVerifiedUsers()
@@ -544,7 +566,7 @@ bot.on('interactionCreate', async interaction => {
                     setTimeout(() => {
                         try { interaction.deleteReply().catch(() => {}) } catch {}
                         try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                    }, 2500)
+                    }, 20000)
                     userCodes.delete(interaction.user.id + userGuild.id)
                 } else {
                     await interaction.reply({ content: 'Invalid code. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => null)
