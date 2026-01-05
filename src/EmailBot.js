@@ -331,23 +331,37 @@ bot.on('interactionCreate', async interaction => {
             const key = interaction.user.id + userGuild.id
             const userCode = userCodes.get(key)
             await database.getServerSettings(userGuild.id, async serverSettings => {
-                const modal = new ModalBuilder().setCustomId('codeModal').setTitle('Enter Verification Code')
-                let description = '-# Check your inbox for a 6-digit code'
+                const language = serverSettings.language
+                
+                // Build header text
+                let headerText = getLocale(language, 'codeModalHeader')
                 if (userCode && userCode.logEmail) {
-                    description = getLocale(serverSettings.language, 'mailPositive', userCode.logEmail)
+                    headerText += `\n\n📬 **Sent to:** ${userCode.logEmail}`
                 }
+                headerText += '\n\n-# Check your spam folder if you don\'t see the email'
+                
+                const modal = new ModalBuilder()
+                    .setCustomId('codeModal')
+                    .setTitle(getLocale(language, 'codeModalTitle'))
+                
                 const codeInput = new TextInputBuilder()
                     .setCustomId('codeInput')
                     .setStyle(TextInputStyle.Short)
-                    .setPlaceholder('123456')
+                    .setPlaceholder(getLocale(language, 'codeModalPlaceholder'))
                     .setMinLength(6)
                     .setMaxLength(6)
                     .setRequired(true)
+                
                 const codeLabel = new LabelBuilder()
-                    .setLabel('Verification code')
+                    .setLabel(getLocale(language, 'codeModalLabel'))
                     .setTextInputComponent(codeInput)
-                const instructionText = new TextDisplayBuilder().setContent(description)
-                modal.addTextDisplayComponents(instructionText).addLabelComponents(codeLabel)
+                
+                const headerDisplay = new TextDisplayBuilder().setContent(headerText)
+                
+                modal
+                    .addTextDisplayComponents(headerDisplay)
+                    .addLabelComponents(codeLabel)
+                
                 // Show code modal
                 await interaction.showModal(modal).catch(() => {})
                 // After opening the code modal, delete the preceding ephemeral code prompt (the one with the button)

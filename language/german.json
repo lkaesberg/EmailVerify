@@ -11,5 +11,21 @@
   "userBotError": "Der Bot ist nicht richtig konfiguriert. Bitte kontaktiere den Admin!",
   "userEnterEmail": "Bitte gib deine Email Adresse an um dich zu verifizieren %VAR%.",
   "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle.",
-  "emailText": "Willkommen bei %VAR%!\nHier ist Ihr Zugangscode: %VAR%\n\nTeilen Sie diesen Code mit niemandem."
+  "emailText": "Willkommen bei %VAR%!\nHier ist Ihr Zugangscode: %VAR%\n\nTeilen Sie diesen Code mit niemandem.",
+  "verifyEmbedTitle": "✉️ E-Mail Verifizierung",
+  "verifyEmbedInstructions": "Klicke auf den Button unten, um den Verifizierungsprozess zu starten. Du erhältst einen Code per E-Mail.",
+  "verifyEmbedFooter": "Verifizierungssystem",
+  "buttonCreated": "✅ Verifizierungs-Button erfolgreich erstellt!",
+  "emailModalTitle": "📧 E-Mail Verifizierung",
+  "emailModalHeader": "## Bestätige deine Identität\nGib deine E-Mail-Adresse ein, um einen Verifizierungscode zu erhalten.",
+  "emailModalLabel": "E-Mail-Adresse",
+  "emailModalPlaceholder": "dein.name@",
+  "emailModalAdminWarning": "\n\n⚠️ **Hinweis:** Der Server-Admin kann die verwendete E-Mail-Adresse sehen.",
+  "emailModalAllDomainsAccepted": "✅ Jede E-Mail-Adresse wird akzeptiert",
+  "emailModalAcceptedDomains": "📋 **Du musst eine E-Mail von einer dieser Domains verwenden:**",
+  "emailModalDomainExample": "`%VAR%`\n    ↳ z.B. `%VAR%`",
+  "codeModalTitle": "🔐 Verifizierungscode eingeben",
+  "codeModalHeader": "## Fast geschafft!\nPrüfe deinen Posteingang auf den 6-stelligen Verifizierungscode.",
+  "codeModalLabel": "Verifizierungscode",
+  "codeModalPlaceholder": "6-stelligen Code eingeben"
 }

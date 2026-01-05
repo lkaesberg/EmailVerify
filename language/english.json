@@ -11,5 +11,21 @@
   "userBotError": "Bot not properly configured. Please contact admin!",
   "userEnterEmail": "Please enter your email address to verify %VAR%.",
   "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
-  "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%"
+  "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%",
+  "verifyEmbedTitle": "✉️ Email Verification",
+  "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.",
+  "verifyEmbedFooter": "Verification System",
+  "buttonCreated": "✅ Verification button created successfully!",
+  "emailModalTitle": "📧 Email Verification",
+  "emailModalHeader": "## Verify Your Identity\nEnter your email address below to receive a verification code.",
+  "emailModalLabel": "Email Address",
+  "emailModalPlaceholder": "your.name@",
+  "emailModalAdminWarning": "\n\n⚠️ **Note:** The server admin can see the email address you use.",
+  "emailModalAllDomainsAccepted": "✅ Any email address is accepted",
+  "emailModalAcceptedDomains": "📋 **You must use an email from one of these domains:**",
+  "emailModalDomainExample": "`%VAR%`\n    ↳ e.g. `%VAR%`",
+  "codeModalTitle": "🔐 Enter Verification Code",
+  "codeModalHeader": "## Almost There!\nCheck your inbox for the 6-digit verification code.",
+  "codeModalLabel": "Verification Code",
+  "codeModalPlaceholder": "Enter 6-digit code"
 }
