@@ -1,6 +1,7 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const {languages} = require("../Language")
 const database = require("../database/Database.js");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('language').setDescription('Set language of bot')
@@ -12,7 +13,7 @@ module.exports = {
 
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             serverSettings.language = language
-            await interaction.reply("Language: " + language)
+            await interaction.reply({content: "Language: " + language, flags: MessageFlags.Ephemeral})
             database.updateServerSettings(interaction.guildId, serverSettings)
         })
     }

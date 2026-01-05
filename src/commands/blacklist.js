@@ -1,5 +1,6 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database.js");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,17 +15,17 @@ module.exports = {
         const blacklist = interaction.options.getString('email');
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!blacklist) {
-                await interaction.reply("Blacklisted emails:\n" + serverSettings.blacklist.join(", "));
+                await interaction.reply({content: "Blacklisted emails:\n" + serverSettings.blacklist.join(", "), flags: MessageFlags.Ephemeral});
             } else if (blacklist === "-") {
                 serverSettings.blacklist=[];
                 database.updateServerSettings(interaction.guildId, serverSettings);
-                await interaction.reply("Blacklist cleared!");
+                await interaction.reply({content: "Blacklist cleared!", flags: MessageFlags.Ephemeral});
             }
             else {
                 const newBlacklists = blacklist.split(",").map(name=> name.trim())
                 const blacklistedNames = (format = false) => serverSettings.blacklist
                     .concat(format ? newBlacklists.map(v=> `**${v}**`) : newBlacklists);
-                await interaction.reply("Added:\n" + blacklistedNames(true).join(", "));
+                await interaction.reply({content: "Added:\n" + blacklistedNames(true).join(", "), flags: MessageFlags.Ephemeral});
                 serverSettings.blacklist = blacklistedNames();
                 database.updateServerSettings(interaction.guildId, serverSettings);
             }

@@ -1,39 +1,97 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not').setDefaultMemberPermissions(0),
     async execute(interaction) {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
-            let response = "Configuration: " + (serverSettings.status ? "\:white_check_mark:\n" : "\:x: \n");
-            response += "ChannelID: " + serverSettings.channelID + "\n"
-            response += "MessageID: " + serverSettings.messageID + "\n"
-            try {
-                await interaction.client.channels.cache.get(serverSettings.channelID)?.messages.fetch(serverSettings.messageID)
-                response += "Message Found: \:white_check_mark:\n"
-            } catch {
-                response += "Message Found: \:x: \n"
+            const isConfigured = serverSettings.status
+            
+            // Check roles
+            const roleVerified = interaction.guild.roles.cache.find(r => r.id === serverSettings.verifiedRoleName)
+            const roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
+            
+            // Check log channel
+            const logChannel = serverSettings.logChannel ? interaction.guild.channels.cache.get(serverSettings.logChannel) : null
+            
+            // Format domains
+            const domainsDisplay = serverSettings.domains.length > 0 
+                ? serverSettings.domains.map(d => `\`${d.replaceAll("*", "✱")}\``).join(', ')
+                : '*None configured*'
+            
+            // Format blacklist
+            const blacklistDisplay = serverSettings.blacklist.length > 0
+                ? serverSettings.blacklist.map(b => `\`${b}\``).join(', ')
+                : '*None*'
+            
+            // Determine status color and icon
+            const statusColor = isConfigured ? 0x57F287 : 0xED4245
+            const statusIcon = isConfigured ? '✅' : '❌'
+            const statusText = isConfigured ? 'Ready' : 'Not Configured'
+            
+            // Build issues list
+            const issues = []
+            if (!roleVerified) issues.push('• Verified role not set or not found')
+            if (serverSettings.domains.length === 0) issues.push('• No email domains configured')
+            
+            const statusEmbed = new EmbedBuilder()
+                .setTitle(`📊 Bot Status - ${statusIcon} ${statusText}`)
+                .setColor(statusColor)
+                .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
+                .addFields(
+                    {
+                        name: '👥 Roles',
+                        value: 
+                            `**Verified:** ${roleVerified ? `<@&${roleVerified.id}>` : '❌ *Not set*'}\n` +
+                            `**Unverified:** ${roleUnverified ? `<@&${roleUnverified.id}>` : '➖ *Disabled*'}`,
+                        inline: true
+                    },
+                    {
+                        name: '🌐 Language',
+                        value: `${serverSettings.language || 'english'}`,
+                        inline: true
+                    },
+                    {
+                        name: '📝 Log Channel',
+                        value: logChannel ? `<#${logChannel.id}>` : '*Disabled*',
+                        inline: true
+                    },
+                    {
+                        name: '📧 Allowed Domains',
+                        value: domainsDisplay
+                    },
+                    {
+                        name: '🚫 Blacklisted Emails',
+                        value: blacklistDisplay
+                    },
+                    {
+                        name: '⚙️ Auto Settings',
+                        value: 
+                            `**Auto-verify on join:** ${serverSettings.autoVerify ? '✅ Enabled' : '❌ Disabled'}\n` +
+                            `**Auto-add unverified role:** ${serverSettings.autoAddUnverified ? '✅ Enabled' : '❌ Disabled'}`,
+                        inline: false
+                    },
+                    {
+                        name: '💬 Custom Verify Message',
+                        value: serverSettings.verifyMessage ? `"${serverSettings.verifyMessage}"` : '*Default message*'
+                    }
+                )
+            
+            // Add issues field if there are problems
+            if (issues.length > 0) {
+                statusEmbed.addFields({
+                    name: '⚠️ Issues to Fix',
+                    value: issues.join('\n')
+                })
             }
-            response += "Domains: " + serverSettings.domains.toString().replaceAll(",", "|").replaceAll("*", "\\*") + "\n"
-            response += "Blacklisted: " + serverSettings.blacklist.toString().replaceAll(",", "|") + "\n"
-            let roleVerified = interaction.guild.roles.cache.find(r => r.id === serverSettings.verifiedRoleName)
-            if (roleVerified === undefined) {
-                response += "Verified role can not be found!\n"
-            } else {
-                response += "Verified role: " + roleVerified.name + "\n"
-            }
-            let roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
-            if (roleUnverified === undefined) {
-                response += "Unverified role is disabled\n"
-            } else {
-                response += "Unverified role: " + roleUnverified.name + "\n"
-            }
-            response += "Verify message: " + (serverSettings.verifyMessage ? serverSettings.verifyMessage : "Default") + "\n"
-            response += "Language: " + serverSettings.language + "\n"
-            response += "Auto add unverified role: " + (serverSettings.autoAddUnverified ? "Enabled" : "Disabled") + "\n"
-            response += "Auto verify: " + (serverSettings.autoVerify ? "Enabled" : "Disabled") + "\n"
-            await interaction.reply({content: response, flags: MessageFlags.Ephemeral})
+            
+            statusEmbed.setFooter({ 
+                text: `Server: ${interaction.guild.name}`,
+                iconURL: interaction.guild.iconURL({ dynamic: true })
+            })
+            
+            await interaction.reply({ embeds: [statusEmbed], flags: MessageFlags.Ephemeral })
         })
     }
 }

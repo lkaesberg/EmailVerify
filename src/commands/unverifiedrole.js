@@ -1,5 +1,6 @@
 const database = require("../database/Database.js");
 const {SlashCommandBuilder} = require("@discordjs/builders");
+const { MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('unverifiedrole').setDescription('returns the name of the unverified role')
@@ -10,21 +11,21 @@ module.exports = {
             if (unverifiedRole == null) {
                 let role = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
                 if (role === undefined) {
-                    await interaction.reply("Unverified role is disabled")
+                    await interaction.reply({content: "Unverified role is disabled", flags: MessageFlags.Ephemeral})
                     return
                 }
-                await interaction.reply("Unverified role: " + role.name)
+                await interaction.reply({content: "Unverified role: " + role.name, flags: MessageFlags.Ephemeral})
             } else {
                 if (unverifiedRole.id === serverSettings.unverifiedRoleName) {
                     serverSettings.unverifiedRoleName = ""
-                    await interaction.reply("Unverified role deactivated")
+                    await interaction.reply({content: "Unverified role deactivated", flags: MessageFlags.Ephemeral})
                 } else {
                     if (unverifiedRole.name === "@everyone") {
-                        await interaction.reply("@Everyone is no permitted role!")
+                        await interaction.reply({content: "@Everyone is no permitted role!", flags: MessageFlags.Ephemeral})
                         return
                     }
                     serverSettings.unverifiedRoleName = unverifiedRole.id
-                    await interaction.reply("Unverified role changed to " + unverifiedRole.name)
+                    await interaction.reply({content: "Unverified role changed to " + unverifiedRole.name, flags: MessageFlags.Ephemeral})
                 }
 
                 database.updateServerSettings(interaction.guildId, serverSettings)
