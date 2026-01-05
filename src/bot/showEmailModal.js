@@ -1,6 +1,7 @@
-const {ModalBuilder, TextInputBuilder, TextInputStyle, LabelBuilder, TextDisplayBuilder} = require('discord.js');
+const {ModalBuilder, TextInputBuilder, TextInputStyle, LabelBuilder, TextDisplayBuilder, MessageFlags} = require('discord.js');
 const database = require("../database/Database");
 const {getLocale} = require("../Language");
+const {createSessionExpiredEmbed} = require("../utils/embeds");
 
 /**
  * Checks if a domain is a full wildcard (accepts all emails)
@@ -74,7 +75,7 @@ function formatDomain(domain, language) {
  */
 async function showEmailModal(interaction, guild, userGuilds) {
     if (!guild) {
-        await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: require('discord.js').MessageFlags.Ephemeral }).catch(() => {})
+        await interaction.reply({ embeds: [createSessionExpiredEmbed(false)], flags: MessageFlags.Ephemeral }).catch(() => {})
         return false
     }
     userGuilds.set(interaction.user.id, guild)

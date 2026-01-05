@@ -20,6 +20,7 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
+const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 
 const bot = new Discord.Client({
     intents: [
@@ -325,7 +326,7 @@ bot.on('interactionCreate', async interaction => {
             // Open code modal, include instruction with email
             const userGuild = interaction.guild || userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                await interaction.reply({ embeds: [createSessionExpiredEmbed(true)], flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             const key = interaction.user.id + userGuild.id
@@ -388,7 +389,7 @@ bot.on('interactionCreate', async interaction => {
             const emailText = interaction.fields.getTextInputValue('emailInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.followUp({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => {})
+                await interaction.followUp({ embeds: [createSessionExpiredEmbed(false)], flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
@@ -413,11 +414,7 @@ bot.on('interactionCreate', async interaction => {
                     validEmail = false
                 }
                 if (emailText.includes(' ') || !validEmail) {
-                    const invalidEmailEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(serverSettings.language, "mailInvalidTitle"))
-                        .setDescription(getLocale(serverSettings.language, "mailInvalidDescription"))
-                        .setColor(0xED4245)
-                    await interaction.followUp({ embeds: [invalidEmailEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                    await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Rate limit per user
@@ -445,14 +442,7 @@ bot.on('interactionCreate', async interaction => {
                     })
 
                     // Only show the code prompt if email was successfully sent
-                    const codePromptEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(serverSettings.language, 'codePromptTitle'))
-                        .setDescription(getLocale(serverSettings.language, 'codePromptDescription', emailText.toLowerCase()))
-                        .setColor(0x57F287)
-                        .addFields({
-                            name: getLocale(serverSettings.language, 'codePromptTip'),
-                            value: getLocale(serverSettings.language, 'codePromptTipValue')
-                        })
+                    const codePromptEmbed = createCodeSentEmbed(serverSettings.language, emailText.toLowerCase())
                     
                     const row = new ActionRowBuilder().addComponents(
                         new ButtonBuilder()
@@ -487,12 +477,12 @@ bot.on('interactionCreate', async interaction => {
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
             const userGuild = userGuilds.get(interaction.user.id)
             if (!userGuild) {
-                await interaction.reply({ content: 'Not linked to a guild. Try again using the button in the server.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                await interaction.reply({ embeds: [createSessionExpiredEmbed(true)], flags: MessageFlags.Ephemeral }).catch(() => null)
                 const sent = await interaction.fetchReply().catch(() => null)
                 setTimeout(() => {
                     try { interaction.deleteReply().catch(() => {}) } catch {}
                     try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                }, 2500)
+                }, 10000)
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
@@ -547,11 +537,7 @@ bot.on('interactionCreate', async interaction => {
                             userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
                         }
                     } catch {}
-                    const successEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(serverSettings.language, "verificationSuccessTitle"))
-                        .setDescription(getLocale(serverSettings.language, "verificationSuccessDescription", roleVerified.name, userGuild.name))
-                        .setColor(0x57F287)
-                        .setThumbnail(userGuild.iconURL({ dynamic: true }))
+                    const successEmbed = createVerificationSuccessEmbed(serverSettings.language, roleVerified.name, userGuild.name, userGuild.iconURL({ dynamic: true }))
                     await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
                     // Track successful verification
@@ -569,7 +555,7 @@ bot.on('interactionCreate', async interaction => {
                     }, 20000)
                     userCodes.delete(interaction.user.id + userGuild.id)
                 } else {
-                    await interaction.reply({ content: 'Invalid code. Please try again.', flags: MessageFlags.Ephemeral }).catch(() => null)
+                    await interaction.reply({ embeds: [createInvalidCodeEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
                     // Delete the code prompt message after any code submission (even if invalid)
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
@@ -581,7 +567,7 @@ bot.on('interactionCreate', async interaction => {
                     setTimeout(() => {
                         try { interaction.deleteReply().catch(() => {}) } catch {}
                         try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                    }, 2500)
+                    }, 10000)
                 }
             })
             return

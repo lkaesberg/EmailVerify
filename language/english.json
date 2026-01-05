@@ -36,5 +36,7 @@
   "mailInvalidTitle": "❌ Invalid Email",
   "mailInvalidDescription": "The email address you entered is not valid.\n\nPlease make sure:\n• The email has the correct format (name@domain.com)\n• You're using an allowed email domain\n• There are no spaces in the address",
   "verificationSuccessTitle": "✅ Verification Complete!",
-  "verificationSuccessDescription": "Welcome! You have been successfully verified.\n\n**Role assigned:** %VAR%\n**Server:** %VAR%\n\nYou now have full access to the server."
+  "verificationSuccessDescription": "Welcome! You have been successfully verified.\n\n**Role assigned:** %VAR%\n**Server:** %VAR%\n\nYou now have full access to the server.",
+  "invalidCodeTitle": "❌ Invalid Code",
+  "invalidCodeDescription": "The code you entered is incorrect.\n\n**What to do:**\n• Double-check the 6-digit code from your email\n• Make sure you're using the most recent code\n• Request a new code if needed by clicking the verification button again"
 }

@@ -36,5 +36,7 @@
   "mailInvalidTitle": "❌ Ungültige E-Mail",
   "mailInvalidDescription": "Die eingegebene E-Mail-Adresse ist ungültig.\n\nBitte stelle sicher:\n• Die E-Mail hat das richtige Format (name@domain.com)\n• Du verwendest eine erlaubte E-Mail-Domain\n• Es sind keine Leerzeichen in der Adresse",
   "verificationSuccessTitle": "✅ Verifizierung abgeschlossen!",
-  "verificationSuccessDescription": "Willkommen! Du wurdest erfolgreich verifiziert.\n\n**Rolle zugewiesen:** %VAR%\n**Server:** %VAR%\n\nDu hast jetzt vollen Zugriff auf den Server."
+  "verificationSuccessDescription": "Willkommen! Du wurdest erfolgreich verifiziert.\n\n**Rolle zugewiesen:** %VAR%\n**Server:** %VAR%\n\nDu hast jetzt vollen Zugriff auf den Server.",
+  "invalidCodeTitle": "❌ Ungültiger Code",
+  "invalidCodeDescription": "Der eingegebene Code ist falsch.\n\n**Was du tun kannst:**\n• Überprüfe den 6-stelligen Code aus deiner E-Mail\n• Stelle sicher, dass du den neuesten Code verwendest\n• Fordere bei Bedarf einen neuen Code an, indem du erneut auf den Verifizierungs-Button klickst"
 }
