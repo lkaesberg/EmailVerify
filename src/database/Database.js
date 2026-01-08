@@ -29,6 +29,10 @@ class Database {
         this.runMigration(6, () => {
             this.db.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
             })
+        this.runMigration(7, () => {
+            this.db.run("ALTER TABLE guilds ADD errorNotifyType TEXT DEFAULT 'owner'")
+            this.db.run("ALTER TABLE guilds ADD errorNotifyTarget TEXT DEFAULT ''")
+        })
     }
 
     runMigration(version, migration) {
@@ -59,8 +63,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget])
     }
 
     async getServerSettings(guildID, callback) {
@@ -81,6 +85,8 @@ class Database {
                     serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
                     serverSettings.blacklist = result.blacklist.split(",").filter((name) => name.length !== 0)
                     serverSettings.logChannel = result.logChannel
+                    serverSettings.errorNotifyType = result.errorNotifyType || "owner"
+                    serverSettings.errorNotifyTarget = result.errorNotifyTarget || ""
                 }
                 callback(serverSettings)
             }

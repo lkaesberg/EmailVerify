@@ -4,6 +4,7 @@ const database = require("../database/Database.js");
 const {getLocale} = require("../Language");
 const md5hash = require("../crypto/Crypto");
 const EmailUser = require("../database/EmailUser");
+const ErrorNotifier = require("../utils/ErrorNotifier");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,9 +26,13 @@ module.exports = {
 
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!serverSettings.status) {
-                await interaction.reply({
-                    content: getLocale(serverSettings.language, "userBotError"),
-                    flags: MessageFlags.Ephemeral
+                await ErrorNotifier.notify({
+                    guild: interaction.guild,
+                    errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
+                    errorMessage: getLocale(serverSettings.language, 'errorBotNotConfiguredMessage'),
+                    user: interaction.user,
+                    interaction: interaction,
+                    language: serverSettings.language
                 });
                 return;
             }

@@ -4,6 +4,32 @@ const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not').setDefaultMemberPermissions(0),
+    
+    async getErrorNotifyStatus(guild, serverSettings) {
+        const notifyType = serverSettings.errorNotifyType || 'owner';
+        const notifyTarget = serverSettings.errorNotifyTarget || '';
+        
+        if (notifyType === 'owner') {
+            const owner = await guild.fetchOwner().catch(() => null);
+            return `📤 Sent to: **Server Owner** ${owner ? `(<@${owner.id}>)` : ''} via DM`;
+        } else if (notifyType === 'channel') {
+            const channel = guild.channels.cache.get(notifyTarget);
+            if (channel) {
+                return `📤 Sent to: **Channel** <#${channel.id}>`;
+            } else {
+                return `⚠️ Sent to: **Channel** (not found - will fallback to owner)`;
+            }
+        } else if (notifyType === 'user') {
+            const member = await guild.members.fetch(notifyTarget).catch(() => null);
+            if (member) {
+                return `📤 Sent to: **User** <@${member.id}> via DM`;
+            } else {
+                return `⚠️ Sent to: **User** (not found - will fallback to owner)`;
+            }
+        }
+        return '*Default (owner)*';
+    },
+    
     async execute(interaction) {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             const isConfigured = serverSettings.status
@@ -70,6 +96,11 @@ module.exports = {
                         value: 
                             `**Auto-verify on join:** ${serverSettings.autoVerify ? '✅ Enabled' : '❌ Disabled'}\n` +
                             `**Auto-add unverified role:** ${serverSettings.autoAddUnverified ? '✅ Enabled' : '❌ Disabled'}`,
+                        inline: false
+                    },
+                    {
+                        name: '🔔 Error Notifications',
+                        value: await this.getErrorNotifyStatus(interaction.guild, serverSettings),
                         inline: false
                     },
                     {
