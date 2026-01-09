@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
+const registerBlacklistChoices = require("../bot/registerBlacklistChoices");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +25,7 @@ module.exports = {
                 .addStringOption(option =>
                     option
                         .setName('emails')
-                        .setDescription('Email(s) or patterns to unblock (comma-separated for multiple)')
+                        .setDescription('Pattern to unblock (select from list or type manually)')
                         .setRequired(true)
                 )
         )
@@ -87,6 +88,7 @@ module.exports = {
 
                 serverSettings.blacklist = serverSettings.blacklist.concat(addedEntries);
                 database.updateServerSettings(interaction.guildId, serverSettings);
+                await registerBlacklistChoices(interaction.guildId, { data: this.data });
 
                 const addedDisplay = addedEntries.map(e => `\`${e.replaceAll("*", "✱")}\``).join(', ');
                 await interaction.reply({
@@ -110,6 +112,8 @@ module.exports = {
                     });
                 } else {
                     database.updateServerSettings(interaction.guildId, serverSettings);
+                    await registerBlacklistChoices(interaction.guildId, { data: this.data });
+                    
                     const removedDisplay = removedEntries.map(e => `\`${e.replaceAll("*", "✱")}\``).join(', ');
                     await interaction.reply({
                         content: `🗑️ **Removed from blacklist:** ${removedDisplay}\n\nThese patterns are no longer blocked.`,
@@ -131,6 +135,7 @@ module.exports = {
                 const count = serverSettings.blacklist.length;
                 serverSettings.blacklist = [];
                 database.updateServerSettings(interaction.guildId, serverSettings);
+                await registerBlacklistChoices(interaction.guildId, { data: this.data });
 
                 await interaction.reply({
                     content: `🗑️ **Blacklist cleared!**\n\nRemoved ${count} ${count === 1 ? 'entry' : 'entries'} from the blacklist.`,

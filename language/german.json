@@ -68,5 +68,5 @@
   "errorRoleAssignTitle": "Rollenzuweisungs-Fehler",
   "errorRoleAssignMessage": "Die Verifiziert/Unverifiziert-Rolle konnte einem Benutzer nicht zugewiesen werden. Bitte stelle sicher:\n• Die Bot-Rolle ist höher als die Verifiziert/Unverifiziert-Rollen\n• Die Rollen existieren noch\n• Der Bot hat die 'Rollen verwalten'-Berechtigung",
   "errorBotNotConfiguredTitle": "Bot Nicht Konfiguriert",
-  "errorBotNotConfiguredMessage": "Ein Benutzer hat versucht sich zu verifizieren, aber der Bot ist nicht richtig konfiguriert.\n\n**Erforderliche Einrichtung:**\n• Erlaubte E-Mail-Domains mit `/domains` festlegen\n• Verifiziert-Rolle mit `/verifiedrole` festlegen\n\nFühre `/status` aus, um die aktuelle Konfiguration zu überprüfen."
+  "errorBotNotConfiguredMessage": "Ein Benutzer hat versucht sich zu verifizieren, aber der Bot ist nicht richtig konfiguriert.\n\n**Erforderliche Einrichtung:**\n• Erlaubte E-Mail-Domains mit `/domain add` festlegen\n• Verifiziert-Rolle mit `/role verified` festlegen\n\nFühre `/status` aus, um die aktuelle Konfiguration zu überprüfen."
 }

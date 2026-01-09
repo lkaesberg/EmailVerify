@@ -14,6 +14,7 @@ const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
+const registerBlacklistChoices = require("./bot/registerBlacklistChoices")
 const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder, EmbedBuilder} = require("discord.js");
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
@@ -161,6 +162,7 @@ async function registerAllGuilds(bot) {
             await registerCommands(guild, count, total);
 
             registerRemoveDomain(guild.id);
+            registerBlacklistChoices(guild.id);
             database.getServerSettings(guild.id, async serverSettings => {
                 try {
                     await bot.guilds.cache

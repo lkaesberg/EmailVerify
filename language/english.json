@@ -68,5 +68,5 @@
   "errorRoleAssignTitle": "Role Assignment Error",
   "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission",
   "errorBotNotConfiguredTitle": "Bot Not Configured",
-  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domains`\n• Set verified role with `/verifiedrole`\n\nRun `/status` to check the current configuration."
+  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set verified role with `/role verified`\n\nRun `/status` to check the current configuration."
 }

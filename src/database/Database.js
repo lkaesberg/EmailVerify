@@ -43,6 +43,10 @@ class Database {
                 statsMonth TEXT DEFAULT ''
             );`)
         })
+        this.runMigration(9, () => {
+            // Rename language from 'france' to 'french'
+            this.db.run("UPDATE guilds SET language = 'french' WHERE language = 'france';")
+        })
     }
 
     runMigration(version, migration) {
