@@ -42,7 +42,7 @@ module.exports = {
 
             if (!roleVerified) {
                 await interaction.reply({
-                    content: "Verified role not found! Please set a verified role first using /verifiedrole",
+                    content: "❌ **Verified role not found!**\n\nPlease set a verified role first using `/role verified`",
                     flags: MessageFlags.Ephemeral
                 });
                 return;
@@ -92,13 +92,13 @@ module.exports = {
             try {
                 if (serverSettings.logChannel !== "") {
                     interaction.guild.channels.cache.get(serverSettings.logChannel).send(
-                        `Manual Verification by <@${interaction.user.id}>: <@${targetUser.id}> → ${email}`
+                        `🔧 <@${targetUser.id}> → \`${email}\` (by <@${interaction.user.id}>)`
                     ).catch(() => {});
                 }
             } catch {}
 
             await interaction.reply({
-                content: `Successfully verified <@${targetUser.id}> with email: ${email}`,
+                content: `✅ **Manual verification complete!**\n\n👤 **User:** <@${targetUser.id}>\n📧 **Email:** \`${email}\`\n🎭 **Role:** <@&${roleVerified.id}>`,
                 flags: MessageFlags.Ephemeral
             });
         });

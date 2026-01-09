@@ -547,7 +547,7 @@ bot.on('interactionCreate', async interaction => {
                     }
                     try {
                         if (serverSettings.logChannel !== "") {
-                            userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
+                            userGuild.channels.cache.get(serverSettings.logChannel).send(`✅ <@${interaction.user.id}> → \`${userCode.logEmail}\``).catch(() => {})
                         }
                     } catch {}
                     const successEmbed = createVerificationSuccessEmbed(serverSettings.language, roleVerified.name, userGuild.name, userGuild.iconURL({ dynamic: true }))
