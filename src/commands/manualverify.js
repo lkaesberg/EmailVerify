@@ -10,14 +10,14 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setDefaultPermission(true)
         .setName('manualverify')
-        .setDescription('Manually verify a user without email confirmation (Admin only)')
+        .setDescription('Bypass email verification and manually verify a user (Admin only)')
         .addUserOption(option => option
             .setName('user')
-            .setDescription('The user to verify')
+            .setDescription('The member to verify - they will receive the verified role')
             .setRequired(true))
         .addStringOption(option => option
             .setName('email')
-            .setDescription('The email address to associate with the user')
+            .setDescription('Email address to associate')
             .setRequired(true))
         .setDefaultMemberPermissions(0),
     async execute(interaction) {

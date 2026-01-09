@@ -74,34 +74,82 @@ Use this link to invite the bot to your server:
 ### Quick Setup
 
 1. **Invite the bot** using the link above
-2. **Set the verified role**: `/verifiedrole @YourVerifiedRole`
-3. **Add allowed domains**: `/domains university.edu`
-4. **Create a verification button**: `/button #verification-channel "Click to verify!" "Verify"`
+2. **Set the verified role**: `/role verified @YourVerifiedRole`
+3. **Add allowed domains**: `/domain add @university.edu` (use `@*.edu` for all .edu domains)
+4. **Create a verification button**: `/button #verification-channel "Click to Verify"`
 5. Done! Users can now verify themselves
 
 ---
 
 ## 📝 Commands
 
-|         Commands          |            Arguments            |                                                                                                Usage                                                                                                |
-|:-------------------------:|:-------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|          `/help`          |                                 |                                                                               Get instructions on how to use the bot                                                                                |
-|         `/verify`         |                                 |                                                                                        Verify on the server                                                                                         |
-|         `/status`         |              **-**              |                                                                        Returns whether the bot is properly configured or not                                                                        |
-|         `/domains`         |        **(domain name)**        |                                                         **()** → returns registered domains<br>**(domain name)** → register given domain                                                          |
-|      `/removedomain`      |         **domain name**         |                                                                                      Remove registered domain                                                                                       |
-|         `/button`         | **channel, message, buttontext** |                                                                  Creates a button in the channel with the message and button text                                                                   |
-|     `/verifymessage`      |          **(message)**          |                                                     **()** → resets to default verify message <br> **(message)** → set custom verify message                                                      |
-|      `/verifiedrole`      |    **(verified role name)**     |                                      **()** → returns the name of the verified role <br> **(verified role name)** → set the role name for the verified role                                       |
-|     `/unverifiedrole`     |   **(unverified role name)**    | **()** → returns the name of the unverified role <br> **(unverified rolename)** → set the role name for the unverified role <br> **(current unverified rolename)** → deactivates unverified role |
-|        `/language`        |          **language**           |                                                                               Set language for the user interactions                                                                                |
-| `/add_unverified_on_join` |           **enable**            |                                                          **(enable/disable)** → automatically adds the unverified role to every new user                                                           |
-|     `/verify_on_join`     |           **enable**            |                                                                **(enable/disable)** → automatically asks every new member to verify                                                                |
-|    `/delete_user_data`    |                                 |                                                                                  Delete all the data from the user                                                                                  |
-|   `/delete_server_data`   |                                 |                                                                                 Delete all the data from the server                                                                                 |
-|     `/manualverify`       |         **user, email**         |                                                          Manually verify a user without email confirmation (Admin only)                                                                             |
+### 👤 User Commands
 
-> ⚠️ **Note:** Most commands can only be used by administrators
+| Command | Description |
+|---------|-------------|
+| `/verify` | Start the email verification process |
+| `/data delete-user` | Delete your verification data and remove verified status |
+
+### 👥 Role Configuration
+
+| Command | Description |
+|---------|-------------|
+| `/role verified [role]` | Set or view the role given after verification |
+| `/role unverified [role]` | Set or view the optional role for unverified members |
+
+### 📧 Domain Management
+
+| Command | Description |
+|---------|-------------|
+| `/domain add <domains>` | Add allowed email domains (supports `*` wildcard) |
+| `/domain remove <domains>` | Remove allowed domains |
+| `/domain list` | View all allowed domains |
+| `/domain clear` | Remove all allowed domains |
+
+> 💡 **Wildcard Example:** Use `@*.edu` to allow any `.edu` email address
+
+### 🚫 Blacklist Management
+
+| Command | Description |
+|---------|-------------|
+| `/blacklist add <emails>` | Block specific emails or patterns from verifying |
+| `/blacklist remove <emails>` | Unblock emails or patterns |
+| `/blacklist list` | View all blacklisted entries |
+| `/blacklist clear` | Remove all blacklist entries |
+
+### ⚙️ Settings
+
+| Command | Description |
+|---------|-------------|
+| `/settings language <lang>` | Change the bot's language |
+| `/settings log-channel [channel]` | Set or disable the verification log channel |
+| `/settings verify-message [message]` | Set or reset custom message in verification emails |
+| `/settings auto-verify <enable>` | Auto-prompt new members to verify on join |
+| `/settings auto-unverified <enable>` | Auto-assign unverified role to new members |
+
+### 🛡️ Moderation & Setup
+
+| Command | Description |
+|---------|-------------|
+| `/button <channel> <buttontext>` | Create a verification button embed in a channel |
+| `/manualverify <user> <email>` | Manually verify a user without email confirmation |
+| `/set_error_notify` | Configure where error notifications are sent |
+
+### 📊 Information
+
+| Command | Description |
+|---------|-------------|
+| `/status` | View bot configuration, statistics, and check for issues |
+| `/help` | Show setup instructions and command overview |
+
+### ⚠️ Data Management
+
+| Command | Description |
+|---------|-------------|
+| `/data delete-user` | Delete your personal verification data |
+| `/data delete-server` | Delete all server data and remove the bot |
+
+> ⚠️ **Note:** Most commands require administrator permissions
 
 ### Important: Role Hierarchy
 

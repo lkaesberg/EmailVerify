@@ -601,7 +601,8 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
+            // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({

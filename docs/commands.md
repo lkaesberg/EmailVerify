@@ -1,38 +1,118 @@
 # Commands
 
-**The following commands can be used by any user.**
+## 👤 User Commands
 
-|      Commands       | Arguments |               Usage               |
-|:-------------------:|:---------:|:---------------------------------:|
-|      `/verify`      |           |       verify on the server        |
-| `/delete_user_data` |           | delete all the data from the user |
+These commands can be used by any user.
 
-**The following commands can only be used by an administrator**
+| Command | Description |
+|---------|-------------|
+| `/verify` | Start the email verification process to get access to the server |
+| `/data delete-user` | Delete your personal verification data and remove your verified status |
 
-|         Commands          |            Arguments            |                                                                                                Usage                                                                                                |
-|:-------------------------:|:-------------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|          `/help`          |                                 |                                                                               get instructions on how to use the bot                                                                                |
-|         `/status`         |              **-**              |                                                                        returns whether the bot is properly configured or not                                                                        |
-|         `/domains`        |        **(domain name)**        |                                                         **()** -> returns registered domains<br>**(domain name)** -> register given domain                                                          |
-|      `/removedomain`      |         **domain name**         |                                                                                      remove registered domain                                                                                       |
-|         `/button`         | **channel,message, buttontext** |                                                                  creates a button in the channel with the message and button text                                                                   |
-|        `/message`         |       **channel,message**       |                                                sends a message to the channel to which the user can add a reaction to start the verification process                                                |
-|     `/verifymessage`      |          **(message)**          |                                                     **()** -> resets to default verify message <br> **(message)** -> set custom verify message                                                      |
-|      `/verifiedrole`      |    **(verified role name)**     |                                      **()** -> returns the name of the verified role <br> **(verified role name)** -> set the role name for the verified role                                       |
-|     `/unverifiedrole`     |   **(unverified role name)**    | **()** -> returns the name of the unverified role <br> **(unverified rolename)** -> set the role name for the unverified role <br> **(current unverified rolename)** -> deactivates unverified role |
-|        `/language`        |          **language**           |                                                                               set language for the user interactions                                                                                |
-| `/add_unverified_on_join` |           **enable**            |                                                          **(enable/disable)** -> automatically adds the unverified role to every new user                                                           |
-|     `/verify_on_join`     |           **enable**            |                                                                **(enable/disable)** -> automatically asks every new member to verify                                                                |
-|   `/delete_server_data`   |                                 |                                                                                 delete all the data from the server                                                                                 |
-|    `/set_log_channel`     |        **(logchannel)**         |                                                               **()** -> disable log channel <br> **(log channel)** -> set log channel                                                               |
-|       `/blacklist`        |          **(emails)**           |       **()** -> returns a comma-separated list of emails that are blocked from being verified <br> **(emails)** -> set a comma-separated list of emails that are blocked from being verified        |
-|     `/manualverify`       |         **user, email**         |                                                          manually verify a user without email confirmation (Admin only)                                                                             |
+---
 
-react := react to the message with an emoji
+## 🔧 Administrator Commands
 
-The unverified role can be used to make a channel visible in which the message is located
+The following commands require administrator permissions.
 
-The EmailBot role has to be higher in the role hierarchy then the verified and unverified role else
--> `Cant find roles. Please contact the admin!` error
+### 👥 Role Configuration
 
-![img.png](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)
+Configure which roles are assigned during the verification process.
+
+| Command | Description |
+|---------|-------------|
+| `/role verified [role]` | Set or view the role given to users after successful verification |
+| `/role unverified [role]` | Set or view the optional role for unverified members (select current role to disable) |
+
+### 📧 Domain Management
+
+Control which email domains are allowed for verification.
+
+| Command | Description |
+|---------|-------------|
+| `/domain add <domains>` | Add allowed email domains (comma-separated for multiple) |
+| `/domain remove <domains>` | Remove allowed domains |
+| `/domain list` | View all currently allowed domains |
+| `/domain clear` | Remove all allowed domains |
+
+#### Wildcard Support
+
+Use `*` as a wildcard to match any text:
+
+| Pattern | Matches | Example |
+|---------|---------|---------|
+| `@gmail.com` | Only Gmail | `user@gmail.com` ✓ |
+| `@*.edu` | Any .edu domain | `user@stanford.edu` ✓, `user@mit.edu` ✓ |
+| `@*.harvard.edu` | Harvard subdomains | `user@cs.harvard.edu` ✓, `user@law.harvard.edu` ✓ |
+| `@company.com` | Specific company | `user@company.com` ✓ |
+
+### 🚫 Blacklist Management
+
+Block specific email addresses or patterns from verifying.
+
+| Command | Description |
+|---------|-------------|
+| `/blacklist add <emails>` | Add emails or patterns to the blacklist (comma-separated) |
+| `/blacklist remove <emails>` | Remove emails or patterns from the blacklist |
+| `/blacklist list` | View all blacklisted entries |
+| `/blacklist clear` | Remove all entries from the blacklist |
+
+**Blacklist examples:**
+- `spam@example.com` — Block a specific email
+- `@tempmail.com` — Block an entire domain
+- `troll` — Block any email containing "troll"
+
+### ⚙️ Settings
+
+Configure bot behavior and preferences.
+
+| Command | Description |
+|---------|-------------|
+| `/settings language <language>` | Change the bot's display language |
+| `/settings log-channel [channel]` | Set a channel for verification logs (leave empty to disable) |
+| `/settings verify-message [message]` | Set a custom message for verification emails (leave empty for default) |
+| `/settings auto-verify <enable>` | Automatically prompt new members to verify when they join |
+| `/settings auto-unverified <enable>` | Automatically assign the unverified role to new members |
+
+### 🛡️ Moderation & Setup
+
+| Command | Description |
+|---------|-------------|
+| `/button <channel> <buttontext> [title] [message] [color]` | Create a verification button embed in a channel |
+| `/manualverify <user> <email>` | Manually verify a user without email confirmation |
+| `/set_error_notify owner` | Send error notifications to the server owner (default) |
+| `/set_error_notify channel <channel>` | Send error notifications to a specific channel |
+| `/set_error_notify user <user>` | Send error notifications to a specific user via DM |
+| `/set_error_notify status` | View current error notification settings |
+
+### 📊 Information
+
+| Command | Description |
+|---------|-------------|
+| `/status` | View bot configuration, verification statistics, and check for setup issues |
+| `/help` | Show setup instructions and command overview |
+
+### ⚠️ Data Management (Danger Zone)
+
+| Command | Description |
+|---------|-------------|
+| `/data delete-server` | Delete all server data and remove the bot from the server |
+
+---
+
+## ⚠️ Important Notes
+
+### Role Hierarchy
+
+The **EmailBot role must be higher** in the role hierarchy than both the verified and unverified roles. Otherwise, you'll see this error:
+
+> `Can't find roles. Please contact the admin!`
+
+![Role Hierarchy Example](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)
+
+### Unverified Role Usage
+
+The unverified role can be used to:
+- Make a verification channel visible only to unverified users
+- Restrict access to most channels until users verify
+- Combined with `/settings auto-unverified`, automatically restrict new members

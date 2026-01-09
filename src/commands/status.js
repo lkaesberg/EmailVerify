@@ -3,7 +3,7 @@ const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-    data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('returns whether the bot is properly configured or not').setDefaultMemberPermissions(0),
+    data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('View bot configuration, verification statistics, and check setup issues').setDefaultMemberPermissions(0),
     
     async getErrorNotifyStatus(guild, serverSettings) {
         const notifyType = serverSettings.errorNotifyType || 'owner';
