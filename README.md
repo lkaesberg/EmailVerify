@@ -63,20 +63,6 @@ This bot verifies that a Discord user owns an email address with a specific doma
 
 ---
 
-## 🛠️ Built With
-
-<p align="center">
-  <a href="https://nodejs.org/en/"><img src="images/node.png" alt="NodeJS" width="64" height="64" title="NodeJS"></a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://www.npmjs.com/"><img src="images/npm.png" alt="npm" width="64" height="64" title="npm"></a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://discord.js.org/#/"><img src="images/discordjs.png" alt="DiscordJS" width="64" height="64" title="DiscordJS"></a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://nodemailer.com/about/"><img src="images/nodemailer.webp" alt="Nodemailer" width="94" height="64" title="Nodemailer"></a>
-</p>
-
----
-
 ## 🚀 Usage
 
 ### Invite the Bot
@@ -274,7 +260,7 @@ Create an issue with your translation file using the [English template](language
 If you're self-hosting this bot and find it useful, please consider supporting the development! Your contribution helps keep the project maintained and improved.
 
 <p align="center">
-  <a href="https://www.buymeacoffee.com/sral12486"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
+<a href="https://www.buymeacoffee.com/sral12486"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
 </p>
 
 ---
