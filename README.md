@@ -259,9 +259,7 @@ Create an issue with your translation file using the [English template](language
 
 If you're self-hosting this bot and find it useful, please consider supporting the development! Your contribution helps keep the project maintained and improved.
 
-<p align="center">
-<a href="https://www.buymeacoffee.com/sral12486"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a pizza&emoji=🍕&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" /></a>
-</p>
+![Buy Me A Pizza](https://img.buymeacoffee.com/button-api/?text=Support%20this%20project!&emoji=%F0%9F%8D%95&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)
 
 ---
 
