@@ -11,6 +11,10 @@ class ServerSettings {
         this.language = "english"
         this.verifyMessage = ""
         this.logChannel = ""
+        // Error notification settings: 'owner' (default), 'user', or 'channel'
+        this.errorNotifyType = "owner"
+        // The user ID or channel ID for error notifications (empty means use owner)
+        this.errorNotifyTarget = ""
     }
 
     get status() {

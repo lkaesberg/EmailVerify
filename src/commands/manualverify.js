@@ -4,19 +4,20 @@ const database = require("../database/Database.js");
 const {getLocale} = require("../Language");
 const md5hash = require("../crypto/Crypto");
 const EmailUser = require("../database/EmailUser");
+const ErrorNotifier = require("../utils/ErrorNotifier");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setDefaultPermission(true)
         .setName('manualverify')
-        .setDescription('Manually verify a user without email confirmation (Admin only)')
+        .setDescription('Bypass email verification and manually verify a user (Admin only)')
         .addUserOption(option => option
             .setName('user')
-            .setDescription('The user to verify')
+            .setDescription('The member to verify - they will receive the verified role')
             .setRequired(true))
         .addStringOption(option => option
             .setName('email')
-            .setDescription('The email address to associate with the user')
+            .setDescription('Email address to associate')
             .setRequired(true))
         .setDefaultMemberPermissions(0),
     async execute(interaction) {
@@ -25,9 +26,13 @@ module.exports = {
 
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             if (!serverSettings.status) {
-                await interaction.reply({
-                    content: getLocale(serverSettings.language, "userBotError"),
-                    flags: MessageFlags.Ephemeral
+                await ErrorNotifier.notify({
+                    guild: interaction.guild,
+                    errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
+                    errorMessage: getLocale(serverSettings.language, 'errorBotNotConfiguredMessage'),
+                    user: interaction.user,
+                    interaction: interaction,
+                    language: serverSettings.language
                 });
                 return;
             }
@@ -37,7 +42,7 @@ module.exports = {
 
             if (!roleVerified) {
                 await interaction.reply({
-                    content: "Verified role not found! Please set a verified role first using /verifiedrole",
+                    content: "❌ **Verified role not found!**\n\nPlease set a verified role first using `/role verified`",
                     flags: MessageFlags.Ephemeral
                 });
                 return;
@@ -87,13 +92,13 @@ module.exports = {
             try {
                 if (serverSettings.logChannel !== "") {
                     interaction.guild.channels.cache.get(serverSettings.logChannel).send(
-                        `Manual Verification by <@${interaction.user.id}>: <@${targetUser.id}> → ${email}`
+                        `🔧 <@${targetUser.id}> → \`${email}\` (by <@${interaction.user.id}>)`
                     ).catch(() => {});
                 }
             } catch {}
 
             await interaction.reply({
-                content: `Successfully verified <@${targetUser.id}> with email: ${email}`,
+                content: `✅ **Manual verification complete!**\n\n👤 **User:** <@${targetUser.id}>\n📧 **Email:** \`${email}\`\n🎭 **Role:** <@&${roleVerified.id}>`,
                 flags: MessageFlags.Ephemeral
             });
         });

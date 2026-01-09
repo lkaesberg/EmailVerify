@@ -8,27 +8,27 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setDefaultPermission(true)
         .setName('button')
-        .setDescription("Create a verification button in a channel")
+        .setDescription("Create a verification button embed in a channel for users to verify")
         .addChannelOption(option => option
             .setName("channel")
             .setRequired(true)
-            .setDescription("The channel to send the verification message to"))
+            .setDescription("Channel where the verification embed will be posted"))
         .addStringOption(option => option
             .setName("buttontext")
             .setRequired(true)
-            .setDescription("The text displayed on the button"))
-        .addStringOption(option => option
-            .setName("message")
-            .setRequired(false)
-            .setDescription("Custom description (overrides default locale text)"))
+            .setDescription("Text shown on the verify button (e.g. 'Click to Verify')"))
         .addStringOption(option => option
             .setName("title")
             .setRequired(false)
-            .setDescription("Custom embed title (overrides default locale title)"))
+            .setDescription("Custom title for the embed (default: localized verify title)"))
+        .addStringOption(option => option
+            .setName("message")
+            .setRequired(false)
+            .setDescription("Custom description/instructions (default: localized instructions)"))
         .addStringOption(option => option
             .setName("color")
             .setRequired(false)
-            .setDescription("Embed color in hex (e.g., #5865F2)"))
+            .setDescription("Embed accent color in hex format (e.g. #5865F2, #FF0000)"))
         .setDefaultMemberPermissions(0),
     async execute(interaction) {
         const buttonText = interaction.options.getString("buttontext", true)

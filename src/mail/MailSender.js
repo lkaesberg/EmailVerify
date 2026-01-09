@@ -4,15 +4,14 @@ const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 if (typeof username === 'undefined') {
     username = email;
 }
 
 module.exports = class MailSender {
-    constructor(userGuilds, serverStatsAPI) {
-        this.userGuilds = userGuilds
+    constructor(serverStatsAPI) {
         this.serverStatsAPI = serverStatsAPI
         let nodemailerOptions = {
             host: smtpHost,
@@ -32,18 +31,26 @@ module.exports = class MailSender {
         this.transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
     }
 
-    async sendEmail(toEmail, code, name, message, emailNotify, callback, options = {}) {
-        // message can be a DM Message or an Interaction (from modals/buttons)
-        const isGuildInteraction = typeof message.guildId !== 'undefined' && message.guildId !== null;
-        const userId = message.user ? message.user.id : message.author.id;
-        const serverId = isGuildInteraction ? message.guildId : this.userGuilds.get(userId).id;
+    /**
+     * Send verification email
+     * @param {string} toEmail - Email address to send to
+     * @param {string} code - Verification code
+     * @param {string} name - Server name
+     * @param {Interaction} interaction - Discord interaction (modal/button)
+     * @param {boolean} emailNotify - Whether to log email events to console
+     * @param {Function} callback - Called with accepted email on success
+     */
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback) {
+        const serverId = interaction.guildId;
 
         await database.getServerSettings(serverId, serverSettings => {
+            const language = serverSettings.language || defaultLanguage;
+            
             const mailOptions = {
                 from: '"Email Verification Bot ✉️" <'+ email +'>',
                 to: toEmail,
                 subject: '[EmailVerify] Your Discord verification code for ' + name,
-                text: getLocale(serverSettings.language, "emailText", name, code),
+                text: getLocale(language, "emailText", name, code),
                 headers: {
                     'X-Mailer': 'Discord Email Verification Bot',
                     'X-Priority': '1',
@@ -54,18 +61,13 @@ module.exports = class MailSender {
                 }
             };
 
-            let language = ""
-            try {
-                language = serverSettings.language
-            } catch {
-                language = defaultLanguage
-            }
             // Build modern HTML version while preserving the same text content
             const websiteUrl = 'https://emailbot.larskaesberg.de/'
             const emailTextBase = getLocale(language, "emailText", name, code)
             const emailText = emailTextBase + "\n\n" + 'Learn more: ' + websiteUrl
             mailOptions.text = emailText
             mailOptions.html = this.#buildModernHtmlEmail(emailTextBase, name, code)
+            
             this.transporter.sendMail(mailOptions, async (error, info) => {
                 if (error || info.rejected.length > 0) {
                     if (emailNotify) {
@@ -78,32 +80,21 @@ module.exports = class MailSender {
                             console.log('SMTP Response:', info.response);
                         }
                     }
-                    // Always show error messages to the user regardless of suppressReply
-                    const negative = getLocale(language, "mailNegative", toEmail)
-                    if (isGuildInteraction) {
-                        if (message.deferred || message.replied) {
-                            await message.followUp({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
-                        } else {
-                            await message.reply({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
-                        }
+                    // Show error message to the user
+                    const errorEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(language, "mailFailedTitle"))
+                        .setDescription(getLocale(language, "mailFailedDescription", toEmail))
+                        .setColor(0xED4245)
+                    
+                    if (interaction.deferred || interaction.replied) {
+                        await interaction.followUp({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     } else {
-                        await message.reply(negative).catch(() => {})
+                        await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     }
                 } else {
                     this.serverStatsAPI.increaseMailSend()
+                    database.incrementMailsSent(serverId)
                     callback(info.accepted[0])
-                    if (!options.suppressReply) {
-                        const positive = getLocale(language, "mailPositive", toEmail)
-                        if (isGuildInteraction) {
-                            if (message.deferred || message.replied) {
-                                await message.followUp({ content: positive, flags: MessageFlags.Ephemeral }).catch(() => {})
-                            } else {
-                                await message.reply({ content: positive, flags: MessageFlags.Ephemeral }).catch(() => {})
-                            }
-                        } else {
-                            await message.reply(positive).catch(() => {})
-                        }
-                    }
                     if (emailNotify) {
                         console.log('EMAIL SUCCESS for:', toEmail);
                         console.log('Accepted emails:', info.accepted);
@@ -181,7 +172,7 @@ module.exports = class MailSender {
               </td>
             </tr>
           </table>
-          <div style="font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial; color:#9ca3af; font-size:12px; margin-top:12px;">If you didn’t request this, you can ignore this email.</div>
+          <div style="font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial; color:#9ca3af; font-size:12px; margin-top:12px;">If you didn't request this, you can ignore this email.</div>
         </td>
       </tr>
     </table>

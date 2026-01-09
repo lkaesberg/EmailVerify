@@ -75,11 +75,87 @@ function createCodeSentEmbed(language, email) {
         });
 }
 
+/**
+ * Creates a verification log embed for the log channel
+ * @param {Object} options - Options for the embed
+ * @param {Object} options.user - The Discord user who was verified
+ * @param {string} options.email - The email address used for verification
+ * @param {string} options.type - Type of verification: 'email' or 'manual'
+ * @param {Object} [options.admin] - The admin who performed manual verification (for manual type)
+ * @param {Object} [options.role] - The verified role that was assigned
+ * @returns {EmbedBuilder}
+ */
+function createVerificationLogEmbed({ user, email, type, admin, role }) {
+    const isManual = type === 'manual';
+    
+    const embed = new EmbedBuilder()
+        .setAuthor({
+            name: user.tag || user.username,
+            iconURL: user.displayAvatarURL({ dynamic: true })
+        })
+        .setColor(isManual ? 0xFFA500 : 0x57F287)
+        .setTimestamp();
+
+    if (isManual) {
+        embed.setTitle('🔧 Manual Verification');
+        embed.setDescription(`<@${user.id}> was manually verified by an administrator.`);
+        embed.addFields(
+            { name: '👤 User', value: `<@${user.id}>\n\`${user.id}\``, inline: true },
+            { name: '📧 Email', value: `\`${email}\``, inline: true },
+            { name: '👮 Verified By', value: admin ? `<@${admin.id}>` : 'Unknown', inline: true }
+        );
+    } else {
+        embed.setTitle('✅ Email Verification');
+        embed.setDescription(`<@${user.id}> has successfully verified their email.`);
+        embed.addFields(
+            { name: '👤 User', value: `<@${user.id}>\n\`${user.id}\``, inline: true },
+            { name: '📧 Email', value: `\`${email}\``, inline: true }
+        );
+    }
+
+    if (role) {
+        embed.addFields({ name: '🎭 Role Assigned', value: `<@&${role.id}>`, inline: true });
+    }
+
+    embed.setFooter({ 
+        text: isManual ? 'Manual verification' : 'Email verification'
+    });
+
+    return embed;
+}
+
+/**
+ * Creates a verification failed log embed for the log channel
+ * @param {Object} options - Options for the embed
+ * @param {Object} options.user - The Discord user who failed verification
+ * @param {string} options.email - The email address attempted
+ * @param {string} options.reason - Reason for failure
+ * @returns {EmbedBuilder}
+ */
+function createVerificationFailedLogEmbed({ user, email, reason }) {
+    return new EmbedBuilder()
+        .setTitle('❌ Verification Failed')
+        .setAuthor({
+            name: user.tag || user.username,
+            iconURL: user.displayAvatarURL({ dynamic: true })
+        })
+        .setDescription(`<@${user.id}> failed to verify.`)
+        .addFields(
+            { name: '👤 User', value: `<@${user.id}>\n\`${user.id}\``, inline: true },
+            { name: '📧 Email Attempted', value: email ? `\`${email}\`` : 'N/A', inline: true },
+            { name: '❓ Reason', value: reason, inline: false }
+        )
+        .setColor(0xED4245)
+        .setTimestamp()
+        .setFooter({ text: 'Verification attempt failed' });
+}
+
 module.exports = {
     createSessionExpiredEmbed,
     createInvalidCodeEmbed,
     createInvalidEmailEmbed,
     createVerificationSuccessEmbed,
-    createCodeSentEmbed
+    createCodeSentEmbed,
+    createVerificationLogEmbed,
+    createVerificationFailedLogEmbed
 };
-

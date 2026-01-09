@@ -10,17 +10,19 @@ require("./database/ServerSettings");
 const ServerStatsAPI = require("./api/ServerStatsAPI");
 const topggAPI = require("./api/TopGG")
 const MailSender = require("./mail/MailSender")
-const messageCreate = require("./bot/messageCreate")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
 const registerRemoveDomain = require("./bot/registerRemoveDomain")
+const registerBlacklistChoices = require("./bot/registerBlacklistChoices")
 const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder, EmbedBuilder} = require("discord.js");
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
+const ErrorNotifier = require('./utils/ErrorNotifier');
+const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
 
 const bot = new Discord.Client({
     intents: [
@@ -45,7 +47,7 @@ const userCodes = new Map()
 
 let userTimeouts = new Map()
 
-const mailSender = new MailSender(userGuilds, serverStatsAPI)
+const mailSender = new MailSender(serverStatsAPI)
 
 // Expose cross-shard state on the client for broadcastEval access
 bot.userGuilds = userGuilds
@@ -117,24 +119,13 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
             discordCode === 50013;     // Discord: Missing Permissions
 
         if (missingPerms) {
-            try {
-                const errorChannel = guild.channels.cache.find(channel =>
-                    channel.type === 'GUILD_TEXT' &&
-                    channel.permissionsFor(bot.user).has('SEND_MESSAGES')
-                );
-
-                if (errorChannel) {
-                    await errorChannel.send(
-                        'No permissions to create Commands. Please visit: ' +
-                        'https://emailbot.larskaesberg.de/'
-                    );
-                }
-            } catch (e) {
-                console.error(
-                    `Failed to send error message in ${guild.name} before leaving:`,
-                    e
-                );
-            }
+            // Notify the guild owner about missing permissions before leaving
+            await ErrorNotifier.notify({
+                guild: guild,
+                errorTitle: 'Missing Permissions',
+                errorMessage: 'The bot does not have permission to create slash commands. The bot will leave the server.\n\nTo fix this, please re-invite the bot with proper permissions: https://emailbot.larskaesberg.de/',
+                language: 'english'
+            });
 
             try {
                 await bot.guilds.cache.get(guild.id)?.leave();
@@ -171,6 +162,7 @@ async function registerAllGuilds(bot) {
             await registerCommands(guild, count, total);
 
             registerRemoveDomain(guild.id);
+            registerBlacklistChoices(guild.id);
             database.getServerSettings(guild.id, async serverSettings => {
                 try {
                     await bot.guilds.cache
@@ -262,20 +254,19 @@ bot.on("guildMemberAdd", async member => {
                 try {
                     await member.roles.add(roleUnverified)
                 } catch (e) {
-                    const errorChannel = member.guild.channels.cache.find(channel => channel.type === 'GUILD_TEXT' && channel.permissionsFor(bot.user).has('SEND_MESSAGES'))
-                    if (errorChannel) {
-                        try {
-                            await errorChannel.send("Cant add unverified role to new member. Help: Ensure that the bot role is higher in the serversettings role menu then the verified and unverified role.")
-                        } catch (e) {
-
-                        }
-                    }
+                    await ErrorNotifier.notify({
+                        guild: member.guild,
+                        errorTitle: getLocale(serverSettings.language, 'errorRoleAssignTitle'),
+                        errorMessage: getLocale(serverSettings.language, 'errorRoleAssignMessage'),
+                        user: member.user,
+                        language: serverSettings.language
+                    })
                 }
 
             }
         }
         if (serverSettings.autoVerify) {
-            await sendVerifyMessage(member.guild, member.user, null, null, userGuilds, true)
+            await sendVerifyMessage(member.guild, member.user, userGuilds)
         }
     })
 })
@@ -285,10 +276,11 @@ bot.on('guildCreate', guild => {
     registerCommands(guild)
 })
 
-bot.on("messageCreate", async (message) => {
-        await messageCreate(message, bot, userGuilds, userCodes, userTimeouts, mailSender, emailNotify)
-    }
-)
+bot.on('messageCreate', async (message) => {
+    if (message.author.bot) return
+    if (message.content === "") return
+    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Message created: "${message.content}" in ${message.guild?.name ?? 'DM'} by ${message.author.username} (${message.author.id})`)
+})
 
 bot.on('messageReactionAdd', async (reaction, user) => {
     try {
@@ -394,26 +386,30 @@ bot.on('interactionCreate', async interaction => {
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "userBotError"), flags: MessageFlags.Ephemeral }).catch(() => {})
+                    await ErrorNotifier.notify({
+                        guild: userGuild,
+                        errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
+                        errorMessage: getLocale(serverSettings.language, 'errorBotNotConfiguredMessage'),
+                        user: interaction.user,
+                        interaction: interaction,
+                        language: serverSettings.language
+                    });
                     return
                 }
-                // Blacklist
-                if (serverSettings.blacklist.some((element) => emailText.includes(element))) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), flags: MessageFlags.Ephemeral }).catch(() => {})
+                // Blacklist check (supports wildcards, e.g., *@tempmail.*, spam*)
+                if (emailIsBlacklisted(emailText, serverSettings.blacklist)) {
+                    const blacklistEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "mailBlacklistedTitle"))
+                        .setDescription(getLocale(serverSettings.language, "mailBlacklistedDescription"))
+                        .setColor(0xED4245)
+                    await interaction.followUp({ embeds: [blacklistEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
-                // Domain allowlist
-                let validEmail = false
-                for (const domain of serverSettings.domains) {
-                    const regex = new RegExp(domain.replace(/\./g, "\\.").replace(/\*/g, ".+").concat("$"))
-                    if (regex.test(emailText)) {
-                        validEmail = true
-                    }
-                }
-                if (emailText.split("@").length - 1 !== 1) {
-                    validEmail = false
-                }
-                if (emailText.includes(' ') || !validEmail) {
+                // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
+                const hasValidFormat = emailText.split("@").length - 1 === 1 && !emailText.includes(' ')
+                const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
+                
+                if (!hasValidFormat || !matchesDomain) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
@@ -425,7 +421,11 @@ bot.on('interactionCreate', async interaction => {
                 }
                 const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
                 if (timeoutMs > 0) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailTimeout", (timeoutMs / 1000).toFixed(2)), flags: MessageFlags.Ephemeral }).catch(() => {})
+                    const timeoutEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "mailTimeoutTitle"))
+                        .setDescription(getLocale(serverSettings.language, "mailTimeoutDescription", (timeoutMs / 1000).toFixed(0)))
+                        .setColor(0xFFA500)
+                    await interaction.followUp({ embeds: [timeoutEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 userTimeout.timestamp = Date.now()
@@ -433,7 +433,6 @@ bot.on('interactionCreate', async interaction => {
 
                 const code = Math.floor((Math.random() + 1) * 100000).toString()
                 // Send email and store code on success
-                // suppressReply to reduce chat noise; we'll present the code modal button separately on success
                 await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, async (email) => {
                     userCodes.set(interaction.user.id + userGuild.id, {
                         code: code,
@@ -468,7 +467,7 @@ bot.on('interactionCreate', async interaction => {
                             interaction.webhook.deleteMessage(follow.id).catch(() => {})
                         }, 300000)
                     }
-                }, { suppressReply: true })
+                })
             })
             return
         }
@@ -487,12 +486,14 @@ bot.on('interactionCreate', async interaction => {
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
-                    await interaction.reply({ content: getLocale(serverSettings.language, "userBotError"), flags: MessageFlags.Ephemeral }).catch(() => null)
-                    const sent = await interaction.fetchReply().catch(() => null)
-                    setTimeout(() => {
-                        try { interaction.deleteReply().catch(() => {}) } catch {}
-                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                    }, 2500)
+                    await ErrorNotifier.notify({
+                        guild: userGuild,
+                        errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
+                        errorMessage: getLocale(serverSettings.language, 'errorBotNotConfiguredMessage'),
+                        user: interaction.user,
+                        interaction: interaction,
+                        language: serverSettings.language
+                    });
                     return
                 }
                 const userCode = userCodes.get(interaction.user.id + userGuild.id)
@@ -529,19 +530,28 @@ bot.on('interactionCreate', async interaction => {
                             await verifyMember.roles.remove(roleUnverified).catch(() => {})
                         }
                     } catch (e) {
-                        await interaction.reply({ content: getLocale(serverSettings.language, "userCantFindRole"), flags: MessageFlags.Ephemeral }).catch(() => {})
+                        // Send generic error to user and detailed error to admin
+                        await ErrorNotifier.notify({
+                            guild: userGuild,
+                            errorTitle: getLocale(serverSettings.language, 'errorRoleAssignTitle'),
+                            errorMessage: getLocale(serverSettings.language, 'errorRoleAssignMessage'),
+                            user: interaction.user,
+                            interaction: interaction,
+                            language: serverSettings.language
+                        })
                         return
                     }
                     try {
                         if (serverSettings.logChannel !== "") {
-                            userGuild.channels.cache.get(serverSettings.logChannel).send(`Authorized: <@${interaction.user.id}>\t →\t ${userCode.logEmail}`).catch(() => {})
+                            userGuild.channels.cache.get(serverSettings.logChannel).send(`✅ <@${interaction.user.id}> → \`${userCode.logEmail}\``).catch(() => {})
                         }
                     } catch {}
                     const successEmbed = createVerificationSuccessEmbed(serverSettings.language, roleVerified.name, userGuild.name, userGuild.iconURL({ dynamic: true }))
                     await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
-                    // Track successful verification
+                    // Track successful verification (global and per-guild)
                     serverStatsAPI.increaseVerifiedUsers()
+                    database.incrementVerifications(userGuild.id)
                     // Delete the code prompt message after successful verification
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
                     if (codePromptId) {
@@ -589,7 +599,8 @@ bot.on('interactionCreate', async interaction => {
             language = defaultLanguage
         }
         try {
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "delete_user_data" || interaction.commandName === "verify") {
+            // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({
@@ -599,22 +610,15 @@ bot.on('interactionCreate', async interaction => {
             }
         } catch (error) {
             console.error(error);
-            try {
-                await interaction.reply({
-                    content: getLocale(language, "commandFailed"),
-                    flags: MessageFlags.Ephemeral
-                });
-            } catch {
-                try {
-                    await interaction.editReply({
-                        content: getLocale(language, "commandFailed"),
-                        flags: MessageFlags.Ephemeral
-                    });
-                } catch {
-                    console.log("ERROR: Can't reply")
-                }
-            }
-
+            // Send detailed error to admin and generic message to user
+            await ErrorNotifier.notify({
+                guild: interaction.guild,
+                errorTitle: 'Command Execution Error',
+                errorMessage: `Command \`/${interaction.commandName}\` failed with error:\n\`\`\`${error.message || error}\`\`\``,
+                user: interaction.user,
+                interaction: interaction,
+                language: language
+            })
         }
     })
 });

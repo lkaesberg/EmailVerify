@@ -1,8 +1,13 @@
-const {SlashCommandBuilder} = require("@discordjs/builders");
+const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-    data: new SlashCommandBuilder().setDefaultPermission(true).setName('help').setDescription('show instructions on how to use the bot').setDefaultMemberPermissions(0),
+    data: new SlashCommandBuilder()
+        .setDefaultPermission(true)
+        .setName('help')
+        .setDescription('Learn how to set up and use the email verification bot')
+        .setDefaultMemberPermissions(0),
+    
     async execute(interaction) {
         const helpEmbed = new EmbedBuilder()
             .setTitle('📚 Email Verification Bot - Setup Guide')
@@ -10,50 +15,73 @@ module.exports = {
             .setColor(0x5865F2)
             .addFields(
                 {
-                    name: '🚀 Quick Setup',
+                    name: '🚀 Quick Setup (4 Steps)',
                     value: 
-                        '**Step 1:** `/verifiedrole` - Set the role users get after verification\n' +
-                        '**Step 2:** `/domains` - Add allowed email domains\n' +
-                        '**Step 3:** `/button` - Create the verification button in a channel\n' +
-                        '**Step 4:** `/status` - Verify everything is configured correctly'
+                        '**1.** `/role verified <role>` - Set the role for verified users\n' +
+                        '**2.** `/domain add <domains>` - Add allowed email domains\n' +
+                        '**3.** `/button <channel>` - Create verification embed\n' +
+                        '**4.** `/status` - Verify everything is configured'
                 },
                 {
-                    name: '⚙️ Configuration Commands',
+                    name: '👥 Role Configuration',
                     value:
-                        '`/domains` - Add allowed email domains (e.g. @gmail.com)\n' +
-                        '`/removedomain` - Remove an allowed domain\n' +
-                        '`/verifiedrole` - Set/view the verified role\n' +
-                        '`/unverifiedrole` - Set/view the unverified role (optional)\n' +
-                        '`/verifymessage` - Set a custom verification message\n' +
-                        '`/language` - Change the bot language'
+                        '`/role verified` - Set/view role given after verification\n' +
+                        '`/role unverified` - Set/view optional role for unverified members'
                 },
                 {
-                    name: '🛡️ Moderation Commands',
+                    name: '📧 Domain Management',
                     value:
-                        '`/blacklist` - Block specific emails from verifying\n' +
-                        '`/manualverify` - Manually verify a user\n' +
-                        '`/set_log_channel` - Set a channel to log verifications'
+                        '`/domain add` - Add allowed domains (use `*` wildcard, e.g. `@*.edu`)\n' +
+                        '`/domain remove` - Remove allowed domains\n' +
+                        '`/domain list` - View all allowed domains\n' +
+                        '`/domain clear` - Remove all allowed domains'
                 },
                 {
-                    name: '🔧 Advanced Settings',
+                    name: '🚫 Blacklist Management',
                     value:
-                        '`/add_unverified_on_join` - Auto-assign unverified role to new members\n' +
-                        '`/verify_on_join` - Auto request user to verify on join\n' +
-                        '`/delete_server_data` - Remove all bot data and leave server'
+                        '`/blacklist add` - Block patterns (use `*` wildcard, e.g. `*@tempmail.*`)\n' +
+                        '`/blacklist remove` - Unblock patterns\n' +
+                        '`/blacklist list` - View all blacklisted entries\n' +
+                        '`/blacklist clear` - Remove all blacklist entries'
                 },
                 {
-                    name: '📊 Other Commands',
+                    name: '⚙️ Settings',
                     value:
-                        '`/status` - View current configuration\n' +
-                        '`/help` - Show this help message\n' +
-                        '`/verify` - Start verification (for users)'
+                        '`/settings language` - Change bot language\n' +
+                        '`/settings log-channel` - Set verification log channel\n' +
+                        '`/settings verify-message` - Custom message in emails\n' +
+                        '`/settings auto-verify` - Auto-prompt new members\n' +
+                        '`/settings auto-unverified` - Auto-assign unverified role'
+                },
+                {
+                    name: '🛡️ Moderation',
+                    value:
+                        '`/manualverify` - Manually verify a user without email\n' +
+                        '`/set_error_notify` - Configure error notifications'
+                },
+                {
+                    name: '📊 Information',
+                    value:
+                        '`/status` - View configuration & statistics\n' +
+                        '`/help` - Show this help message'
+                },
+                {
+                    name: '👤 User Commands',
+                    value:
+                        '`/verify` - Start email verification process\n' +
+                        '`/data delete-user` - Delete your verification data'
+                },
+                {
+                    name: '⚠️ Danger Zone',
+                    value:
+                        '`/data delete-server` - Delete all data & remove bot'
                 }
             )
-            .setFooter({ text: 'Need more help? Visit our documentation or support server.' })
+            .setFooter({ text: 'Need more help? Visit emailbot.larskaesberg.de' });
 
         await interaction.reply({
             embeds: [helpEmbed],
             flags: MessageFlags.Ephemeral
-        })
+        });
     }
-}
+};

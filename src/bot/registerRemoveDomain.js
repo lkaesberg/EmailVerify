@@ -10,25 +10,32 @@ function truncateString(str) {
     return str;
 }
 
-module.exports = async function registerRemoveDomain(guildId, removeDomain = require("../commands/removedomain")) {
+module.exports = async function registerRemoveDomain(guildId, domainCommand = require("../commands/domain")) {
     await database.getServerSettings(guildId, async serverSettings => {
         rest.get(Routes.applicationGuildCommands(clientId, guildId)).then(async commands => {
-            const commandId = commands.find(command => command.name === "removedomain")?.id
+            const command = commands.find(cmd => cmd.name === "domain")
+            const commandId = command?.id
 
             if (!commandId) return
 
-            let removeDomainCommand = removeDomain.data.toJSON()
+            let domainCommandData = domainCommand.data.toJSON()
 
-
-            if (serverSettings.domains.length < 25) {
-                removeDomainCommand["options"][0]["choices"] = serverSettings.domains.map(domain => {
-                    return {"name": truncateString(domain), "value": truncateString(domain)}
-                })
-            } else {
-                removeDomainCommand["options"][0]["choices"] = undefined
+            // Find the 'remove' subcommand and update its choices
+            const removeSubcommand = domainCommandData.options.find(opt => opt.name === "remove")
+            if (removeSubcommand && removeSubcommand.options) {
+                const domainsOption = removeSubcommand.options.find(opt => opt.name === "domains")
+                if (domainsOption) {
+                    if (serverSettings.domains.length > 0 && serverSettings.domains.length <= 25) {
+                        domainsOption.choices = serverSettings.domains.map(domain => {
+                            return {"name": truncateString(domain), "value": truncateString(domain)}
+                        })
+                    } else {
+                        domainsOption.choices = undefined
+                    }
+                }
             }
 
-            rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: removeDomainCommand}).catch()
+            rest.patch(Routes.applicationGuildCommand(clientId, guildId, commandId), {body: domainCommandData}).catch()
         }).catch(e => console.log(e))
     }).catch(e => console.log(e))
 }
