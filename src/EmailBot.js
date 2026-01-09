@@ -274,6 +274,8 @@ bot.on('guildCreate', guild => {
 })
 
 bot.on('messageCreate', async (message) => {
+    if (message.author.bot) return
+    if (message.content === "") return
     console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Message created: "${message.content}" in ${message.guild?.name ?? 'DM'} by ${message.author.username} (${message.author.id})`)
 })
 
