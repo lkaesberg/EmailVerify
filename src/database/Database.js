@@ -33,6 +33,16 @@ class Database {
             this.db.run("ALTER TABLE guilds ADD errorNotifyType TEXT DEFAULT 'owner'")
             this.db.run("ALTER TABLE guilds ADD errorNotifyTarget TEXT DEFAULT ''")
         })
+        this.runMigration(8, () => {
+            this.db.run(`CREATE TABLE IF NOT EXISTS guild_stats(
+                guildID TEXT PRIMARY KEY,
+                mailsSentTotal INTEGER DEFAULT 0,
+                mailsSentMonth INTEGER DEFAULT 0,
+                verificationsTotal INTEGER DEFAULT 0,
+                verificationsMonth INTEGER DEFAULT 0,
+                statsMonth TEXT DEFAULT ''
+            );`)
+        })
     }
 
     runMigration(version, migration) {
@@ -109,6 +119,100 @@ class Database {
                 }
             }
         )
+    }
+
+    getCurrentMonth() {
+        const now = new Date()
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    }
+
+    getGuildStats(guildID, callback) {
+        const currentMonth = this.getCurrentMonth()
+        this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+            if (err) {
+                console.error('Error getting guild stats:', err)
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0 })
+                return
+            }
+            if (result === undefined) {
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0 })
+                return
+            }
+            // Reset monthly counters if month changed
+            if (result.statsMonth !== currentMonth) {
+                callback({
+                    mailsSentTotal: result.mailsSentTotal,
+                    mailsSentMonth: 0,
+                    verificationsTotal: result.verificationsTotal,
+                    verificationsMonth: 0
+                })
+            } else {
+                callback({
+                    mailsSentTotal: result.mailsSentTotal,
+                    mailsSentMonth: result.mailsSentMonth,
+                    verificationsTotal: result.verificationsTotal,
+                    verificationsMonth: result.verificationsMonth
+                })
+            }
+        })
+    }
+
+    incrementMailsSent(guildID) {
+        const currentMonth = this.getCurrentMonth()
+        this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+            if (err) {
+                console.error('Error incrementing mails sent:', err)
+                return
+            }
+            if (result === undefined) {
+                // Create new entry
+                this.db.run(
+                    "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 1, 1, 0, 0, ?)",
+                    [guildID, currentMonth]
+                )
+            } else if (result.statsMonth !== currentMonth) {
+                // Reset monthly counter for new month
+                this.db.run(
+                    "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ? WHERE guildID = ?",
+                    [currentMonth, guildID]
+                )
+            } else {
+                // Increment both counters
+                this.db.run(
+                    "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ?",
+                    [guildID]
+                )
+            }
+        })
+    }
+
+    incrementVerifications(guildID) {
+        const currentMonth = this.getCurrentMonth()
+        this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+            if (err) {
+                console.error('Error incrementing verifications:', err)
+                return
+            }
+            if (result === undefined) {
+                // Create new entry
+                this.db.run(
+                    "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 0, 0, 1, 1, ?)",
+                    [guildID, currentMonth]
+                )
+            } else if (result.statsMonth !== currentMonth) {
+                // Reset monthly counter for new month
+                this.db.run(
+                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ? WHERE guildID = ?",
+                    [currentMonth, guildID]
+                )
+            } else {
+                // Increment both counters
+                this.db.run(
+                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = verificationsMonth + 1 WHERE guildID = ?",
+                    [guildID]
+                )
+            }
+        })
     }
 }
 

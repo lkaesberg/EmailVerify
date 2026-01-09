@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, EmbedBuilder } = require('discord.js');
 
 if (typeof username === 'undefined') {
     username = email;
@@ -81,14 +81,19 @@ module.exports = class MailSender {
                         }
                     }
                     // Show error message to the user
-                    const negative = getLocale(language, "mailNegative", toEmail)
+                    const errorEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(language, "mailFailedTitle"))
+                        .setDescription(getLocale(language, "mailFailedDescription", toEmail))
+                        .setColor(0xED4245)
+                    
                     if (interaction.deferred || interaction.replied) {
-                        await interaction.followUp({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
+                        await interaction.followUp({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     } else {
-                        await interaction.reply({ content: negative, flags: MessageFlags.Ephemeral }).catch(() => {})
+                        await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     }
                 } else {
                     this.serverStatsAPI.increaseMailSend()
+                    database.incrementMailsSent(serverId)
                     callback(info.accepted[0])
                     if (emailNotify) {
                         console.log('EMAIL SUCCESS for:', toEmail);

@@ -15,10 +15,6 @@ English example translation. Please translate the text values to your language.
 {
   "_comment_user_messages": "=== MESSAGES SENT TO USER (DMs, verification flow) ===",
   
-  "userEnterEmail": "Please enter your email address to verify %VAR%.",
-  "mailNegative": "Can't send mail to %VAR%",
-  "mailTimeout": "Please wait %VAR% seconds before resending the email!",
-  "mailBlacklisted": "Your email is blacklisted",
   "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%",
   
   "_comment_public_text": "=== PUBLIC VISIBLE TEXT (embeds, buttons, modals) ===",
@@ -26,6 +22,9 @@ English example translation. Please translate the text values to your language.
   "verifyEmbedTitle": "✉️ Email Verification",
   "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.\n\nAlready have a code? Use the **Enter Code** button.",
   "verifyEmbedFooter": "Verification System",
+  "verifyDmDescription": "Welcome to **%VAR%**! Click the button below to verify your email address and gain access to the server.",
+  "verifyDmButton": "Start Verification",
+  "verifyDmAdminWarning": "Note: The server admin can see the email address you use",
   "buttonCreated": "✅ Verification button created successfully!",
   "enterCodeButton": "Enter Code",
   
@@ -58,6 +57,15 @@ English example translation. Please translate the text values to your language.
   
   "invalidCodeTitle": "❌ Invalid Code",
   "invalidCodeDescription": "The code you entered is incorrect.\n\n**What to do:**\n• Double-check the 6-digit code from your email\n• Make sure you're using the most recent code\n• Request a new code if needed by clicking the verification button again",
+  
+  "mailFailedTitle": "❌ Email Delivery Failed",
+  "mailFailedDescription": "We couldn't send the verification email to:\n`%VAR%`\n\n**Possible reasons:**\n• The email address doesn't exist\n• The email server rejected the message\n• There's a temporary delivery issue\n\nPlease double-check your email address and try again.",
+  
+  "mailTimeoutTitle": "⏳ Please Wait",
+  "mailTimeoutDescription": "You're sending emails too quickly.\n\nPlease wait **%VAR% seconds** before requesting another verification code.\n\nThis limit helps prevent spam and ensures reliable email delivery.",
+  
+  "mailBlacklistedTitle": "🚫 Email Blocked",
+  "mailBlacklistedDescription": "The email address you entered has been blocked by the server administrator.\n\nThis could be because:\n• The email domain is not allowed\n• The specific email has been banned\n\nIf you believe this is an error, please contact a server administrator.",
   
   "invalidPermissions": "You are not allowed to execute this command!",
   

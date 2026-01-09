@@ -263,7 +263,7 @@ bot.on("guildMemberAdd", async member => {
             }
         }
         if (serverSettings.autoVerify) {
-            await sendVerifyMessage(member.guild, member.user, null, null, userGuilds, true)
+            await sendVerifyMessage(member.guild, member.user, userGuilds)
         }
     })
 })
@@ -393,7 +393,11 @@ bot.on('interactionCreate', async interaction => {
                 }
                 // Blacklist
                 if (serverSettings.blacklist.some((element) => emailText.includes(element))) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailBlacklisted"), flags: MessageFlags.Ephemeral }).catch(() => {})
+                    const blacklistEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "mailBlacklistedTitle"))
+                        .setDescription(getLocale(serverSettings.language, "mailBlacklistedDescription"))
+                        .setColor(0xED4245)
+                    await interaction.followUp({ embeds: [blacklistEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 // Domain allowlist
@@ -419,7 +423,11 @@ bot.on('interactionCreate', async interaction => {
                 }
                 const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
                 if (timeoutMs > 0) {
-                    await interaction.followUp({ content: getLocale(serverSettings.language, "mailTimeout", (timeoutMs / 1000).toFixed(2)), flags: MessageFlags.Ephemeral }).catch(() => {})
+                    const timeoutEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(serverSettings.language, "mailTimeoutTitle"))
+                        .setDescription(getLocale(serverSettings.language, "mailTimeoutDescription", (timeoutMs / 1000).toFixed(0)))
+                        .setColor(0xFFA500)
+                    await interaction.followUp({ embeds: [timeoutEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
                 userTimeout.timestamp = Date.now()
@@ -543,8 +551,9 @@ bot.on('interactionCreate', async interaction => {
                     const successEmbed = createVerificationSuccessEmbed(serverSettings.language, roleVerified.name, userGuild.name, userGuild.iconURL({ dynamic: true }))
                     await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
-                    // Track successful verification
+                    // Track successful verification (global and per-guild)
                     serverStatsAPI.increaseVerifiedUsers()
+                    database.incrementVerifications(userGuild.id)
                     // Delete the code prompt message after successful verification
                     const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
                     if (codePromptId) {
