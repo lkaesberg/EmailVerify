@@ -39,8 +39,8 @@ module.exports = {
                 {
                     name: '🚫 Blacklist Management',
                     value:
-                        '`/blacklist add` - Block specific emails or patterns\n' +
-                        '`/blacklist remove` - Unblock emails or patterns\n' +
+                        '`/blacklist add` - Block patterns (use `*` wildcard, e.g. `*@tempmail.*`)\n' +
+                        '`/blacklist remove` - Unblock patterns\n' +
                         '`/blacklist list` - View all blacklisted entries\n' +
                         '`/blacklist clear` - Remove all blacklist entries'
                 },

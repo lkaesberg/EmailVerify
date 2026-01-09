@@ -9,11 +9,11 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('add')
-                .setDescription('Add email addresses or patterns to the blacklist')
+                .setDescription('Add email addresses or patterns to the blacklist (supports * wildcard)')
                 .addStringOption(option =>
                     option
                         .setName('emails')
-                        .setDescription('Email(s) or patterns to block (comma-separated for multiple)')
+                        .setDescription('Pattern(s) to block, e.g. *@tempmail.*, spam* (comma-separated)')
                         .setRequired(true)
                 )
         )
@@ -47,15 +47,15 @@ module.exports = {
             if (subcommand === 'list') {
                 if (serverSettings.blacklist.length === 0) {
                     await interaction.reply({
-                        content: "🚫 **No blacklisted emails.**\n\nAdd entries with `/blacklist add` to block specific email addresses or patterns from verifying.\n\n*Examples:*\n• `spam@example.com` - Block specific email\n• `@tempmail.com` - Block entire domain\n• `troll` - Block any email containing 'troll'",
+                        content: "🚫 **No blacklisted emails.**\n\nAdd entries with `/blacklist add` to block email addresses or patterns.\n\n**Examples (supports `*` wildcard):**\n• `spam@example.com` — Block specific email\n• `*@tempmail.*` — Block all tempmail domains\n• `*spam*` — Block any email containing 'spam'\n• `test*@*` — Block emails starting with 'test'",
                         flags: MessageFlags.Ephemeral
                     });
                 } else {
                     const blacklistDisplay = serverSettings.blacklist
-                        .map(b => `\`${b}\``)
+                        .map(b => `\`${b.replaceAll("*", "✱")}\``)
                         .join('\n• ');
                     await interaction.reply({
-                        content: `🚫 **Blacklisted emails:**\n• ${blacklistDisplay}\n\n*Use \`/blacklist add\`, \`/blacklist remove\`, or \`/blacklist clear\` to modify.*`,
+                        content: `🚫 **Blacklisted patterns:**\n• ${blacklistDisplay}\n\n💡 **Tip:** Use \`*\` as wildcard (e.g. \`*@tempmail.*\` blocks all tempmail domains)\n\n*Use \`/blacklist add\`, \`/blacklist remove\`, or \`/blacklist clear\` to modify.*`,
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -88,9 +88,9 @@ module.exports = {
                 serverSettings.blacklist = serverSettings.blacklist.concat(addedEntries);
                 database.updateServerSettings(interaction.guildId, serverSettings);
 
-                const addedDisplay = addedEntries.map(e => `\`${e}\``).join(', ');
+                const addedDisplay = addedEntries.map(e => `\`${e.replaceAll("*", "✱")}\``).join(', ');
                 await interaction.reply({
-                    content: `✅ **Added to blacklist:** ${addedDisplay}\n\nUsers with these email addresses or matching patterns will be blocked from verifying.`,
+                    content: `✅ **Added to blacklist:** ${addedDisplay}\n\nEmails matching these patterns will be blocked from verifying.\n\n💡 **Tip:** \`*\` matches any characters (e.g. \`*@tempmail.*\` blocks all tempmail domains)`,
                     flags: MessageFlags.Ephemeral
                 });
                 return;
@@ -110,9 +110,9 @@ module.exports = {
                     });
                 } else {
                     database.updateServerSettings(interaction.guildId, serverSettings);
-                    const removedDisplay = removedEntries.map(e => `\`${e}\``).join(', ');
+                    const removedDisplay = removedEntries.map(e => `\`${e.replaceAll("*", "✱")}\``).join(', ');
                     await interaction.reply({
-                        content: `🗑️ **Removed from blacklist:** ${removedDisplay}\n\nThese email addresses or patterns are no longer blocked.`,
+                        content: `🗑️ **Removed from blacklist:** ${removedDisplay}\n\nThese patterns are no longer blocked.`,
                         flags: MessageFlags.Ephemeral
                     });
                 }

@@ -48,19 +48,23 @@ Use `*` as a wildcard to match any text:
 
 ### 🚫 Blacklist Management
 
-Block specific email addresses or patterns from verifying.
+Block specific email addresses or patterns from verifying. Supports `*` wildcard.
 
 | Command | Description |
 |---------|-------------|
-| `/blacklist add <emails>` | Add emails or patterns to the blacklist (comma-separated) |
-| `/blacklist remove <emails>` | Remove emails or patterns from the blacklist |
+| `/blacklist add <patterns>` | Add patterns to the blacklist (supports `*` wildcard) |
+| `/blacklist remove <patterns>` | Remove patterns from the blacklist |
 | `/blacklist list` | View all blacklisted entries |
 | `/blacklist clear` | Remove all entries from the blacklist |
 
-**Blacklist examples:**
-- `spam@example.com` — Block a specific email
-- `@tempmail.com` — Block an entire domain
-- `troll` — Block any email containing "troll"
+#### Blacklist Wildcard Examples
+
+| Pattern | Blocks | Example Matches |
+|---------|--------|-----------------|
+| `spam@example.com` | Specific email | `spam@example.com` |
+| `*@tempmail.*` | All tempmail domains | `user@tempmail.com`, `test@tempmail.net` |
+| `*spam*` | Emails containing "spam" | `spam@gmail.com`, `myspammail@test.com` |
+| `test*@*` | Emails starting with "test" | `test123@gmail.com`, `testuser@company.com` |
 
 ### ⚙️ Settings
 

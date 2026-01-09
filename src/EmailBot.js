@@ -21,6 +21,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
+const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
 
 const bot = new Discord.Client({
     intents: [
@@ -393,8 +394,8 @@ bot.on('interactionCreate', async interaction => {
                     });
                     return
                 }
-                // Blacklist
-                if (serverSettings.blacklist.some((element) => emailText.includes(element))) {
+                // Blacklist check (supports wildcards, e.g., *@tempmail.*, spam*)
+                if (emailIsBlacklisted(emailText, serverSettings.blacklist)) {
                     const blacklistEmbed = new EmbedBuilder()
                         .setTitle(getLocale(serverSettings.language, "mailBlacklistedTitle"))
                         .setDescription(getLocale(serverSettings.language, "mailBlacklistedDescription"))
@@ -402,18 +403,11 @@ bot.on('interactionCreate', async interaction => {
                     await interaction.followUp({ embeds: [blacklistEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
-                // Domain allowlist
-                let validEmail = false
-                for (const domain of serverSettings.domains) {
-                    const regex = new RegExp(domain.replace(/\./g, "\\.").replace(/\*/g, ".+").concat("$"))
-                    if (regex.test(emailText)) {
-                        validEmail = true
-                    }
-                }
-                if (emailText.split("@").length - 1 !== 1) {
-                    validEmail = false
-                }
-                if (emailText.includes(' ') || !validEmail) {
+                // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
+                const hasValidFormat = emailText.split("@").length - 1 === 1 && !emailText.includes(' ')
+                const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
+                
+                if (!hasValidFormat || !matchesDomain) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }

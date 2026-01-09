@@ -112,10 +112,12 @@ Use this link to invite the bot to your server:
 
 | Command | Description |
 |---------|-------------|
-| `/blacklist add <emails>` | Block specific emails or patterns from verifying |
-| `/blacklist remove <emails>` | Unblock emails or patterns |
+| `/blacklist add <patterns>` | Block email patterns (supports `*` wildcard) |
+| `/blacklist remove <patterns>` | Unblock patterns |
 | `/blacklist list` | View all blacklisted entries |
 | `/blacklist clear` | Remove all blacklist entries |
+
+> 💡 **Wildcard Examples:** `*@tempmail.*` blocks all tempmail domains, `*spam*` blocks emails containing "spam"
 
 ### ⚙️ Settings
 
