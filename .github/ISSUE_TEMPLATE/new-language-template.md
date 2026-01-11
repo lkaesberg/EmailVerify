@@ -7,20 +7,99 @@ assignees: lkaesberg
 
 ---
 
-English example translation. Please change text to the new translation.
+English example translation. Please translate the text values to your language.
 
-```
+**Note:** Keep `%VAR%` placeholders as they are - these will be replaced with dynamic values.
+
+```json
 {
-  "mailPositive": "Please enter the code you received at %VAR% (Check the spam folder if you do not receive a code).",
-  "mailNegative": "Can't send mail to %VAR%",
-  "roleAdded": "Added role %VAR%",
-  "mailInvalid": "Please enter only valid email addresses",
-  "mailTimeout": "Please wait %VAR% seconds before resending the email!",
+  "_comment_user_messages": "=== MESSAGES SENT TO USER (DMs, verification flow) ===",
+  
+  "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%",
+  
+  "_comment_public_text": "=== PUBLIC VISIBLE TEXT (embeds, buttons, modals) ===",
+  
+  "verifyEmbedTitle": "✉️ Email Verification",
+  "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.\n\nAlready have a code? Use the **Enter Code** button.",
+  "verifyEmbedFooter": "Verification System",
+  "verifyDmDescription": "Welcome to **%VAR%**! Click the button below to verify your email address and gain access to the server.",
+  "verifyDmButton": "Start Verification",
+  "verifyDmAdminWarning": "Note: The server admin can see the email address you use",
+  "buttonCreated": "✅ Verification button created successfully!",
+  "enterCodeButton": "Enter Code",
+  
+  "emailModalTitle": "📧 Email Verification",
+  "emailModalHeader": "## Verify Your Identity\nEnter your email address below to receive a verification code.",
+  "emailModalLabel": "Email Address",
+  "emailModalPlaceholder": "your.name@",
+  "emailModalAdminWarning": "\n\n⚠️ **Note:** The server admin can see the email address you use.",
+  "emailModalAllDomainsAccepted": "✅ Any email address is accepted",
+  "emailModalAcceptedDomains": "📋 **You must use an email from one of these domains:**",
+  "emailModalDomainExample": "`%VAR%`\n    ↳ e.g. `%VAR%`",
+  
+  "codeModalTitle": "🔐 Enter Verification Code",
+  "codeModalHeader": "## Almost There!\nCheck your inbox for the 6-digit verification code.",
+  "codeModalLabel": "Verification Code",
+  "codeModalPlaceholder": "Enter 6-digit code",
+  
+  "codePromptTitle": "📬 Code Sent!",
+  "codePromptDescription": "A verification code has been sent to:\n`%VAR%`\n\nClick the button below to enter your code.",
+  "codePromptTip": "💡 Didn't receive it?",
+  "codePromptTipValue": "Check your spam/junk folder. The email may take a few minutes to arrive.",
+  
+  "verificationSuccessTitle": "✅ Verification Complete!",
+  "verificationSuccessDescription": "Welcome! You have been successfully verified.\n\n**Role assigned:** %VAR%\n**Server:** %VAR%\n\nYou now have full access to the server.",
+  
+  "_comment_errors": "=== ERROR MESSAGES (shown to users) ===",
+  
+  "mailInvalidTitle": "❌ Invalid Email",
+  "mailInvalidDescription": "The email address you entered is not valid.\n\nPlease make sure:\n• The email has the correct format (name@domain.com)\n• You're using an allowed email domain\n• There are no spaces in the address",
+  
+  "invalidCodeTitle": "❌ Invalid Code",
+  "invalidCodeDescription": "The code you entered is incorrect.\n\n**What to do:**\n• Double-check the 6-digit code from your email\n• Make sure you're using the most recent code\n• Request a new code if needed by clicking the verification button again",
+  
+  "mailFailedTitle": "❌ Email Delivery Failed",
+  "mailFailedDescription": "We couldn't send the verification email to:\n`%VAR%`\n\n**Possible reasons:**\n• The email address doesn't exist\n• The email server rejected the message\n• There's a temporary delivery issue\n\nPlease double-check your email address and try again.",
+  
+  "mailTimeoutTitle": "⏳ Please Wait",
+  "mailTimeoutDescription": "You're sending emails too quickly.\n\nPlease wait **%VAR% seconds** before requesting another verification code.\n\nThis limit helps prevent spam and ensures reliable email delivery.",
+  
+  "mailBlacklistedTitle": "🚫 Email Blocked",
+  "mailBlacklistedDescription": "The email address you entered has been blocked by the server administrator.\n\nThis could be because:\n• The email domain is not allowed\n• The specific email has been banned\n\nIf you believe this is an error, please contact a server administrator.",
+  
   "invalidPermissions": "You are not allowed to execute this command!",
-  "commandFailed": "There was an error while executing this command!",
-  "userRetry": "An error occurred. Please remove and add the reaction to try again.",
-  "userBotError": "Bot not properly configured. Please contact admin!",
-  "userEnterEmail": "Please enter your email address to verify %VAR%.",
-  "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role."
+  
+  "errorGenericTitle": "❌ An Error Occurred",
+  "errorGenericDescription": "Something went wrong while processing your request. The server administrator has been notified and will look into it.",
+  
+  "_comment_admin": "=== ADMIN NOTIFICATIONS (sent to server admins/owners) ===",
+  
+  "errorFieldGuild": "Server",
+  "errorFieldUser": "User",
+  "errorFallbackWarning": "⚠️ Notification Fallback",
+  
+  "errorNotifyChannelFailed": "The configured error channel no longer exists or the bot cannot send messages there. Error was sent to you (the owner) instead. Please reconfigure using `/set_error_notify`.",
+  "errorNotifyUserFailed": "The configured error notification user is no longer in the server or has DMs disabled. Error was sent to you (the owner) instead. Please reconfigure using `/set_error_notify`.",
+  
+  "errorNotifySetOwner": "✅ Error notifications will now be sent to the server owner via DM.",
+  "errorNotifySetChannel": "✅ Error notifications will now be sent to #%VAR%.",
+  "errorNotifySetUser": "✅ Error notifications will now be sent to %VAR% via DM.",
+  "errorNotifyInvalidChannel": "❌ Please select a text channel for error notifications.",
+  "errorNotifyUserNotInGuild": "❌ The selected user is not a member of this server.",
+  
+  "errorNotifyStatusTitle": "📋 Error Notification Settings",
+  "errorNotifyStatusOwner": "Error notifications are sent to the **server owner** (%VAR%) via DM.",
+  "errorNotifyStatusChannel": "Error notifications are sent to **#%VAR%**.",
+  "errorNotifyStatusChannelInvalid": "⚠️ Error notifications are configured for a channel that no longer exists. Notifications will fall back to the server owner.",
+  "errorNotifyStatusUser": "Error notifications are sent to **%VAR%** via DM.",
+  "errorNotifyStatusUserInvalid": "⚠️ Error notifications are configured for a user who is no longer in the server. Notifications will fall back to the server owner.",
+  "errorNotifyStatusNote": "ℹ️ Note",
+  "errorNotifyStatusNoteValue": "If the configured notification method fails, errors will automatically fall back to the server owner.",
+  
+  "errorRoleAssignTitle": "Role Assignment Error",
+  "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission",
+  
+  "errorBotNotConfiguredTitle": "Bot Not Configured",
+  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domains`\n• Set verified role with `/verifiedrole`\n\nRun `/status` to check the current configuration."
 }
 ```
