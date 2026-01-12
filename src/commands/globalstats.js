@@ -27,6 +27,14 @@ module.exports = {
                     { name: 'This Month', value: 'month' },
                     { name: 'All Time', value: 'alltime' }
                 )
+        )
+        .addIntegerOption(option =>
+            option
+                .setName('pages')
+                .setDescription('Number of pages to show for top lists (default: 1, max: 10)')
+                .setRequired(false)
+                .setMinValue(1)
+                .setMaxValue(10)
         ),
 
     getCurrentMonth() {
@@ -53,6 +61,7 @@ module.exports = {
             const allStats = await database.getAllGuildStats();
             const type = interaction.options.getString('type');
             const period = interaction.options.getString('period');
+            const pages = interaction.options.getInteger('pages') || 1;
             const isMonthly = period === 'month';
 
             if (allStats.length === 0) {
@@ -66,9 +75,9 @@ module.exports = {
             if (type === 'overview') {
                 await this.showOverview(interaction, allStats, isMonthly);
             } else if (type === 'top_mails') {
-                await this.showTopMails(interaction, allStats, isMonthly);
+                await this.showTopMails(interaction, allStats, isMonthly, pages);
             } else if (type === 'top_verifications') {
-                await this.showTopVerifications(interaction, allStats, isMonthly);
+                await this.showTopVerifications(interaction, allStats, isMonthly, pages);
             }
         } catch (error) {
             console.error('Error fetching owner stats:', error);
@@ -171,49 +180,55 @@ module.exports = {
         await interaction.editReply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 
-    async showTopMails(interaction, allStats, isMonthly) {
+    async showTopMails(interaction, allStats, isMonthly, pages) {
         const periodLabel = isMonthly ? 'This Month' : 'All Time';
+        const itemsPerPage = 10;
+        const maxItems = pages * itemsPerPage;
         
-        // Sort by mails sent descending and take top 100
+        // Sort by mails sent descending and take top N based on pages
         const sorted = [...allStats]
             .sort((a, b) => this.getMailsValue(b, isMonthly) - this.getMailsValue(a, isMonthly))
-            .slice(0, 100);
+            .slice(0, maxItems);
 
         const embeds = await this.createTopEmbeds(
             interaction,
             sorted,
-            `📬 Top 100 Servers by Mails Sent (${periodLabel})`,
+            `📬 Top ${maxItems} Servers by Mails Sent (${periodLabel})`,
             (stat) => this.getMailsValue(stat, isMonthly),
             'mails sent',
-            periodLabel
+            periodLabel,
+            pages
         );
 
         await interaction.editReply({ embeds, flags: MessageFlags.Ephemeral });
     },
 
-    async showTopVerifications(interaction, allStats, isMonthly) {
+    async showTopVerifications(interaction, allStats, isMonthly, pages) {
         const periodLabel = isMonthly ? 'This Month' : 'All Time';
+        const itemsPerPage = 10;
+        const maxItems = pages * itemsPerPage;
         
-        // Sort by verifications descending and take top 100
+        // Sort by verifications descending and take top N based on pages
         const sorted = [...allStats]
             .sort((a, b) => this.getVerificationsValue(b, isMonthly) - this.getVerificationsValue(a, isMonthly))
-            .slice(0, 100);
+            .slice(0, maxItems);
 
         const embeds = await this.createTopEmbeds(
             interaction,
             sorted,
-            `✅ Top 100 Servers by Verifications (${periodLabel})`,
+            `✅ Top ${maxItems} Servers by Verifications (${periodLabel})`,
             (stat) => this.getVerificationsValue(stat, isMonthly),
             'verifications',
-            periodLabel
+            periodLabel,
+            pages
         );
 
         await interaction.editReply({ embeds, flags: MessageFlags.Ephemeral });
     },
 
-    async createTopEmbeds(interaction, sortedStats, title, getValue, label, periodLabel) {
+    async createTopEmbeds(interaction, sortedStats, title, getValue, label, periodLabel, maxPages) {
         const embeds = [];
-        const itemsPerEmbed = 25;
+        const itemsPerEmbed = 10;
 
         for (let i = 0; i < sortedStats.length; i += itemsPerEmbed) {
             const chunk = sortedStats.slice(i, i + itemsPerEmbed);
@@ -227,19 +242,18 @@ module.exports = {
                 const rank = i + j + 1;
                 const value = getValue(stat);
                 
-                // Try to get guild name
+                // Try to get guild name and truncate if too long
                 let guildName = 'Unknown Server';
                 try {
                     const guild = interaction.client.guilds.cache.get(stat.guildID);
                     if (guild) {
-                        guildName = guild.name;
+                        guildName = guild.name.length > 30 ? guild.name.substring(0, 27) + '...' : guild.name;
                     }
                 } catch {
                     // Keep default
                 }
 
-                description += `**${rank}.** ${guildName}\n`;
-                description += `    └ ${value.toLocaleString()} ${label} (ID: \`${stat.guildID}\`)\n`;
+                description += `**${rank}.** ${guildName} — ${value.toLocaleString()} ${label}\n`;
             }
 
             embed.setDescription(description || 'No data');
@@ -247,7 +261,7 @@ module.exports = {
             embeds.push(embed);
         }
 
-        return embeds.slice(0, 10); // Discord limits to 10 embeds per message
+        return embeds.slice(0, maxPages); // Limit to requested pages (max 10 per Discord)
     },
 
     calculateMedian(sortedArray) {
