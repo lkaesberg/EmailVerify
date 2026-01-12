@@ -218,6 +218,19 @@ class Database {
             }
         })
     }
+
+    getAllGuildStats() {
+        return new Promise((resolve, reject) => {
+            this.db.all("SELECT * FROM guild_stats", [], (err, rows) => {
+                if (err) {
+                    console.error('Error getting all guild stats:', err)
+                    reject(err)
+                    return
+                }
+                resolve(rows || [])
+            })
+        })
+    }
 }
 
 const database = new Database()

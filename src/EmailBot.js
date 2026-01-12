@@ -600,7 +600,8 @@ bot.on('interactionCreate', async interaction => {
         }
         try {
             // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify") {
+            // Allow /globalstats for owner check to happen inside the command
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({
