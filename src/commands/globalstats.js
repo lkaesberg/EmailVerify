@@ -17,7 +17,22 @@ module.exports = {
                     { name: 'Top 100 by Mails Sent', value: 'top_mails' },
                     { name: 'Top 100 by Verifications', value: 'top_verifications' }
                 )
+        )
+        .addStringOption(option =>
+            option
+                .setName('period')
+                .setDescription('Time period for statistics')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'This Month', value: 'month' },
+                    { name: 'All Time', value: 'alltime' }
+                )
         ),
+
+    getCurrentMonth() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    },
 
     async execute(interaction) {
         // Check if the user is the bot owner
@@ -37,6 +52,8 @@ module.exports = {
         try {
             const allStats = await database.getAllGuildStats();
             const type = interaction.options.getString('type');
+            const period = interaction.options.getString('period');
+            const isMonthly = period === 'month';
 
             if (allStats.length === 0) {
                 await interaction.editReply({
@@ -47,11 +64,11 @@ module.exports = {
             }
 
             if (type === 'overview') {
-                await this.showOverview(interaction, allStats);
+                await this.showOverview(interaction, allStats, isMonthly);
             } else if (type === 'top_mails') {
-                await this.showTopMails(interaction, allStats);
+                await this.showTopMails(interaction, allStats, isMonthly);
             } else if (type === 'top_verifications') {
-                await this.showTopVerifications(interaction, allStats);
+                await this.showTopVerifications(interaction, allStats, isMonthly);
             }
         } catch (error) {
             console.error('Error fetching owner stats:', error);
@@ -62,9 +79,33 @@ module.exports = {
         }
     },
 
-    async showOverview(interaction, allStats) {
-        const mailsArray = allStats.map(s => s.mailsSentTotal || 0).sort((a, b) => a - b);
-        const verificationsArray = allStats.map(s => s.verificationsTotal || 0).sort((a, b) => a - b);
+    getMailsValue(stat, isMonthly) {
+        if (isMonthly) {
+            // Only count if statsMonth matches current month
+            const currentMonth = this.getCurrentMonth();
+            if (stat.statsMonth === currentMonth) {
+                return stat.mailsSentMonth || 0;
+            }
+            return 0;
+        }
+        return stat.mailsSentTotal || 0;
+    },
+
+    getVerificationsValue(stat, isMonthly) {
+        if (isMonthly) {
+            // Only count if statsMonth matches current month
+            const currentMonth = this.getCurrentMonth();
+            if (stat.statsMonth === currentMonth) {
+                return stat.verificationsMonth || 0;
+            }
+            return 0;
+        }
+        return stat.verificationsTotal || 0;
+    },
+
+    async showOverview(interaction, allStats, isMonthly) {
+        const mailsArray = allStats.map(s => this.getMailsValue(s, isMonthly)).sort((a, b) => a - b);
+        const verificationsArray = allStats.map(s => this.getVerificationsValue(s, isMonthly)).sort((a, b) => a - b);
 
         // Calculate totals
         const totalMails = mailsArray.reduce((sum, val) => sum + val, 0);
@@ -79,11 +120,17 @@ module.exports = {
         const medianVerifications = this.calculateMedian(verificationsArray);
 
         // Count servers with at least one verification
-        const serversWithVerifications = allStats.filter(s => (s.verificationsTotal || 0) >= 1).length;
-        const serversWithMails = allStats.filter(s => (s.mailsSentTotal || 0) >= 1).length;
+        const serversWithVerifications = allStats.filter(s => this.getVerificationsValue(s, isMonthly) >= 1).length;
+        const serversWithMails = allStats.filter(s => this.getMailsValue(s, isMonthly) >= 1).length;
+
+        // Get period label for display
+        const periodLabel = isMonthly ? 'This Month' : 'All Time';
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        const currentMonthName = monthNames[new Date().getMonth()];
 
         const embed = new EmbedBuilder()
-            .setTitle('📊 Global Server Statistics Overview')
+            .setTitle(`📊 Global Server Statistics Overview (${isMonthly ? currentMonthName : periodLabel})`)
             .setColor(0x5865F2)
             .addFields(
                 {
@@ -118,47 +165,53 @@ module.exports = {
                     inline: true
                 }
             )
-            .setFooter({ text: `Data from ${allStats.length} servers` })
+            .setFooter({ text: `${periodLabel} • Data from ${allStats.length} servers` })
             .setTimestamp();
 
         await interaction.editReply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     },
 
-    async showTopMails(interaction, allStats) {
+    async showTopMails(interaction, allStats, isMonthly) {
+        const periodLabel = isMonthly ? 'This Month' : 'All Time';
+        
         // Sort by mails sent descending and take top 100
         const sorted = [...allStats]
-            .sort((a, b) => (b.mailsSentTotal || 0) - (a.mailsSentTotal || 0))
+            .sort((a, b) => this.getMailsValue(b, isMonthly) - this.getMailsValue(a, isMonthly))
             .slice(0, 100);
 
         const embeds = await this.createTopEmbeds(
             interaction,
             sorted,
-            '📬 Top 100 Servers by Mails Sent',
-            (stat) => stat.mailsSentTotal || 0,
-            'mails sent'
+            `📬 Top 100 Servers by Mails Sent (${periodLabel})`,
+            (stat) => this.getMailsValue(stat, isMonthly),
+            'mails sent',
+            periodLabel
         );
 
         await interaction.editReply({ embeds, flags: MessageFlags.Ephemeral });
     },
 
-    async showTopVerifications(interaction, allStats) {
+    async showTopVerifications(interaction, allStats, isMonthly) {
+        const periodLabel = isMonthly ? 'This Month' : 'All Time';
+        
         // Sort by verifications descending and take top 100
         const sorted = [...allStats]
-            .sort((a, b) => (b.verificationsTotal || 0) - (a.verificationsTotal || 0))
+            .sort((a, b) => this.getVerificationsValue(b, isMonthly) - this.getVerificationsValue(a, isMonthly))
             .slice(0, 100);
 
         const embeds = await this.createTopEmbeds(
             interaction,
             sorted,
-            '✅ Top 100 Servers by Verifications',
-            (stat) => stat.verificationsTotal || 0,
-            'verifications'
+            `✅ Top 100 Servers by Verifications (${periodLabel})`,
+            (stat) => this.getVerificationsValue(stat, isMonthly),
+            'verifications',
+            periodLabel
         );
 
         await interaction.editReply({ embeds, flags: MessageFlags.Ephemeral });
     },
 
-    async createTopEmbeds(interaction, sortedStats, title, getValue, label) {
+    async createTopEmbeds(interaction, sortedStats, title, getValue, label, periodLabel) {
         const embeds = [];
         const itemsPerEmbed = 25;
 
@@ -190,7 +243,7 @@ module.exports = {
             }
 
             embed.setDescription(description || 'No data');
-            embed.setFooter({ text: `Showing ${i + 1}-${Math.min(i + itemsPerEmbed, sortedStats.length)} of ${sortedStats.length}` });
+            embed.setFooter({ text: `${periodLabel} • Showing ${i + 1}-${Math.min(i + itemsPerEmbed, sortedStats.length)} of ${sortedStats.length}` });
             embeds.push(embed);
         }
 
