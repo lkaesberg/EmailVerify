@@ -66,7 +66,7 @@
   "errorNotifyStatusNote": "ℹ️ Uwaga",
   "errorNotifyStatusNoteValue": "Jeśli skonfigurowana metoda powiadomień zawiedzie, błędy zostaną automatycznie wysłane do właściciela serwera.",
   "errorRoleAssignTitle": "Błąd Przypisania Roli",
-  "errorRoleAssignMessage": "Nie udało się przypisać roli zweryfikowany/niezweryfikowany do użytkownika. Upewnij się, że:\n• Rola bota jest wyżej niż role zweryfikowany/niezweryfikowany\n• Role nadal istnieją\n• Bot ma uprawnienie 'Zarządzaj Rolami'",
+  "errorRoleAssignMessage": "Nie udało się przypisać roli zweryfikowany/niezweryfikowany do użytkownika. Upewnij się, że:\n• Rola bota jest wyżej niż role zweryfikowany/niezweryfikowany\n• Role nadal istnieją\n• Bot ma uprawnienie 'Zarządzaj Rolami'\n\n💡 **Wskazówka:** Przenieś rolę EmailBot powyżej ról zweryfikowany/niezweryfikowany w Ustawienia serwera → Role, lub przypisz rolę zweryfikowany/niezweryfikowany bezpośrednio do bota.\n[Zobacz przykład](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Nie Skonfigurowany",
   "errorBotNotConfiguredMessage": "Użytkownik próbował się zweryfikować, ale bot nie jest poprawnie skonfigurowany.\n\n**Wymagana konfiguracja:**\n• Ustaw dozwolone domeny email za pomocą `/domain add`\n• Ustaw rolę zweryfikowanego za pomocą `/role verified`\n\nUruchom `/status` aby sprawdzić aktualną konfigurację."
 }

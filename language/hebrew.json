@@ -66,7 +66,7 @@
   "errorNotifyStatusNote": "ℹ️ הערה",
   "errorNotifyStatusNoteValue": "אם שיטת ההתראה המוגדרת נכשלת, שגיאות יישלחו אוטומטית לבעלי השרת.",
   "errorRoleAssignTitle": "שגיאת הקצאת תפקיד",
-  "errorRoleAssignMessage": "נכשל בהקצאת תפקיד מאומת/לא מאומת למשתמש. אנא ודא:\n• תפקיד הבוט גבוה יותר מתפקידי מאומת/לא מאומת\n• התפקידים עדיין קיימים\n• לבוט יש הרשאת 'ניהול תפקידים'",
+  "errorRoleAssignMessage": "נכשל בהקצאת תפקיד מאומת/לא מאומת למשתמש. אנא ודא:\n• תפקיד הבוט גבוה יותר מתפקידי מאומת/לא מאומת\n• התפקידים עדיין קיימים\n• לבוט יש הרשאת 'ניהול תפקידים'\n\n💡 **טיפ:** העבר את תפקיד EmailBot מעל תפקידי מאומת/לא מאומת בהגדרות שרת → תפקידים, או הקצה את התפקיד מאומת/לא מאומת ישירות לבוט.\n[צפה בדוגמה](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "הבוט לא מוגדר",
   "errorBotNotConfiguredMessage": "משתמש ניסה לאמת אבל הבוט לא מוגדר כראוי.\n\n**הגדרה נדרשת:**\n• הגדר דומיינים מותרים עם `/domain add`\n• הגדר תפקיד מאומת עם `/role verified`\n\nהרץ `/status` כדי לבדוק את ההגדרה הנוכחית."
 }

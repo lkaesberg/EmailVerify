@@ -66,7 +66,7 @@
   "errorNotifyStatusNote": "ℹ️ Hinweis",
   "errorNotifyStatusNoteValue": "Wenn die konfigurierte Benachrichtigungsmethode fehlschlägt, werden Fehler automatisch an den Server-Owner weitergeleitet.",
   "errorRoleAssignTitle": "Rollenzuweisungs-Fehler",
-  "errorRoleAssignMessage": "Die Verifiziert/Unverifiziert-Rolle konnte einem Benutzer nicht zugewiesen werden. Bitte stelle sicher:\n• Die Bot-Rolle ist höher als die Verifiziert/Unverifiziert-Rollen\n• Die Rollen existieren noch\n• Der Bot hat die 'Rollen verwalten'-Berechtigung",
+  "errorRoleAssignMessage": "Die Verifiziert/Unverifiziert-Rolle konnte einem Benutzer nicht zugewiesen werden. Bitte stelle sicher:\n• Die Bot-Rolle ist höher als die Verifiziert/Unverifiziert-Rollen\n• Die Rollen existieren noch\n• Der Bot hat die 'Rollen verwalten'-Berechtigung\n\n💡 **Tipp:** Verschiebe die EmailBot-Rolle über die Verifiziert/Unverifiziert-Rollen in Servereinstellungen → Rollen, oder weise dem Bot die Verifiziert/Unverifiziert-Rolle direkt zu.\n[Beispiel ansehen](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Nicht Konfiguriert",
   "errorBotNotConfiguredMessage": "Ein Benutzer hat versucht sich zu verifizieren, aber der Bot ist nicht richtig konfiguriert.\n\n**Erforderliche Einrichtung:**\n• Erlaubte E-Mail-Domains mit `/domain add` festlegen\n• Verifiziert-Rolle mit `/role verified` festlegen\n\nFühre `/status` aus, um die aktuelle Konfiguration zu überprüfen."
 }

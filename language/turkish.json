@@ -66,7 +66,7 @@
   "errorNotifyStatusNote": "ℹ️ Not",
   "errorNotifyStatusNoteValue": "Yapılandırılmış bildirim yöntemi başarısız olursa, hatalar otomatik olarak sunucu sahibine gönderilir.",
   "errorRoleAssignTitle": "Rol Atama Hatası",
-  "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip",
+  "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip\n\n💡 **İpucu:** Sunucu Ayarları → Roller'de EmailBot rolünü doğrulanmış/doğrulanmamış rollerin üzerine taşıyın veya doğrulanmış/doğrulanmamış rolü doğrudan bota atayın.\n[Örneğe bakın](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Yapılandırılmamış",
   "errorBotNotConfiguredMessage": "Bir kullanıcı doğrulamaya çalıştı ancak bot düzgün yapılandırılmamış.\n\n**Gerekli kurulum:**\n• `/domain add` ile izin verilen e-posta domainlerini ayarlayın\n• `/role verified` ile doğrulanmış rolü ayarlayın\n\nMevcut yapılandırmayı kontrol etmek için `/status` çalıştırın."
 }

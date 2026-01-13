@@ -66,7 +66,7 @@
   "errorNotifyStatusNote": "ℹ️ Nota",
   "errorNotifyStatusNoteValue": "Si el método de notificación configurado falla, los errores se enviarán automáticamente al propietario del servidor.",
   "errorRoleAssignTitle": "Error de Asignación de Rol",
-  "errorRoleAssignMessage": "No se pudo asignar el rol verificado/no verificado a un usuario. Por favor asegúrese de:\n• El rol del bot está más alto que los roles verificado/no verificado\n• Los roles todavía existen\n• El bot tiene el permiso 'Gestionar Roles'",
+  "errorRoleAssignMessage": "No se pudo asignar el rol verificado/no verificado a un usuario. Por favor asegúrese de:\n• El rol del bot está más alto que los roles verificado/no verificado\n• Los roles todavía existen\n• El bot tiene el permiso 'Gestionar Roles'\n\n💡 **Consejo:** Mueva el rol de EmailBot por encima de los roles verificado/no verificado en Configuración del servidor → Roles, o asigne el rol verificado/no verificado directamente al bot.\n[Ver ejemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot No Configurado",
   "errorBotNotConfiguredMessage": "Un usuario intentó verificarse pero el bot no está configurado correctamente.\n\n**Configuración requerida:**\n• Establecer dominios de email permitidos con `/domain add`\n• Establecer rol verificado con `/role verified`\n\nEjecute `/status` para verificar la configuración actual."
 }
