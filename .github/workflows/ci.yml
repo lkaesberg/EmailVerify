@@ -85,14 +85,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  pages:
-    name: GitHub Pages
+  pages-build:
+    name: Build Pages
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@v5
@@ -104,14 +100,26 @@ jobs:
       - run: pip install mkdocs-material
       - run: mkdocs build
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./site
+          path: site
 
+  pages-deploy:
+    name: Deploy Pages
+    needs: pages-build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
