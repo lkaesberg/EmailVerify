@@ -175,4 +175,4 @@ We may update this Privacy Policy from time to time. Changes will be indicated b
 For any privacy-related questions or concerns, please contact:
 
 - Discord Server: [Official Support Discord](https://discord.com/invite/fEBSHUQXu2)
-- Email: <a href="mailto:emailbot@larskaesberg.de">emailbot@larskaesberg.de</a>
+- Email: <a href="mailto:larskaesberg@gmail.com">larskaesberg@gmail.com</a>
