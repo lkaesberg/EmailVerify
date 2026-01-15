@@ -47,6 +47,20 @@ class Database {
             // Rename language from 'france' to 'french'
             this.db.run("UPDATE guilds SET language = 'french' WHERE language = 'france';")
         })
+        this.runMigration(10, () => {
+            // Add domain-based roles support
+            // defaultRoles: JSON array of role IDs always assigned on verification
+            // domainRoles: JSON object mapping domain patterns to arrays of role IDs
+            this.db.run("ALTER TABLE guilds ADD defaultRoles TEXT DEFAULT '[]'")
+            this.db.run("ALTER TABLE guilds ADD domainRoles TEXT DEFAULT '{}'")
+            // Migrate existing verifiedrole to defaultRoles
+            this.db.each("SELECT guildid, verifiedrole FROM guilds WHERE verifiedrole IS NOT NULL AND verifiedrole != ''", (err, result) => {
+                if (!err && result && result.verifiedrole) {
+                    const defaultRoles = JSON.stringify([result.verifiedrole])
+                    this.db.run("UPDATE guilds SET defaultRoles = ? WHERE guildid = ?", [defaultRoles, result.guildid])
+                }
+            })
+        })
     }
 
     runMigration(version, migration) {
@@ -77,8 +91,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles)])
     }
 
     async getServerSettings(guildID, callback) {
@@ -101,6 +115,21 @@ class Database {
                     serverSettings.logChannel = result.logChannel
                     serverSettings.errorNotifyType = result.errorNotifyType || "owner"
                     serverSettings.errorNotifyTarget = result.errorNotifyTarget || ""
+                    // Parse domain-based roles (JSON stored in DB)
+                    try {
+                        serverSettings.defaultRoles = result.defaultRoles ? JSON.parse(result.defaultRoles) : []
+                    } catch {
+                        serverSettings.defaultRoles = []
+                    }
+                    try {
+                        serverSettings.domainRoles = result.domainRoles ? JSON.parse(result.domainRoles) : {}
+                    } catch {
+                        serverSettings.domainRoles = {}
+                    }
+                    // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
+                    if (serverSettings.defaultRoles.length === 0 && serverSettings.verifiedRoleName) {
+                        serverSettings.defaultRoles = [serverSettings.verifiedRoleName]
+                    }
                 }
                 callback(serverSettings)
             }

@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ כל כתובת מייל מתקבלת",
   "emailModalAcceptedDomains": "📋 **עליך להשתמש במייל מאחד הדומיינים הבאים:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ לדוגמה `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **תפקידים שתקבל**",
   "codeModalTitle": "🔐 הזן קוד אימות",
   "codeModalHeader": "## כמעט שם!\nבדוק את תיבת הדואר הנכנס שלך לקוד האימות בן 6 הספרות.",
   "codeModalLabel": "קוד אימות",

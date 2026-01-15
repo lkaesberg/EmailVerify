@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ Any email address is accepted",
   "emailModalAcceptedDomains": "📋 **You must use an email from one of these domains:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ e.g. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Roles you will receive**",
   "codeModalTitle": "🔐 Enter Verification Code",
   "codeModalHeader": "## Almost There!\nCheck your inbox for the 6-digit verification code.",
   "codeModalLabel": "Verification Code",
@@ -68,5 +69,5 @@
   "errorRoleAssignTitle": "Role Assignment Error",
   "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission\n\n💡 **Tip:** Either move the EmailBot role above the verified/unverified roles in Server Settings → Roles, or assign the verified/unverified role to the bot directly.\n[See example](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Not Configured",
-  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set verified role with `/role verified`\n\nRun `/status` to check the current configuration."
+  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set default roles with `/role add` or domain-specific roles with `/domainrole add`\n\nRun `/status` to check the current configuration."
 }

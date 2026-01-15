@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ Herhangi bir e-posta adresi kabul edilir",
   "emailModalAcceptedDomains": "📋 **Bu domainlerden birinden e-posta kullanmalısınız:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ örn. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Alacağınız roller**",
   "codeModalTitle": "🔐 Doğrulama Kodunu Girin",
   "codeModalHeader": "## Neredeyse Bitti!\n6 haneli doğrulama kodu için gelen kutunuzu kontrol edin.",
   "codeModalLabel": "Doğrulama Kodu",

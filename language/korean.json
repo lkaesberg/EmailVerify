@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ 모든 이메일 주소가 허용됩니다",
   "emailModalAcceptedDomains": "📋 **다음 도메인 중 하나의 이메일을 사용해야 합니다:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ 예: `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **받게 될 역할**",
   "codeModalTitle": "🔐 인증 코드 입력",
   "codeModalHeader": "## 거의 다 됐습니다!\n받은 편지함에서 6자리 인증 코드를 확인하세요.",
   "codeModalLabel": "인증 코드",

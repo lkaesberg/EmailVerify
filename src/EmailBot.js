@@ -22,7 +22,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
+const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
 
 const bot = new Discord.Client({
     intents: [
@@ -499,16 +499,42 @@ bot.on('interactionCreate', async interaction => {
                 const userCode = userCodes.get(interaction.user.id + userGuild.id)
                 if (userCode && userCode.code === codeText) {
                     // Success: assign roles and update DB
-                    const roleVerified = userGuild.roles.cache.find(role => role.id === serverSettings.verifiedRoleName);
+                    // Collect all roles to assign: default roles + domain-specific roles
+                    const defaultRoles = serverSettings.defaultRoles || []
+                    const domainRoles = serverSettings.domainRoles || {}
+                    
+                    // Get all matching domain patterns for this email
+                    const matchingPatterns = getMatchingDomainPatterns(userCode.logEmail, Object.keys(domainRoles))
+                    
+                    // Collect domain-specific role IDs
+                    const domainRoleIds = []
+                    for (const pattern of matchingPatterns) {
+                        if (domainRoles[pattern]) {
+                            domainRoleIds.push(...domainRoles[pattern])
+                        }
+                    }
+                    
+                    // Combine and deduplicate all role IDs
+                    const allRoleIds = [...new Set([...defaultRoles, ...domainRoleIds])]
+                    
+                    // Get role objects and filter out invalid ones
+                    const rolesToAdd = allRoleIds
+                        .map(id => userGuild.roles.cache.get(id))
+                        .filter(role => role !== undefined)
+                    
                     const roleUnverified = userGuild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
 
+                    // Handle previous user with same email (unverify them)
                     database.getEmailUser(userCode.email, userGuild.id, async (currentUserEmail) => {
                         let member = await userGuild.members.fetch(currentUserEmail.userID).catch(() => null)
                         if (interaction.user.id === currentUserEmail.userID) {
                             // same user, nothing to unverify
                         } else if (member) {
                             try {
-                                await member.roles.remove(roleVerified)
+                                // Remove all verified roles from previous user
+                                for (const role of rolesToAdd) {
+                                    await member.roles.remove(role).catch(() => {})
+                                }
                                 if (roleUnverified) {
                                     await member.roles.add(roleUnverified)
                                 }
@@ -521,11 +547,18 @@ bot.on('interactionCreate', async interaction => {
                         }
                     })
 
-                    database.updateEmailUser(new EmailUser(userCode.email, interaction.user.id, userGuild.id, serverSettings.verifiedRoleName, 0))
+                    // Store the first default role in the legacy field for backward compatibility
+                    const primaryRoleId = defaultRoles.length > 0 ? defaultRoles[0] : (allRoleIds[0] || '')
+                    database.updateEmailUser(new EmailUser(userCode.email, interaction.user.id, userGuild.id, primaryRoleId, 0))
 
+                    // Assign all roles to the verified user
+                    const assignedRoleNames = []
                     try {
                         const verifyMember = await userGuild.members.fetch(interaction.user.id)
-                        await verifyMember.roles.add(roleVerified)
+                        for (const role of rolesToAdd) {
+                            await verifyMember.roles.add(role)
+                            assignedRoleNames.push(role.name)
+                        }
                         if (serverSettings.unverifiedRoleName !== "") {
                             await verifyMember.roles.remove(roleUnverified).catch(() => {})
                         }
@@ -543,10 +576,11 @@ bot.on('interactionCreate', async interaction => {
                     }
                     try {
                         if (serverSettings.logChannel !== "") {
-                            userGuild.channels.cache.get(serverSettings.logChannel).send(`✅ <@${interaction.user.id}> → \`${userCode.logEmail}\``).catch(() => {})
+                            const rolesText = assignedRoleNames.length > 0 ? ` [${assignedRoleNames.join(', ')}]` : ''
+                            userGuild.channels.cache.get(serverSettings.logChannel).send(`✅ <@${interaction.user.id}> → \`${userCode.logEmail}\`${rolesText}`).catch(() => {})
                         }
                     } catch {}
-                    const successEmbed = createVerificationSuccessEmbed(serverSettings.language, roleVerified.name, userGuild.name, userGuild.iconURL({ dynamic: true }))
+                    const successEmbed = createVerificationSuccessEmbed(serverSettings.language, assignedRoleNames, userGuild.name, userGuild.iconURL({ dynamic: true }))
                     await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const sent = await interaction.fetchReply().catch(() => null)
                     // Track successful verification (global and per-guild)
@@ -583,6 +617,19 @@ bot.on('interactionCreate', async interaction => {
             return
         }
         return
+    }
+
+    // Handle autocomplete interactions
+    if (interaction.isAutocomplete()) {
+        const command = bot.commands.get(interaction.commandName);
+        if (!command || !command.autocomplete) return;
+        
+        try {
+            await command.autocomplete(interaction);
+        } catch (error) {
+            console.error('Autocomplete error:', error);
+        }
+        return;
     }
 
     if (!interaction.isCommand()) return;

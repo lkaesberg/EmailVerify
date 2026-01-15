@@ -36,8 +36,17 @@ module.exports = {
             database.getGuildStats(interaction.guildId, async (guildStats) => {
                 const isConfigured = serverSettings.status
                 
-                // Check roles
-                const roleVerified = interaction.guild.roles.cache.find(r => r.id === serverSettings.verifiedRoleName)
+                // Check default roles
+                const defaultRoles = serverSettings.defaultRoles || []
+                const validDefaultRoles = defaultRoles
+                    .map(id => interaction.guild.roles.cache.get(id))
+                    .filter(role => role !== undefined)
+                
+                // Check domain roles
+                const domainRoles = serverSettings.domainRoles || {}
+                const domainRoleEntries = Object.entries(domainRoles)
+                
+                // Check unverified role
                 const roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName)
                 
                 // Check log channel
@@ -53,6 +62,24 @@ module.exports = {
                     ? serverSettings.blacklist.map(b => `\`${b}\``).join(', ')
                     : '*None*'
                 
+                // Format default roles
+                const defaultRolesDisplay = validDefaultRoles.length > 0
+                    ? validDefaultRoles.map(r => `<@&${r.id}>`).join(', ')
+                    : '❌ *None set*'
+                
+                // Format domain-specific roles
+                let domainRolesDisplay = '*None configured*'
+                if (domainRoleEntries.length > 0) {
+                    domainRolesDisplay = domainRoleEntries.map(([domain, roleIds]) => {
+                        const roles = roleIds
+                            .map(id => interaction.guild.roles.cache.get(id))
+                            .filter(r => r)
+                            .map(r => `<@&${r.id}>`)
+                            .join(', ')
+                        return `\`${domain.replaceAll("*", "✱")}\` → ${roles || '*invalid roles*'}`
+                    }).join('\n')
+                }
+                
                 // Determine status color and icon
                 const statusColor = isConfigured ? 0x57F287 : 0xED4245
                 const statusIcon = isConfigured ? '✅' : '❌'
@@ -60,7 +87,8 @@ module.exports = {
                 
                 // Build issues list
                 const issues = []
-                if (!roleVerified) issues.push('• Verified role not set or not found')
+                const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
+                if (!hasAnyRoles) issues.push('• No verified roles configured (use `/role add` or `/domainrole add`)')
                 if (serverSettings.domains.length === 0) issues.push('• No email domains configured')
                 
                 // Get current month name for display
@@ -74,10 +102,18 @@ module.exports = {
                     .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
                     .addFields(
                         {
-                            name: '👥 Roles',
-                            value: 
-                                `**Verified:** ${roleVerified ? `<@&${roleVerified.id}>` : '❌ *Not set*'}\n` +
-                                `**Unverified:** ${roleUnverified ? `<@&${roleUnverified.id}>` : '➖ *Disabled*'}`,
+                            name: '🎭 Default Roles (all verified users)',
+                            value: defaultRolesDisplay,
+                            inline: false
+                        },
+                        {
+                            name: '🔗 Domain-Specific Roles',
+                            value: domainRolesDisplay,
+                            inline: false
+                        },
+                        {
+                            name: '👤 Unverified Role',
+                            value: roleUnverified ? `<@&${roleUnverified.id}>` : '➖ *Disabled*',
                             inline: true
                         },
                         {
