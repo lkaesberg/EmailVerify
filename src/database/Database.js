@@ -61,6 +61,43 @@ class Database {
                 }
             })
         })
+        this.runMigration(11, () => {
+            // Migrate domains and blacklist from comma-separated strings to JSON arrays
+            this.db.each("SELECT guildid, domains, blacklist FROM guilds", (err, result) => {
+                if (!err && result) {
+                    // Convert domains from comma-separated to JSON
+                    let domainsJson = '[]'
+                    if (result.domains && result.domains.length > 0) {
+                        try {
+                            // Check if already JSON
+                            JSON.parse(result.domains)
+                            domainsJson = result.domains
+                        } catch {
+                            // Convert comma-separated to JSON array
+                            const domainsArray = result.domains.split(',').filter(d => d.length > 0)
+                            domainsJson = JSON.stringify(domainsArray)
+                        }
+                    }
+                    
+                    // Convert blacklist from comma-separated to JSON
+                    let blacklistJson = '[]'
+                    if (result.blacklist && result.blacklist.length > 0) {
+                        try {
+                            // Check if already JSON
+                            JSON.parse(result.blacklist)
+                            blacklistJson = result.blacklist
+                        } catch {
+                            // Convert comma-separated to JSON array
+                            const blacklistArray = result.blacklist.split(',').filter(b => b.length > 0)
+                            blacklistJson = JSON.stringify(blacklistArray)
+                        }
+                    }
+                    
+                    this.db.run("UPDATE guilds SET domains = ?, blacklist = ? WHERE guildid = ?", 
+                        [domainsJson, blacklistJson, result.guildid])
+                }
+            })
+        })
     }
 
     runMigration(version, migration) {
@@ -92,7 +129,7 @@ class Database {
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
             "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, serverSettings.domains.toString(), serverSettings.blacklist.toString(), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles)])
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles)])
     }
 
     async getServerSettings(guildID, callback) {
@@ -110,22 +147,40 @@ class Database {
                     serverSettings.autoVerify = result.autoVerify
                     serverSettings.autoAddUnverified = result.autoAddUnverified
                     serverSettings.verifyMessage = result.verifyMessage
-                    serverSettings.domains = result.domains.split(",").filter((domain) => domain.length !== 0)
-                    serverSettings.blacklist = result.blacklist.split(",").filter((name) => name.length !== 0)
                     serverSettings.logChannel = result.logChannel
                     serverSettings.errorNotifyType = result.errorNotifyType || "owner"
                     serverSettings.errorNotifyTarget = result.errorNotifyTarget || ""
-                    // Parse domain-based roles (JSON stored in DB)
+                    
+                    // Parse domains (JSON array, with fallback for legacy comma-separated format)
+                    try {
+                        serverSettings.domains = result.domains ? JSON.parse(result.domains) : []
+                    } catch {
+                        // Fallback to comma-separated format for backward compatibility
+                        serverSettings.domains = result.domains ? result.domains.split(",").filter(d => d.length !== 0) : []
+                    }
+                    
+                    // Parse blacklist (JSON array, with fallback for legacy comma-separated format)
+                    try {
+                        serverSettings.blacklist = result.blacklist ? JSON.parse(result.blacklist) : []
+                    } catch {
+                        // Fallback to comma-separated format for backward compatibility
+                        serverSettings.blacklist = result.blacklist ? result.blacklist.split(",").filter(b => b.length !== 0) : []
+                    }
+                    
+                    // Parse defaultRoles (JSON array)
                     try {
                         serverSettings.defaultRoles = result.defaultRoles ? JSON.parse(result.defaultRoles) : []
                     } catch {
                         serverSettings.defaultRoles = []
                     }
+                    
+                    // Parse domainRoles (JSON object)
                     try {
                         serverSettings.domainRoles = result.domainRoles ? JSON.parse(result.domainRoles) : {}
                     } catch {
                         serverSettings.domainRoles = {}
                     }
+                    
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
                     if (serverSettings.defaultRoles.length === 0 && serverSettings.verifiedRoleName) {
                         serverSettings.defaultRoles = [serverSettings.verifiedRoleName]
