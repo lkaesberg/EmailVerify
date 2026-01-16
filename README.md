@@ -74,10 +74,21 @@ Use this link to invite the bot to your server:
 ### Quick Setup
 
 1. **Invite the bot** using the link above
-2. **Set the verified role**: `/role verified @YourVerifiedRole`
+2. **Add a default role**: `/role add @Verified` (given to all verified users)
 3. **Add allowed domains**: `/domain add @university.edu` (use `@*.edu` for all .edu domains)
 4. **Create a verification button**: `/button #verification-channel "Click to Verify"`
 5. Done! Users can now verify themselves
+
+### Advanced: Domain-Specific Roles
+
+You can assign different roles based on which email domain the user verifies with:
+
+```
+/domainrole add domain:@staff.company.com role:@Staff
+/domainrole add domain:@*.edu role:@Student
+```
+
+Users will receive their domain-specific roles **plus** any default roles you've configured.
 
 ---
 
@@ -94,8 +105,23 @@ Use this link to invite the bot to your server:
 
 | Command | Description |
 |---------|-------------|
-| `/role verified [role]` | Set or view the role given after verification |
+| `/role add <role>` | Add a default role given to all verified users |
+| `/role remove <role>` | Remove a role from the default roles list |
+| `/role list` | View all default roles |
 | `/role unverified [role]` | Set or view the optional role for unverified members |
+
+### 🎭 Domain-Specific Roles
+
+Assign different roles based on email domain:
+
+| Command | Description |
+|---------|-------------|
+| `/domainrole add <domain> <role>` | Add a role for a specific email domain |
+| `/domainrole remove <domain> <role>` | Remove a role from a domain |
+| `/domainrole list` | View all domain-role mappings |
+| `/domainrole clear <domain>` | Remove all roles for a domain |
+
+> 💡 **Example:** `/domainrole add @*.edu @Student` gives the Student role to anyone with a .edu email
 
 ### 📧 Domain Management
 
