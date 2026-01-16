@@ -103,11 +103,36 @@ function emailIsBlacklisted(email, blacklistPatterns) {
     return false;
 }
 
+/**
+ * Get all domain patterns that match an email address
+ * Returns all matching patterns (not just the first or most specific)
+ * @param {string} email - The email address to check
+ * @param {string[]} domainPatterns - Array of domain patterns (e.g., @gmail.com, @*.edu)
+ * @returns {string[]} Array of all matching domain patterns
+ */
+function getMatchingDomainPatterns(email, domainPatterns) {
+    email = email.toLowerCase();
+    const matches = [];
+    
+    for (const pattern of domainPatterns) {
+        // Domain patterns should match at the end of the email
+        const regex = wildcardToRegex(pattern, { fullMatch: false, caseInsensitive: true });
+        
+        // Ensure it matches at the end (domain part)
+        const endPattern = new RegExp(regex.source + '$', regex.flags);
+        if (endPattern.test(email)) {
+            matches.push(pattern);
+        }
+    }
+    return matches;
+}
+
 module.exports = {
     escapeRegExp,
     wildcardToRegex,
     matchesWildcard,
     matchesAnyWildcard,
     emailMatchesDomains,
-    emailIsBlacklisted
+    emailIsBlacklisted,
+    getMatchingDomainPatterns
 };

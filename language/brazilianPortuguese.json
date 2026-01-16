@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ Qualquer endereço de email é aceito",
   "emailModalAcceptedDomains": "📋 **Você deve usar um email de um destes domínios:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ ex. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Roles que você receberá**",
   "codeModalTitle": "🔐 Insira o Código de Verificação",
   "codeModalHeader": "## Quase Lá!\nVerifique sua caixa de entrada para o código de verificação de 6 dígitos.",
   "codeModalLabel": "Código de Verificação",

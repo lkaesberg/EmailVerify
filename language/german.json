@@ -30,6 +30,7 @@
   "emailModalAllDomainsAccepted": "✅ Jede E-Mail-Adresse wird akzeptiert",
   "emailModalAcceptedDomains": "📋 **Du musst eine E-Mail von einer dieser Domains verwenden:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ z.B. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Rollen, die du erhältst**",
   "codeModalTitle": "🔐 Verifizierungscode eingeben",
   "codeModalHeader": "## Fast geschafft!\nPrüfe deinen Posteingang auf den 6-stelligen Verifizierungscode.",
   "codeModalLabel": "Verifizierungscode",

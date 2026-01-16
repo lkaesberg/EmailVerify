@@ -45,15 +45,19 @@ function createInvalidEmailEmbed(language) {
 /**
  * Creates a "Verification Success" embed
  * @param {string} language - Language code for localization
- * @param {string} roleName - Name of the verified role
+ * @param {string|string[]} roleNames - Name(s) of the verified role(s)
  * @param {string} serverName - Name of the server
  * @param {string} serverIconURL - URL of the server icon
  * @returns {EmbedBuilder}
  */
-function createVerificationSuccessEmbed(language, roleName, serverName, serverIconURL) {
+function createVerificationSuccessEmbed(language, roleNames, serverName, serverIconURL) {
+    // Handle both single role name (legacy) and array of role names
+    const roleList = Array.isArray(roleNames) ? roleNames : [roleNames]
+    const rolesText = roleList.length > 0 ? roleList.join(', ') : 'Verified'
+    
     return new EmbedBuilder()
         .setTitle(getLocale(language, 'verificationSuccessTitle'))
-        .setDescription(getLocale(language, 'verificationSuccessDescription', roleName, serverName))
+        .setDescription(getLocale(language, 'verificationSuccessDescription', rolesText, serverName))
         .setColor(0x57F287)
         .setThumbnail(serverIconURL);
 }

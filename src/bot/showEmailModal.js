@@ -49,22 +49,30 @@ function createExampleDomain(pattern) {
  * Formats a domain for display with pattern and example
  * @param {string} domain - The domain string (e.g., "@example.com", "@*.edu", "@gmail.*")
  * @param {string} language - The language code for localization
+ * @param {string[]} roleNames - Optional array of role names for this domain
  * @returns {string} - Formatted domain string
  */
-function formatDomain(domain, language) {
+function formatDomain(domain, language, roleNames = []) {
     const trimmed = domain.trim()
     const withoutAt = trimmed.replace('@', '')
     
+    let formatted
     // If no wildcards, show as simple code-formatted domain
     if (!withoutAt.includes('*')) {
-        return `\`[name]${trimmed}\``
+        formatted = `\`[name]${trimmed}\``
+    } else {
+        // Create pattern description and example
+        const pattern = '[name]@' + createPatternDescription(withoutAt)
+        const example = 'name@' + createExampleDomain(withoutAt)
+        formatted = getLocale(language, "emailModalDomainExample", pattern, example)
     }
     
-    // Create pattern description and example
-    const pattern = '[name]@' + createPatternDescription(withoutAt)
-    const example = 'name@' + createExampleDomain(withoutAt)
+    // Add role info if available
+    if (roleNames.length > 0) {
+        formatted += ` → ${roleNames.join(', ')}`
+    }
     
-    return getLocale(language, "emailModalDomainExample", pattern, example)
+    return formatted
 }
 
 /**
@@ -83,6 +91,18 @@ async function showEmailModal(interaction, guild, userGuilds) {
     await database.getServerSettings(guild.id, async serverSettings => {
         const language = serverSettings.language
         const domains = serverSettings.domains || []
+        const domainRoles = serverSettings.domainRoles || {}
+        const defaultRoles = serverSettings.defaultRoles || []
+        
+        // Helper to get role names from IDs
+        const getRoleNames = (roleIds) => {
+            return roleIds
+                .map(id => {
+                    const role = guild.roles.cache.get(id)
+                    return role ? role.name : null
+                })
+                .filter(name => name !== null)
+        }
         
         // Build header text
         let headerText = getLocale(language, "emailModalHeader")
@@ -92,14 +112,26 @@ async function showEmailModal(interaction, guild, userGuilds) {
         const hasAnyFullWildcard = domains.some(d => isFullWildcard(d))
         const allDomainsAccepted = hasNoDomains || hasAnyFullWildcard
         
+        // Get default role names for display
+        const defaultRoleNames = getRoleNames(defaultRoles)
+        
         if (allDomainsAccepted) {
             // All domains accepted
             headerText += `\n\n${getLocale(language, "emailModalAllDomainsAccepted")}`
+            // Show default roles if any
+            if (defaultRoleNames.length > 0) {
+                headerText += `\n${getLocale(language, "emailModalRolesAssigned")}: ${defaultRoleNames.join(', ')}`
+            }
         } else {
-            // Show formatted domain list
+            // Show formatted domain list with roles
             headerText += `\n\n${getLocale(language, "emailModalAcceptedDomains")}`
             domains.forEach((domain, index) => {
-                const formatted = formatDomain(domain, language)
+                // Get domain-specific roles + default roles
+                const domainSpecificRoles = domainRoles[domain] || []
+                const allRoleIds = [...new Set([...domainSpecificRoles, ...defaultRoles])]
+                const roleNames = getRoleNames(allRoleIds)
+                
+                const formatted = formatDomain(domain, language, roleNames)
                 headerText += `\n${index + 1}. ${formatted}`
             })
         }
