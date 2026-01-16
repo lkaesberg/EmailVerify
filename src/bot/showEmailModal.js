@@ -115,12 +115,40 @@ async function showEmailModal(interaction, guild, userGuilds) {
         // Get default role names for display
         const defaultRoleNames = getRoleNames(defaultRoles)
         
+        // Check if there are any non-wildcard domain-specific roles to show
+        const domainsWithSpecificRoles = Object.keys(domainRoles).filter(d => !isFullWildcard(d))
+        const hasSpecificDomainRoles = domainsWithSpecificRoles.length > 0
+        
         if (allDomainsAccepted) {
             // All domains accepted
             headerText += `\n\n${getLocale(language, "emailModalAllDomainsAccepted")}`
-            // Show default roles if any
-            if (defaultRoleNames.length > 0) {
-                headerText += `\n${getLocale(language, "emailModalRolesAssigned")}: ${defaultRoleNames.join(', ')}`
+            
+            // Collect base roles: default roles + any domain-specific roles from wildcard patterns
+            const baseRoleIds = [...defaultRoles]
+            for (const domain of domains) {
+                if (isFullWildcard(domain) && domainRoles[domain]) {
+                    baseRoleIds.push(...domainRoles[domain])
+                }
+            }
+            const uniqueBaseRoleIds = [...new Set(baseRoleIds)]
+            const baseRoleNames = getRoleNames(uniqueBaseRoleIds)
+            
+            // Show base roles if any
+            if (baseRoleNames.length > 0) {
+                headerText += `\n${getLocale(language, "emailModalRolesAssigned")}: ${baseRoleNames.join(', ')}`
+            }
+            
+            // If there are specific domain roles, show them as bonus roles
+            if (hasSpecificDomainRoles) {
+                headerText += `\n\n📋 **Additional roles for specific domains:**`
+                domainsWithSpecificRoles.forEach((domain) => {
+                    const domainSpecificRoles = domainRoles[domain] || []
+                    const roleNames = getRoleNames(domainSpecificRoles)
+                    if (roleNames.length > 0) {
+                        const domainDisplay = domain.replaceAll('*', '✱')
+                        headerText += `\n• \`${domainDisplay}\` → +${roleNames.join(', ')}`
+                    }
+                })
             }
         } else {
             // Show formatted domain list with roles
