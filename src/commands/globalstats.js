@@ -35,7 +35,8 @@ module.exports = {
                 .setRequired(false)
                 .setMinValue(1)
                 .setMaxValue(10)
-        ),
+        )
+        .setDefaultMemberPermissions(0),
 
     getCurrentMonth() {
         const now = new Date();

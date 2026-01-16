@@ -70,7 +70,7 @@ module.exports = {
 
         if (subcommand === 'delete-server') {
             // Check admin permissions for server deletion
-            if (!interaction.member.permissions.has('Administrator')) {
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
                 await interaction.reply({
                     content: "❌ **Permission denied.**\n\nOnly server administrators can delete server data.",
                     flags: MessageFlags.Ephemeral
