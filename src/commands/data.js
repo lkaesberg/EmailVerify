@@ -20,7 +20,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('delete-server')
-                .setDescription('Delete all server data and remove the bot from this server')
+                .setDescription('Delete all server data and remove the bot from this server (requires administrator permissions)')
                 .addStringOption(option =>
                     option
                         .setName('confirm')
