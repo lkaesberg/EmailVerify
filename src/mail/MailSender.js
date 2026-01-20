@@ -1,11 +1,11 @@
 let {smtpHost, email, username, password, isGoogle, isSecure, smtpPort} = require("../../config/config.json");
 
 const nodemailer = require("nodemailer");
-const smtpTransport = require("nodemailer-smtp-transport");
 const {defaultLanguage, getLocale} = require("../Language");
 const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 
+// Ensure username is set (used for SMTP auth AND From address for policy compliance)
 if (typeof username === 'undefined') {
     username = email;
 }
@@ -13,22 +13,26 @@ if (typeof username === 'undefined') {
 module.exports = class MailSender {
     constructor(serverStatsAPI) {
         this.serverStatsAPI = serverStatsAPI
+        
         let nodemailerOptions = {
             host: smtpHost,
+            port: smtpPort || 587,           // Default to STARTTLS port
+            secure: isSecure || false,        // false = STARTTLS on 587, true = implicit TLS on 465
             auth: {
                 user: username,
                 pass: password
             },
             tls: {
-              rejectUnauthorized: false
+                rejectUnauthorized: true      // Enforce TLS certificate verification (required by many university mail servers)
             }
         }
-        if (isGoogle) nodemailerOptions["service"] = "gmail"
-        if (isSecure) nodemailerOptions["secure"] = isSecure
-        if (smtpPort) nodemailerOptions["port"] = smtpPort
+        
+        // Gmail uses its own service configuration
+        if (isGoogle) {
+            nodemailerOptions["service"] = "gmail"
+        }
 
-
-        this.transporter = nodemailer.createTransport(smtpTransport(nodemailerOptions));
+        this.transporter = nodemailer.createTransport(nodemailerOptions);
     }
 
     /**
@@ -47,7 +51,7 @@ module.exports = class MailSender {
             const language = serverSettings.language || defaultLanguage;
             
             const mailOptions = {
-                from: '"Email Verification Bot ✉️" <'+ email +'>',
+                from: `"Email Verification Bot ✉️" <${username}>`,  // MUST match authenticated user for DMARC/SPF alignment
                 to: toEmail,
                 subject: '[EmailVerify] Your Discord verification code for ' + name,
                 text: getLocale(language, "emailText", name, code),
@@ -56,7 +60,7 @@ module.exports = class MailSender {
                     'X-Priority': '1',
                     'X-MSMail-Priority': 'High',
                     'Importance': 'high',
-                    'List-Unsubscribe': '<mailto:' + email + '?subject=unsubscribe>',
+                    'List-Unsubscribe': `<mailto:${username}?subject=unsubscribe>`,
                     'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
                 }
             };
