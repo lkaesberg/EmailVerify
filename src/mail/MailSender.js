@@ -18,6 +18,7 @@ module.exports = class MailSender {
             host: smtpHost,
             port: smtpPort || 587,           // Default to STARTTLS port
             secure: isSecure || false,        // false = STARTTLS on 587, true = implicit TLS on 465
+            name: smtpHost,
             auth: {
                 user: username,
                 pass: password
@@ -29,10 +30,16 @@ module.exports = class MailSender {
         
         // Gmail uses its own service configuration
         if (isGoogle) {
-            nodemailerOptions["service"] = "gmail"
-        }
-
-        this.transporter = nodemailer.createTransport(nodemailerOptions);
+          this.transporter = nodemailer.createTransport({
+              service: 'gmail',
+              auth: {
+                  user: username,
+                  pass: password
+              }
+          });
+      } else {
+          this.transporter = nodemailer.createTransport(nodemailerOptions);
+      }
     }
 
     /**
