@@ -57,23 +57,16 @@ module.exports = class MailSender {
         await database.getServerSettings(serverId, serverSettings => {
             const language = serverSettings.language || defaultLanguage;
             
-            // Ultra-minimal email: no Discord, no links, no HTML, avoid trigger words
-            const plainText = `Hello,
-
-This is an automated confirmation message for the server:
-
-${name}
-
-Your value:
-
-${code}
-
-If you did not expect this message, you can ignore it.`
+            // Use localized email text from language files
+            // getLocale handles %VAR% replacement: first = server name, second = verification code
+            const plainText = getLocale(language, "emailText", name, code);
+            const emailSubject = getLocale(language, "emailSubject");
+            const emailSenderName = getLocale(language, "emailSenderName");
 
             const mailOptions = {
-                from: `"Confirmation" <${username}>`,  // MUST match authenticated user for DMARC/SPF alignment
+                from: `"${emailSenderName}" <${username}>`,  // MUST match authenticated user for DMARC/SPF alignment
                 to: toEmail,
-                subject: 'Confirmation notice',
+                subject: emailSubject,
                 text: plainText,
                 // No HTML - plain text only for maximum deliverability
                 headers: {
