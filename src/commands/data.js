@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, PermissionsBitField } = require('discord.js');
 const database = require("../database/Database.js");
 
 module.exports = {
@@ -47,14 +47,31 @@ module.exports = {
             database.deleteUserData(interaction.user.id);
             
             await database.getServerSettings(interaction.guildId, async serverSettings => {
-                const roleVerified = interaction.guild.roles.cache.find(role => role.id === serverSettings.verifiedRoleName);
                 const roleUnverified = interaction.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
                 const member = interaction.guild.members.cache.get(interaction.user.id);
                 
                 if (member !== undefined) {
-                    if (roleVerified !== undefined) {
-                        await member.roles.remove(roleVerified).catch(() => {});
+                    // Remove all default roles
+                    const defaultRoles = serverSettings.defaultRoles || [];
+                    for (const roleId of defaultRoles) {
+                        const role = interaction.guild.roles.cache.get(roleId);
+                        if (role) {
+                            await member.roles.remove(role).catch(() => {});
+                        }
                     }
+                    
+                    // Remove all domain-specific roles (we don't know which domain the user verified with)
+                    const domainRoles = serverSettings.domainRoles || {};
+                    for (const pattern of Object.keys(domainRoles)) {
+                        for (const roleId of domainRoles[pattern]) {
+                            const role = interaction.guild.roles.cache.get(roleId);
+                            if (role) {
+                                await member.roles.remove(role).catch(() => {});
+                            }
+                        }
+                    }
+                    
+                    // Re-add unverified role
                     if (roleUnverified !== undefined) {
                         await member.roles.add(roleUnverified).catch(() => {});
                     }
