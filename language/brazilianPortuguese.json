@@ -71,5 +71,16 @@
   "errorRoleAssignTitle": "Erro de Atribuição de Role",
   "errorRoleAssignMessage": "Falha ao atribuir a role verificado/não verificado a um usuário. Por favor verifique:\n• A role do bot está acima das roles verificado/não verificado\n• As roles ainda existem\n• O bot tem a permissão 'Gerenciar Cargos'\n\n💡 **Dica:** Mova a role do EmailBot acima das roles verificado/não verificado em Configurações do Servidor → Cargos, ou atribua a role verificado/não verificado diretamente ao bot.\n[Ver exemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Não Configurado",
-  "errorBotNotConfiguredMessage": "Um usuário tentou se verificar mas o bot não está configurado corretamente.\n\n**Configuração necessária:**\n• Definir domínios de email permitidos com `/domain add`\n• Definir role verificado com `/role verified`\n\nExecute `/status` para verificar a configuração atual."
+  "errorBotNotConfiguredMessage": "Um usuário tentou se verificar mas o bot não está configurado corretamente.\n\n**Configuração necessária:**\n• Definir domínios de email permitidos com `/domain add`\n• Definir role verificado com `/role verified`\n\nExecute `/status` para verificar a configuração atual.",
+  "emaillistEmpty": "📧 **Nenhum endereço de email permitido configurado.**\n\nEnvie um arquivo CSV com `/emaillist upload` para permitir endereços de email específicos para verificação.",
+  "emaillistListHeader": "📧 **Endereços de email permitidos (%VAR% no total):**",
+  "emaillistListMore": "e mais %VAR%...",
+  "emaillistAlreadyEmpty": "⚠️ **A lista de emails já está vazia.**",
+  "emaillistCleared": "🗑️ **Lista de emails limpa!**\n\n%VAR% endereço(s) de email removido(s).",
+  "emaillistInvalidFile": "❌ **Tipo de arquivo inválido.**\n\nPor favor envie um arquivo `.csv` ou `.txt` com um endereço de email por linha.",
+  "emaillistFileTooLarge": "❌ **Arquivo muito grande.**\n\nO arquivo deve ser menor que 1MB.",
+  "emaillistNoValidEmails": "❌ **Nenhum endereço de email válido encontrado no arquivo.**\n\nCertifique-se de que o arquivo contém um endereço de email por linha (ex. `usuario@exemplo.com`).",
+  "emaillistUploaded": "✅ **Lista de emails enviada!**\n\n%VAR% endereço(s) de email único(s) adicionado(s). Usuários com esses endereços podem agora se verificar.",
+  "emaillistUploadError": "❌ **Falha ao processar o arquivo.**\n\nCertifique-se de que o arquivo é um arquivo CSV/texto válido e tente novamente.",
+  "emailModalAllowedEmails": "📋 Além disso, **%VAR%** endereços de email específicos são permitidos."
 }

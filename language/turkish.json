@@ -71,5 +71,16 @@
   "errorRoleAssignTitle": "Rol Atama Hatası",
   "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip\n\n💡 **İpucu:** Sunucu Ayarları → Roller'de EmailBot rolünü doğrulanmış/doğrulanmamış rollerin üzerine taşıyın veya doğrulanmış/doğrulanmamış rolü doğrudan bota atayın.\n[Örneğe bakın](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Yapılandırılmamış",
-  "errorBotNotConfiguredMessage": "Bir kullanıcı doğrulamaya çalıştı ancak bot düzgün yapılandırılmamış.\n\n**Gerekli kurulum:**\n• `/domain add` ile izin verilen e-posta domainlerini ayarlayın\n• `/role verified` ile doğrulanmış rolü ayarlayın\n\nMevcut yapılandırmayı kontrol etmek için `/status` çalıştırın."
+  "errorBotNotConfiguredMessage": "Bir kullanıcı doğrulamaya çalıştı ancak bot düzgün yapılandırılmamış.\n\n**Gerekli kurulum:**\n• `/domain add` ile izin verilen e-posta domainlerini ayarlayın\n• `/role verified` ile doğrulanmış rolü ayarlayın\n\nMevcut yapılandırmayı kontrol etmek için `/status` çalıştırın.",
+  "emaillistEmpty": "📧 **İzin verilen e-posta adresi yapılandırılmamış.**\n\nBelirli e-posta adreslerinin doğrulanmasına izin vermek için `/emaillist upload` ile bir CSV dosyası yükleyin.",
+  "emaillistListHeader": "📧 **İzin verilen e-posta adresleri (toplam %VAR%):**",
+  "emaillistListMore": "ve %VAR% daha...",
+  "emaillistAlreadyEmpty": "⚠️ **E-posta listesi zaten boş.**",
+  "emaillistCleared": "🗑️ **E-posta listesi temizlendi!**\n\n%VAR% e-posta adresi kaldırıldı.",
+  "emaillistInvalidFile": "❌ **Geçersiz dosya türü.**\n\nLütfen her satırda bir e-posta adresi olan bir `.csv` veya `.txt` dosyası yükleyin.",
+  "emaillistFileTooLarge": "❌ **Dosya çok büyük.**\n\nDosya 1MB'den küçük olmalıdır.",
+  "emaillistNoValidEmails": "❌ **Dosyada geçerli e-posta adresi bulunamadı.**\n\nDosyanın her satırda bir e-posta adresi içerdiğinden emin olun (örn. `kullanici@ornek.com`).",
+  "emaillistUploaded": "✅ **E-posta listesi yüklendi!**\n\n%VAR% benzersiz e-posta adresi eklendi. Bu adreslere sahip kullanıcılar artık doğrulanabilir.",
+  "emaillistUploadError": "❌ **Dosya işlenemedi.**\n\nDosyanın geçerli bir CSV/metin dosyası olduğundan emin olun ve tekrar deneyin.",
+  "emailModalAllowedEmails": "📋 Ayrıca, **%VAR%** belirli e-posta adresine izin verilmektedir."
 }

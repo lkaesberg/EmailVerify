@@ -98,6 +98,10 @@ class Database {
                 }
             })
         })
+        this.runMigration(12, () => {
+            // Add allowed emails list for CSV upload feature
+            this.db.run("ALTER TABLE guilds ADD allowedEmails TEXT DEFAULT '[]'")
+        })
     }
 
     runMigration(version, migration) {
@@ -128,8 +132,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles)])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles, allowedEmails) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails)])
     }
 
     async getServerSettings(guildID, callback) {
@@ -179,6 +183,13 @@ class Database {
                         serverSettings.domainRoles = result.domainRoles ? JSON.parse(result.domainRoles) : {}
                     } catch {
                         serverSettings.domainRoles = {}
+                    }
+                    
+                    // Parse allowedEmails (JSON array)
+                    try {
+                        serverSettings.allowedEmails = result.allowedEmails ? JSON.parse(result.allowedEmails) : []
+                    } catch {
+                        serverSettings.allowedEmails = []
                     }
                     
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it

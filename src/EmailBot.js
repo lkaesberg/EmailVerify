@@ -406,10 +406,13 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
                 // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
+                // Also checks against uploaded email list
                 const hasValidFormat = emailText.split("@").length - 1 === 1 && !emailText.includes(' ')
                 const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
+                const allowedEmails = serverSettings.allowedEmails || []
+                const isInAllowedList = allowedEmails.includes(emailText.toLowerCase())
                 
-                if (!hasValidFormat || !matchesDomain) {
+                if (!hasValidFormat || (!matchesDomain && !isInAllowedList)) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }

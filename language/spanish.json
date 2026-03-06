@@ -71,5 +71,16 @@
   "errorRoleAssignTitle": "Error de Asignación de Rol",
   "errorRoleAssignMessage": "No se pudo asignar el rol verificado/no verificado a un usuario. Por favor asegúrese de:\n• El rol del bot está más alto que los roles verificado/no verificado\n• Los roles todavía existen\n• El bot tiene el permiso 'Gestionar Roles'\n\n💡 **Consejo:** Mueva el rol de EmailBot por encima de los roles verificado/no verificado en Configuración del servidor → Roles, o asigne el rol verificado/no verificado directamente al bot.\n[Ver ejemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot No Configurado",
-  "errorBotNotConfiguredMessage": "Un usuario intentó verificarse pero el bot no está configurado correctamente.\n\n**Configuración requerida:**\n• Establecer dominios de email permitidos con `/domain add`\n• Establecer rol verificado con `/role verified`\n\nEjecute `/status` para verificar la configuración actual."
+  "errorBotNotConfiguredMessage": "Un usuario intentó verificarse pero el bot no está configurado correctamente.\n\n**Configuración requerida:**\n• Establecer dominios de email permitidos con `/domain add`\n• Establecer rol verificado con `/role verified`\n\nEjecute `/status` para verificar la configuración actual.",
+  "emaillistEmpty": "📧 **No hay direcciones de email permitidas configuradas.**\n\nSube un archivo CSV con `/emaillist upload` para permitir la verificación de direcciones de email específicas.",
+  "emaillistListHeader": "📧 **Direcciones de email permitidas (%VAR% en total):**",
+  "emaillistListMore": "y %VAR% más...",
+  "emaillistAlreadyEmpty": "⚠️ **La lista de emails ya está vacía.**",
+  "emaillistCleared": "🗑️ **¡Lista de emails eliminada!**\n\n%VAR% dirección(es) de email eliminada(s).",
+  "emaillistInvalidFile": "❌ **Tipo de archivo inválido.**\n\nPor favor sube un archivo `.csv` o `.txt` con una dirección de email por línea.",
+  "emaillistFileTooLarge": "❌ **Archivo demasiado grande.**\n\nEl archivo debe ser menor de 1MB.",
+  "emaillistNoValidEmails": "❌ **No se encontraron direcciones de email válidas en el archivo.**\n\nAsegúrate de que el archivo contenga una dirección de email por línea (ej. `usuario@ejemplo.com`).",
+  "emaillistUploaded": "✅ **¡Lista de emails subida!**\n\n%VAR% dirección(es) de email única(s) añadida(s). Los usuarios con estas direcciones ahora pueden verificarse.",
+  "emaillistUploadError": "❌ **Error al procesar el archivo.**\n\nAsegúrate de que el archivo sea un archivo CSV/texto válido e inténtalo de nuevo.",
+  "emailModalAllowedEmails": "📋 Además, **%VAR%** direcciones de email específicas están permitidas."
 }

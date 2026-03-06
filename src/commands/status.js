@@ -89,7 +89,7 @@ module.exports = {
                 const issues = []
                 const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
                 if (!hasAnyRoles) issues.push('• No verified roles configured (use `/role add` or `/domainrole add`)')
-                if (serverSettings.domains.length === 0) issues.push('• No email domains configured')
+                if (serverSettings.domains.length === 0 && (serverSettings.allowedEmails || []).length === 0) issues.push('• No email domains or allowed emails configured')
                 
                 // Get current month name for display
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -129,6 +129,12 @@ module.exports = {
                         {
                             name: '📧 Allowed Domains',
                             value: domainsDisplay
+                        },
+                        {
+                            name: '📋 Allowed Email List',
+                            value: (serverSettings.allowedEmails || []).length > 0 
+                                ? `${serverSettings.allowedEmails.length} email address(es)` 
+                                : '*None uploaded*'
                         },
                         {
                             name: '🚫 Blacklisted Emails',

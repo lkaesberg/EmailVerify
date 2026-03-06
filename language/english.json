@@ -71,5 +71,16 @@
   "errorRoleAssignTitle": "Role Assignment Error",
   "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission\n\n💡 **Tip:** Either move the EmailBot role above the verified/unverified roles in Server Settings → Roles, or assign the verified/unverified role to the bot directly.\n[See example](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Not Configured",
-  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set default roles with `/role add` or domain-specific roles with `/domainrole add`\n\nRun `/status` to check the current configuration."
+  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set default roles with `/role add` or domain-specific roles with `/domainrole add`\n\nRun `/status` to check the current configuration.",
+  "emaillistEmpty": "📧 **No allowed email addresses configured.**\n\nUpload a CSV file with `/emaillist upload` to allow specific email addresses to verify.",
+  "emaillistListHeader": "📧 **Allowed email addresses (%VAR% total):**",
+  "emaillistListMore": "and %VAR% more...",
+  "emaillistAlreadyEmpty": "⚠️ **Email list is already empty.**",
+  "emaillistCleared": "🗑️ **Email list cleared!**\n\nRemoved %VAR% email address(es).",
+  "emaillistInvalidFile": "❌ **Invalid file type.**\n\nPlease upload a `.csv` or `.txt` file with one email address per row.",
+  "emaillistFileTooLarge": "❌ **File too large.**\n\nThe file must be smaller than 1MB.",
+  "emaillistNoValidEmails": "❌ **No valid email addresses found in the file.**\n\nMake sure the file contains one email address per row (e.g. `user@example.com`).",
+  "emaillistUploaded": "✅ **Email list uploaded!**\n\nAdded %VAR% unique email address(es). Users with these addresses can now verify.",
+  "emaillistUploadError": "❌ **Failed to process the file.**\n\nPlease make sure the file is a valid CSV/text file and try again.",
+  "emailModalAllowedEmails": "📋 Additionally, **%VAR%** specific email addresses are allowed."
 }

@@ -71,5 +71,16 @@
   "errorRoleAssignTitle": "ข้อผิดพลาดการกำหนดบทบาท",
   "errorRoleAssignMessage": "ไม่สามารถกำหนดบทบาท verified/unverified ให้ผู้ใช้ได้ กรุณาตรวจสอบ:\n• บทบาทของบอทอยู่สูงกว่าบทบาท verified/unverified\n• บทบาทยังคงมีอยู่\n• บอทมีสิทธิ์ 'จัดการบทบาท'\n\n💡 **เคล็ดลับ:** ย้ายบทบาท EmailBot ให้อยู่เหนือบทบาท verified/unverified ในการตั้งค่าเซิร์ฟเวอร์ → บทบาท หรือกำหนดบทบาท verified/unverified ให้บอทโดยตรง\n[ดูตัวอย่าง](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "บอทไม่ได้ถูกตั้งค่า",
-  "errorBotNotConfiguredMessage": "ผู้ใช้พยายามยืนยันตัวตนแต่บอทไม่ได้ถูกตั้งค่าอย่างถูกต้อง\n\n**การตั้งค่าที่ต้องการ:**\n• ตั้งค่าโดเมนอีเมลที่อนุญาตด้วย `/domain add`\n• ตั้งค่าบทบาท verified ด้วย `/role verified`\n\nรัน `/status` เพื่อตรวจสอบการตั้งค่าปัจจุบัน"
+  "errorBotNotConfiguredMessage": "ผู้ใช้พยายามยืนยันตัวตนแต่บอทไม่ได้ถูกตั้งค่าอย่างถูกต้อง\n\n**การตั้งค่าที่ต้องการ:**\n• ตั้งค่าโดเมนอีเมลที่อนุญาตด้วย `/domain add`\n• ตั้งค่าบทบาท verified ด้วย `/role verified`\n\nรัน `/status` เพื่อตรวจสอบการตั้งค่าปัจจุบัน",
+  "emaillistEmpty": "📧 **ไม่มีที่อยู่อีเมลที่อนุญาตถูกตั้งค่า**\n\nอัปโหลดไฟล์ CSV ด้วย `/emaillist upload` เพื่ออนุญาตที่อยู่อีเมลเฉพาะในการยืนยัน",
+  "emaillistListHeader": "📧 **ที่อยู่อีเมลที่อนุญาต (ทั้งหมด %VAR%):**",
+  "emaillistListMore": "และอีก %VAR%...",
+  "emaillistAlreadyEmpty": "⚠️ **รายการอีเมลว่างเปล่าอยู่แล้ว**",
+  "emaillistCleared": "🗑️ **รายการอีเมลถูกล้างแล้ว!**\n\nลบ %VAR% ที่อยู่อีเมลแล้ว",
+  "emaillistInvalidFile": "❌ **ประเภทไฟล์ไม่ถูกต้อง**\n\nกรุณาอัปโหลดไฟล์ `.csv` หรือ `.txt` ที่มีที่อยู่อีเมลหนึ่งรายการต่อแถว",
+  "emaillistFileTooLarge": "❌ **ไฟล์ใหญ่เกินไป**\n\nไฟล์ต้องมีขนาดเล็กกว่า 1MB",
+  "emaillistNoValidEmails": "❌ **ไม่พบที่อยู่อีเมลที่ถูกต้องในไฟล์**\n\nตรวจสอบว่าไฟล์มีที่อยู่อีเมลหนึ่งรายการต่อแถว (เช่น `user@example.com`)",
+  "emaillistUploaded": "✅ **อัปโหลดรายการอีเมลแล้ว!**\n\nเพิ่ม %VAR% ที่อยู่อีเมลที่ไม่ซ้ำกัน ผู้ใช้ที่มีที่อยู่เหล่านี้สามารถยืนยันได้แล้ว",
+  "emaillistUploadError": "❌ **ไม่สามารถประมวลผลไฟล์ได้**\n\nกรุณาตรวจสอบว่าไฟล์เป็นไฟล์ CSV/ข้อความที่ถูกต้องและลองอีกครั้ง",
+  "emailModalAllowedEmails": "📋 นอกจากนี้ ที่อยู่อีเมลเฉพาะ **%VAR%** รายการได้รับอนุญาต"
 }
