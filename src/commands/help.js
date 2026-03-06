@@ -17,7 +17,7 @@ module.exports = {
                 {
                     name: '🚀 Quick Setup (4 Steps)',
                     value: 
-                        '**1.** `/role verified <role>` - Set the role for verified users\n' +
+                        '**1.** `/role add <role>` - Add a default role for verified users\n' +
                         '**2.** `/domain add <domains>` - Add allowed email domains\n' +
                         '**3.** `/button <channel>` - Create verification embed\n' +
                         '**4.** `/status` - Verify everything is configured'
@@ -25,8 +25,19 @@ module.exports = {
                 {
                     name: '👥 Role Configuration',
                     value:
-                        '`/role verified` - Set/view role given after verification\n' +
+                        '`/role add` - Add a default role (given to all verified users)\n' +
+                        '`/role remove` - Remove a default role\n' +
+                        '`/role list` - View all default roles\n' +
                         '`/role unverified` - Set/view optional role for unverified members'
+                },
+                {
+                    name: '🎭 Domain-Specific Roles',
+                    value:
+                        '`/domainrole add` - Assign roles for specific email domains\n' +
+                        '`/domainrole remove` - Remove a role from a domain\n' +
+                        '`/domainrole list` - View all domain-role mappings\n' +
+                        '`/domainrole clear` - Remove all roles for a domain\n' +
+                        '*Users get domain roles + default roles on verification*'
                 },
                 {
                     name: '📧 Domain Management',

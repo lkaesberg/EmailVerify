@@ -15,10 +15,18 @@ class ServerSettings {
         this.errorNotifyType = "owner"
         // The user ID or channel ID for error notifications (empty means use owner)
         this.errorNotifyTarget = ""
+        // Default roles assigned to all verified users (array of role IDs)
+        this.defaultRoles = []
+        // Domain-specific roles: { "@domain.com": ["roleId1", "roleId2"], "@*.edu": ["roleId3"] }
+        this.domainRoles = {}
     }
 
     get status() {
-        return this.domains.length !== 0 && this.verifiedRoleName !== ""
+        // Bot is configured if domains exist AND at least one role is configured (default or domain-specific)
+        const hasRoles = this.defaultRoles.length > 0 || 
+                         Object.keys(this.domainRoles).length > 0 || 
+                         this.verifiedRoleName !== "" // Legacy support
+        return this.domains.length !== 0 && hasRoles
     }
 }
 

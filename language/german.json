@@ -14,7 +14,9 @@
   "userBotError": "Der Bot ist nicht richtig konfiguriert. Bitte kontaktiere den Admin!",
   "userEnterEmail": "Bitte gib deine Email Adresse an um dich zu verifizieren %VAR%.",
   "userCantFindRole": "Rollen konnten nicht gefunden werden. Bitte kontaktiere den Admin! Hilfe: Stelle sicher, dass der Name der Rollen sich nicht verändert hat und, dass im Server Rollen Menü die Bot Rolle höher eingeordnet ist als die Un/Verifiziert Rolle.",
-  "emailText": "Willkommen bei %VAR%!\nHier ist Ihr Zugangscode: %VAR%\n\nTeilen Sie diesen Code mit niemandem.",
+  "emailSubject": "Bestätigungshinweis",
+  "emailSenderName": "Bestätigung",
+  "emailText": "Hallo,\n\nDies ist eine automatisierte Bestätigungsnachricht für den Server:\n\n%VAR%\n\nIhr Code:\n\n%VAR%\n\nWenn Sie diese Nachricht nicht erwartet haben, können Sie sie ignorieren.",
   "verifyEmbedTitle": "✉️ E-Mail Verifizierung",
   "verifyEmbedInstructions": "Klicke auf den Button unten, um den Verifizierungsprozess zu starten. Du erhältst einen Code per E-Mail.\n\nDu hast bereits einen Code? Nutze den **Code eingeben** Button.",
   "verifyEmbedFooter": "Verifizierungssystem",
@@ -30,6 +32,7 @@
   "emailModalAllDomainsAccepted": "✅ Jede E-Mail-Adresse wird akzeptiert",
   "emailModalAcceptedDomains": "📋 **Du musst eine E-Mail von einer dieser Domains verwenden:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ z.B. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Rollen, die du erhältst**",
   "codeModalTitle": "🔐 Verifizierungscode eingeben",
   "codeModalHeader": "## Fast geschafft!\nPrüfe deinen Posteingang auf den 6-stelligen Verifizierungscode.",
   "codeModalLabel": "Verifizierungscode",
@@ -66,7 +69,7 @@
   "errorNotifyStatusNote": "ℹ️ Hinweis",
   "errorNotifyStatusNoteValue": "Wenn die konfigurierte Benachrichtigungsmethode fehlschlägt, werden Fehler automatisch an den Server-Owner weitergeleitet.",
   "errorRoleAssignTitle": "Rollenzuweisungs-Fehler",
-  "errorRoleAssignMessage": "Die Verifiziert/Unverifiziert-Rolle konnte einem Benutzer nicht zugewiesen werden. Bitte stelle sicher:\n• Die Bot-Rolle ist höher als die Verifiziert/Unverifiziert-Rollen\n• Die Rollen existieren noch\n• Der Bot hat die 'Rollen verwalten'-Berechtigung",
+  "errorRoleAssignMessage": "Die Verifiziert/Unverifiziert-Rolle konnte einem Benutzer nicht zugewiesen werden. Bitte stelle sicher:\n• Die Bot-Rolle ist höher als die Verifiziert/Unverifiziert-Rollen\n• Die Rollen existieren noch\n• Der Bot hat die 'Rollen verwalten'-Berechtigung\n\n💡 **Tipp:** Verschiebe die EmailBot-Rolle über die Verifiziert/Unverifiziert-Rollen in Servereinstellungen → Rollen, oder weise dem Bot die Verifiziert/Unverifiziert-Rolle direkt zu.\n[Beispiel ansehen](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Nicht Konfiguriert",
   "errorBotNotConfiguredMessage": "Ein Benutzer hat versucht sich zu verifizieren, aber der Bot ist nicht richtig konfiguriert.\n\n**Erforderliche Einrichtung:**\n• Erlaubte E-Mail-Domains mit `/domain add` festlegen\n• Verifiziert-Rolle mit `/role verified` festlegen\n\nFühre `/status` aus, um die aktuelle Konfiguration zu überprüfen."
 }

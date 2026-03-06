@@ -14,7 +14,9 @@
   "userBotError": "Bot not properly configured. Please contact admin!",
   "userEnterEmail": "Please enter your email address to verify %VAR%.",
   "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
-  "emailText": "Welcome to %VAR%!\n\nThis is a code that will give you access to the Discord server.\nPlease only send this code to EmailBot via Discord to gain access. Please do not give this code to anyone who asks for it other than EmailBot.\nHere is your access code: %VAR%",
+  "emailSubject": "Confirmation notice",
+  "emailSenderName": "Confirmation",
+  "emailText": "Hello,\n\nThis is an automated confirmation message for the server:\n\n%VAR%\n\nYour code:\n\n%VAR%\n\nIf you did not expect this message, you can ignore it.",
   "verifyEmbedTitle": "✉️ Email Verification",
   "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.\n\nAlready have a code? Use the **Enter Code** button.",
   "verifyEmbedFooter": "Verification System",
@@ -30,6 +32,7 @@
   "emailModalAllDomainsAccepted": "✅ Any email address is accepted",
   "emailModalAcceptedDomains": "📋 **You must use an email from one of these domains:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ e.g. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Roles you will receive**",
   "codeModalTitle": "🔐 Enter Verification Code",
   "codeModalHeader": "## Almost There!\nCheck your inbox for the 6-digit verification code.",
   "codeModalLabel": "Verification Code",
@@ -66,7 +69,7 @@
   "errorNotifyStatusNote": "ℹ️ Note",
   "errorNotifyStatusNoteValue": "If the configured notification method fails, errors will automatically fall back to the server owner.",
   "errorRoleAssignTitle": "Role Assignment Error",
-  "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission",
+  "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission\n\n💡 **Tip:** Either move the EmailBot role above the verified/unverified roles in Server Settings → Roles, or assign the verified/unverified role to the bot directly.\n[See example](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Not Configured",
-  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set verified role with `/role verified`\n\nRun `/status` to check the current configuration."
+  "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required setup:**\n• Set allowed email domains with `/domain add`\n• Set default roles with `/role add` or domain-specific roles with `/domainrole add`\n\nRun `/status` to check the current configuration."
 }

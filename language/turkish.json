@@ -14,7 +14,9 @@
   "userBotError": "Bot düzgün bir şekilde ayarlanmamış. Lütfen bir admine ulaşınız!",
   "userEnterEmail": "Hesabınızı doğrulamak için lütfen email adresinizi giriniz %VAR%.",
   "userCantFindRole": "Rolleri bulamıyorum. Lütfen adminle iletişime geçin! Yardım: Rol adının hala aynı olduğundan ve sunucu ayarları rol menüsünde bot rolünün doğrulanmış ve doğrulanmamış rolden daha yüksek olduğundan emin olun.",
-  "emailText": "%VAR% hoş geldiniz!\n\nBu, Discord sunucusuna erişmenizi sağlayacak bir koddur.\nErişim elde etmek için lütfen bu kodu yalnızca Discord aracılığıyla EmailBot'a gönderin. Lütfen bu kodu EmailBot dışında kimseye göndermeyin.\nErişim kodunuz: %VAR%",
+  "emailSubject": "Onay bildirimi",
+  "emailSenderName": "Onay",
+  "emailText": "Merhaba,\n\nBu, sunucu için otomatik bir onay mesajıdır:\n\n%VAR%\n\nKodunuz:\n\n%VAR%\n\nBu mesajı beklemiyorsanız, görmezden gelebilirsiniz.",
   "verifyEmbedTitle": "✉️ E-posta Doğrulama",
   "verifyEmbedInstructions": "Doğrulama sürecini başlatmak için aşağıdaki butona tıklayın. E-posta ile bir kod alacaksınız.\n\nZaten bir kodunuz var mı? **Kod Gir** butonunu kullanın.",
   "verifyEmbedFooter": "Doğrulama Sistemi",
@@ -30,6 +32,7 @@
   "emailModalAllDomainsAccepted": "✅ Herhangi bir e-posta adresi kabul edilir",
   "emailModalAcceptedDomains": "📋 **Bu domainlerden birinden e-posta kullanmalısınız:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ örn. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Alacağınız roller**",
   "codeModalTitle": "🔐 Doğrulama Kodunu Girin",
   "codeModalHeader": "## Neredeyse Bitti!\n6 haneli doğrulama kodu için gelen kutunuzu kontrol edin.",
   "codeModalLabel": "Doğrulama Kodu",
@@ -66,7 +69,7 @@
   "errorNotifyStatusNote": "ℹ️ Not",
   "errorNotifyStatusNoteValue": "Yapılandırılmış bildirim yöntemi başarısız olursa, hatalar otomatik olarak sunucu sahibine gönderilir.",
   "errorRoleAssignTitle": "Rol Atama Hatası",
-  "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip",
+  "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip\n\n💡 **İpucu:** Sunucu Ayarları → Roller'de EmailBot rolünü doğrulanmış/doğrulanmamış rollerin üzerine taşıyın veya doğrulanmış/doğrulanmamış rolü doğrudan bota atayın.\n[Örneğe bakın](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Yapılandırılmamış",
   "errorBotNotConfiguredMessage": "Bir kullanıcı doğrulamaya çalıştı ancak bot düzgün yapılandırılmamış.\n\n**Gerekli kurulum:**\n• `/domain add` ile izin verilen e-posta domainlerini ayarlayın\n• `/role verified` ile doğrulanmış rolü ayarlayın\n\nMevcut yapılandırmayı kontrol etmek için `/status` çalıştırın."
 }

@@ -14,7 +14,9 @@
   "userBotError": "Bot não configurado corretamente. Por favor contate o Administrador!",
   "userEnterEmail": "Por favor, insira o seu endereço de email para verificar %VAR%.",
   "userCantFindRole": "Não foi possível encontrar as roles. Por favor contate o administrador! Ajuda: Confirme que o nome continua igual, e que a role do bot é maior que a role de verificado e não verificado no menu de configuração do servidor.",
-  "emailText": "Bem vindo a %VAR%!\n\nEste é um código que dará acesso ao servidor Discord.\nPor favor, envie este código apenas para o EmailBot via Discord para obter acesso. Por favor, não dê este código para ninguém além do EmailBot.\nAqui está seu código de acesso: %VAR%",
+  "emailSubject": "Aviso de confirmação",
+  "emailSenderName": "Confirmação",
+  "emailText": "Olá,\n\nEsta é uma mensagem de confirmação automática para o servidor:\n\n%VAR%\n\nSeu código:\n\n%VAR%\n\nSe você não esperava esta mensagem, pode ignorá-la.",
   "verifyEmbedTitle": "✉️ Verificação de Email",
   "verifyEmbedInstructions": "Clique no botão abaixo para iniciar o processo de verificação. Você receberá um código por email.\n\nJá tem um código? Use o botão **Inserir Código**.",
   "verifyEmbedFooter": "Sistema de Verificação",
@@ -30,6 +32,7 @@
   "emailModalAllDomainsAccepted": "✅ Qualquer endereço de email é aceito",
   "emailModalAcceptedDomains": "📋 **Você deve usar um email de um destes domínios:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ ex. `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **Roles que você receberá**",
   "codeModalTitle": "🔐 Insira o Código de Verificação",
   "codeModalHeader": "## Quase Lá!\nVerifique sua caixa de entrada para o código de verificação de 6 dígitos.",
   "codeModalLabel": "Código de Verificação",
@@ -66,7 +69,7 @@
   "errorNotifyStatusNote": "ℹ️ Nota",
   "errorNotifyStatusNoteValue": "Se o método de notificação configurado falhar, os erros serão automaticamente enviados ao proprietário do servidor.",
   "errorRoleAssignTitle": "Erro de Atribuição de Role",
-  "errorRoleAssignMessage": "Falha ao atribuir a role verificado/não verificado a um usuário. Por favor verifique:\n• A role do bot está acima das roles verificado/não verificado\n• As roles ainda existem\n• O bot tem a permissão 'Gerenciar Cargos'",
+  "errorRoleAssignMessage": "Falha ao atribuir a role verificado/não verificado a um usuário. Por favor verifique:\n• A role do bot está acima das roles verificado/não verificado\n• As roles ainda existem\n• O bot tem a permissão 'Gerenciar Cargos'\n\n💡 **Dica:** Mova a role do EmailBot acima das roles verificado/não verificado em Configurações do Servidor → Cargos, ou atribua a role verificado/não verificado diretamente ao bot.\n[Ver exemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Não Configurado",
   "errorBotNotConfiguredMessage": "Um usuário tentou se verificar mas o bot não está configurado corretamente.\n\n**Configuração necessária:**\n• Definir domínios de email permitidos com `/domain add`\n• Definir role verificado com `/role verified`\n\nExecute `/status` para verificar a configuração atual."
 }

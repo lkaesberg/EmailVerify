@@ -14,7 +14,9 @@
   "userBotError": "봇이 정상적으로 구성되지 않았습니다. 어드민에게 문의해주세요!",
   "userEnterEmail": "인증할 이메일 주소를 입력해주세요 %VAR%.",
   "userCantFindRole": "역할을 찾을 수 없습니다. 어드민에게 문의해주세요! 팁: 역할의 이름이 동일하고 서버 설정>역할 메뉴에서 봇의 역할이 인증된 역할과 미인증된 역할보다 위에 있는지 확인해주세요.",
-  "emailText": "%VAR%에 오신 것을 환영합니다!\n\n이 코드는 Discord 서버에 대한 액세스를 제공합니다.\n액세스를 얻으려면 Discord를 통해 EmailBot에게만 이 코드를 보내주세요. EmailBot 이외의 다른 사람에게 이 코드를 주지 마세요.\n액세스 코드: %VAR%",
+  "emailSubject": "확인 알림",
+  "emailSenderName": "확인",
+  "emailText": "안녕하세요,\n\n서버에 대한 자동 확인 메시지입니다:\n\n%VAR%\n\n귀하의 코드:\n\n%VAR%\n\n이 메시지를 예상하지 않았다면 무시해도 됩니다.",
   "verifyEmbedTitle": "✉️ 이메일 인증",
   "verifyEmbedInstructions": "아래 버튼을 클릭하여 인증 프로세스를 시작하세요. 이메일로 코드를 받게 됩니다.\n\n이미 코드가 있나요? **코드 입력** 버튼을 사용하세요.",
   "verifyEmbedFooter": "인증 시스템",
@@ -30,6 +32,7 @@
   "emailModalAllDomainsAccepted": "✅ 모든 이메일 주소가 허용됩니다",
   "emailModalAcceptedDomains": "📋 **다음 도메인 중 하나의 이메일을 사용해야 합니다:**",
   "emailModalDomainExample": "`%VAR%`\n    ↳ 예: `%VAR%`",
+  "emailModalRolesAssigned": "🎭 **받게 될 역할**",
   "codeModalTitle": "🔐 인증 코드 입력",
   "codeModalHeader": "## 거의 다 됐습니다!\n받은 편지함에서 6자리 인증 코드를 확인하세요.",
   "codeModalLabel": "인증 코드",
@@ -66,7 +69,7 @@
   "errorNotifyStatusNote": "ℹ️ 참고",
   "errorNotifyStatusNoteValue": "설정된 알림 방법이 실패하면 오류가 자동으로 서버 소유자에게 전송됩니다.",
   "errorRoleAssignTitle": "역할 할당 오류",
-  "errorRoleAssignMessage": "사용자에게 인증/미인증 역할을 할당하지 못했습니다. 확인해주세요:\n• 봇의 역할이 인증/미인증 역할보다 높은지\n• 역할이 여전히 존재하는지\n• 봇에 '역할 관리' 권한이 있는지",
+  "errorRoleAssignMessage": "사용자에게 인증/미인증 역할을 할당하지 못했습니다. 확인해주세요:\n• 봇의 역할이 인증/미인증 역할보다 높은지\n• 역할이 여전히 존재하는지\n• 봇에 '역할 관리' 권한이 있는지\n\n💡 **팁:** 서버 설정 → 역할에서 EmailBot 역할을 인증/미인증 역할 위로 이동하거나, 인증/미인증 역할을 봇에 직접 할당하세요.\n[예시 보기](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "봇 미설정",
   "errorBotNotConfiguredMessage": "사용자가 인증을 시도했지만 봇이 올바르게 구성되지 않았습니다.\n\n**필요한 설정:**\n• `/domain add`로 허용된 이메일 도메인 설정\n• `/role verified`로 인증된 역할 설정\n\n`/status`를 실행하여 현재 구성을 확인하세요."
 }

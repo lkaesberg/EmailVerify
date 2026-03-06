@@ -19,10 +19,37 @@ The following commands require administrator permissions.
 
 Configure which roles are assigned during the verification process.
 
+#### Default Roles
+
+Default roles are given to **all** verified users, regardless of their email domain.
+
 | Command | Description |
 |---------|-------------|
-| `/role verified [role]` | Set or view the role given to users after successful verification |
+| `/role add <role>` | Add a role to the default roles list |
+| `/role remove <role>` | Remove a role from the default roles list |
+| `/role list` | View all configured default roles |
 | `/role unverified [role]` | Set or view the optional role for unverified members (select current role to disable) |
+
+#### Domain-Specific Roles
+
+Assign different roles based on which email domain the user verifies with. Users receive their domain-specific roles **plus** any default roles.
+
+| Command | Description |
+|---------|-------------|
+| `/domainrole add <domain> <role>` | Add a role for a specific email domain |
+| `/domainrole remove <domain> <role>` | Remove a role from a specific domain |
+| `/domainrole list` | View all domain-role mappings |
+| `/domainrole clear <domain>` | Remove all roles for a specific domain |
+
+#### Domain Role Examples
+
+| Setup | Result |
+|-------|--------|
+| Default: `@Member`<br>Domain: `@*.edu` → `@Student` | User with `@stanford.edu` gets: `@Student`, `@Member` |
+| Default: `@Verified`<br>Domain: `@company.com` → `@Employee`, `@Staff` | User with `@company.com` gets: `@Employee`, `@Staff`, `@Verified` |
+| Domain: `@*.harvard.edu` → `@Harvard`<br>Domain: `@*.edu` → `@Student` | User with `@cs.harvard.edu` gets: `@Harvard`, `@Student` (all matching patterns) |
+
+> 💡 **Tip:** When using `/domainrole add`, the domain field autocompletes with your configured domains from `/domain add`.
 
 ### 📧 Domain Management
 
@@ -120,3 +147,15 @@ The unverified role can be used to:
 - Make a verification channel visible only to unverified users
 - Restrict access to most channels until users verify
 - Combined with `/settings auto-unverified`, automatically restrict new members
+
+### Role Display in Verification
+
+When domain-specific roles are configured, the verification modal shows users which roles they will receive:
+
+```
+Accepted domains:
+1. @*.edu → Student, Member
+2. @company.com → Employee, Member
+```
+
+This helps users understand what access they'll get before verifying.

@@ -1,5 +1,5 @@
-<meta name="description" content= "This Discord Bot allows you to verify clients with the help of their email address. This can be useful when there is some sensitive data on the server which shouldn't be accessed by everyone.">
-<meta name="keywords" content="EmailVerify Discord Bot Lars Kaesberg Email Verify EmailBot">
+<meta name="description" content= "This Discord Bot allows you to verify Discord users with the help of their email address. This can be useful when there is some sensitive data on the server that shouldn't be accessed by everyone.">
+<meta name="keywords" content="EmailVerify Discord Bot Lars Kaesberg Email Verify EmailBot managment">
 <meta name="author" content="Lars Kaesberg">
 
 # EmailVerify

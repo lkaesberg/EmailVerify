@@ -267,6 +267,16 @@
 </div>
 
 <div class="chart-section">
+    <div class="chart-title">📉 Verification Rate</div>
+    <div class="chart-wrapper">
+        <canvas id="verificationRateChart"></canvas>
+    </div>
+    <div class="legend">
+        <div class="legend-item"><span class="legend-dot gold"></span> Verified / Emails Sent (%)</div>
+    </div>
+</div>
+
+<div class="chart-section">
     <div class="chart-title">📈 Total Users Verified</div>
     <div class="chart-wrapper">
         <canvas id="verifiedTotalChart"></canvas>
@@ -360,7 +370,7 @@ const autoScaleOptions = {
     }
 };
 
-let dailyChart, verifiedTotalChart, emailsTotalChart, serversChart;
+let dailyChart, verificationRateChart, verifiedTotalChart, emailsTotalChart, serversChart;
 let currentDays = 7;
 
 function formatNumber(num) {
@@ -428,6 +438,7 @@ async function updateCharts(days) {
     
     // Destroy existing charts
     if (dailyChart) dailyChart.destroy();
+    if (verificationRateChart) verificationRateChart.destroy();
     if (verifiedTotalChart) verifiedTotalChart.destroy();
     if (emailsTotalChart) emailsTotalChart.destroy();
     if (serversChart) serversChart.destroy();
@@ -443,6 +454,47 @@ async function updateCharts(days) {
             ]
         },
         options: baseOptions
+    });
+    
+    // Verification Rate Chart
+    const verificationRate = history.map(h => {
+        if (h.mailsSendToday === 0) return 0;
+        return Math.min(((h.usersVerifiedToday / h.mailsSendToday) * 100), 100);
+    });
+    
+    verificationRateChart = new Chart(document.getElementById('verificationRateChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                createDataset(verificationRate, 'rgba(212, 148, 10, 1)', 'Verification Rate (%)')
+            ]
+        },
+        options: {
+            ...baseOptions,
+            scales: {
+                ...baseOptions.scales,
+                y: {
+                    ...baseOptions.scales.y,
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        ...baseOptions.scales.y.ticks,
+                        callback: function(value) { return value + '%'; }
+                    }
+                }
+            },
+            plugins: {
+                ...baseOptions.plugins,
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                        }
+                    }
+                }
+            }
+        }
     });
     
     // Total Users Verified Chart (auto-scale, not starting at 0)
