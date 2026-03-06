@@ -20,9 +20,10 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
-const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
+const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
+const premiumManager = require('./premium/PremiumManager');
 
 const bot = new Discord.Client({
     intents: [
@@ -434,6 +435,27 @@ bot.on('interactionCreate', async interaction => {
                 userTimeout.timestamp = Date.now()
                 userTimeout.increaseWaitTime()
 
+                // Premium check: verify the guild hasn't exceeded its free monthly limit
+                const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
+                if (!premiumCheck.allowed) {
+                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit)
+                    const { monetization } = require('../config/config.json')
+                    const skus = monetization?.skus || {}
+                    const row = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder()
+                            .setStyle(ButtonStyle.Premium)
+                            .setSKUId(skus.subscriptionTier1)
+                    )
+                    try {
+                        await interaction.followUp({ embeds: [limitEmbed], components: [row], flags: MessageFlags.Ephemeral })
+                    } catch (err) {
+                        if (err.code === 50035) {
+                            await interaction.followUp({ embeds: [limitEmbed], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
+                        }
+                    }
+                    return
+                }
+
                 const code = Math.floor((Math.random() + 1) * 100000).toString()
                 // Send email and store code on success
                 await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, async (email) => {
@@ -651,7 +673,7 @@ bot.on('interactionCreate', async interaction => {
         try {
             // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
             // Allow /globalstats for owner check to happen inside the command
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats") {
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats" || interaction.commandName === "premium") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({

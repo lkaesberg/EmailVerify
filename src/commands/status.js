@@ -1,7 +1,8 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
-
+const premiumManager = require("../premium/PremiumManager");
+const { getLocale } = require("../Language");
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('View bot configuration, verification statistics, and check setup issues').setDefaultMemberPermissions(0),
     
@@ -177,6 +178,27 @@ module.exports = {
                     statusEmbed.addFields({
                         name: '⚠️ Issues to Fix',
                         value: issues.join('\n')
+                    })
+                }
+                
+                // Add premium info when monetization is enabled
+                if (premiumManager.enabled) {
+                    const premiumStatus = await premiumManager.getPremiumStatus(interaction.guildId, interaction.entitlements)
+                    const lang = serverSettings.language || 'english'
+                    const tierName = premiumStatus.subscriptionTier
+                        ? getLocale(lang, premiumStatus.subscriptionTier === 'tier2' ? 'premiumPlanPro' : 'premiumPlanStandard')
+                        : getLocale(lang, 'premiumPlanFree')
+                    const mailsInfo = premiumStatus.hasUnlimitedMails
+                        ? getLocale(lang, 'premiumMailsUnlimited', premiumStatus.mailsSentMonth.toString())
+                        : getLocale(lang, 'premiumMailsLimited', premiumStatus.mailsSentMonth.toString(), premiumStatus.freeLimit.toString(), premiumStatus.freeRemaining.toString())
+                    
+                    statusEmbed.addFields({
+                        name: '💳 Premium',
+                        value:
+                            `**${getLocale(lang, 'premiumFieldPlan')}:** ${tierName}\n` +
+                            `**${getLocale(lang, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
+                            `**${getLocale(lang, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
+                            `**${getLocale(lang, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(lang, 'premiumCsvUnlocked') : getLocale(lang, 'premiumCsvLocked')}`
                     })
                 }
                 

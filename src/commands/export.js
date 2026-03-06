@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageFlags, AttachmentBuilder, PermissionFlagsBits } = require('discord.js');
+const { MessageFlags, AttachmentBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const database = require("../database/Database.js");
+const premiumManager = require("../premium/PremiumManager");
+const { createCSVPremiumRequiredEmbed } = require("../utils/embeds");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,6 +27,31 @@ module.exports = {
         const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === 'logs') {
+            // Premium gate: CSV export requires tier 2 subscription or CSV unlock
+            const csvCheck = await premiumManager.canUseCSVFeature(interaction.guildId, interaction.entitlements)
+            if (!csvCheck.allowed) {
+                const { monetization } = require('../../config/config.json')
+                const skus = monetization?.skus || {}
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setStyle(ButtonStyle.Premium)
+                        .setSKUId(skus.subscriptionTier2)
+                )
+                await database.getServerSettings(interaction.guildId, async serverSettings => {
+                    const language = serverSettings.language || 'english'
+                    try {
+                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components: [row], flags: MessageFlags.Ephemeral })
+                    } catch (err) {
+                        if (err.code === 50035) {
+                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components: [], flags: MessageFlags.Ephemeral })
+                        } else {
+                            throw err
+                        }
+                    }
+                })
+                return
+            }
+
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             await database.getServerSettings(interaction.guildId, async serverSettings => {
