@@ -93,6 +93,7 @@ async function showEmailModal(interaction, guild, userGuilds) {
         const domains = serverSettings.domains || []
         const domainRoles = serverSettings.domainRoles || {}
         const defaultRoles = serverSettings.defaultRoles || []
+        const allowedEmails = serverSettings.allowedEmails || []
         
         // Helper to get role names from IDs
         const getRoleNames = (roleIds) => {
@@ -110,7 +111,9 @@ async function showEmailModal(interaction, guild, userGuilds) {
         // Check if all domains are accepted (if ANY domain is a full wildcard, all emails are accepted)
         const hasNoDomains = domains.length === 0
         const hasAnyFullWildcard = domains.some(d => isFullWildcard(d))
-        const allDomainsAccepted = hasNoDomains || hasAnyFullWildcard
+        const hasAllowedEmails = allowedEmails.length > 0
+        const allDomainsAccepted = (!hasNoDomains && hasAnyFullWildcard) || (hasNoDomains && !hasAllowedEmails)
+        const onlyEmailList = hasNoDomains && hasAllowedEmails
         
         // Get default role names for display
         const defaultRoleNames = getRoleNames(defaultRoles)
@@ -150,6 +153,12 @@ async function showEmailModal(interaction, guild, userGuilds) {
                     }
                 })
             }
+        } else if (onlyEmailList) {
+            // Only email list, no domains - show default roles
+            const defaultRoleNamesDisplay = getRoleNames(defaultRoles)
+            if (defaultRoleNamesDisplay.length > 0) {
+                headerText += `\n\n${getLocale(language, "emailModalRolesAssigned")}: ${defaultRoleNamesDisplay.join(', ')}`
+            }
         } else {
             // Show formatted domain list with roles
             headerText += `\n\n${getLocale(language, "emailModalAcceptedDomains")}`
@@ -162,6 +171,11 @@ async function showEmailModal(interaction, guild, userGuilds) {
                 const formatted = formatDomain(domain, language, roleNames)
                 headerText += `\n${index + 1}. ${formatted}`
             })
+        }
+        
+        // Show allowed email list info if present
+        if (hasAllowedEmails) {
+            headerText += `\n\n${getLocale(language, "emailModalAllowedEmails", allowedEmails.length.toString())}`
         }
         
         // Add custom verify message if set

@@ -98,6 +98,18 @@ class Database {
                 }
             })
         })
+        this.runMigration(12, () => {
+            // Add allowed emails list for CSV upload feature
+            this.db.run("ALTER TABLE guilds ADD allowedEmails TEXT DEFAULT '[]'")
+        })
+        this.runMigration(13, () => {
+            // Premium / monetization: per-guild purchased credits and one-time CSV unlock
+            this.db.run(`CREATE TABLE IF NOT EXISTS guild_premium(
+                guildID TEXT PRIMARY KEY,
+                bonusCredits INTEGER DEFAULT 0,
+                csvUnlocked INTEGER DEFAULT 0
+            );`)
+        })
     }
 
     runMigration(version, migration) {
@@ -128,8 +140,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles)])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles, allowedEmails) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails)])
     }
 
     async getServerSettings(guildID, callback) {
@@ -179,6 +191,13 @@ class Database {
                         serverSettings.domainRoles = result.domainRoles ? JSON.parse(result.domainRoles) : {}
                     } catch {
                         serverSettings.domainRoles = {}
+                    }
+                    
+                    // Parse allowedEmails (JSON array)
+                    try {
+                        serverSettings.allowedEmails = result.allowedEmails ? JSON.parse(result.allowedEmails) : []
+                    } catch {
+                        serverSettings.allowedEmails = []
                     }
                     
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
@@ -313,6 +332,74 @@ class Database {
                 }
                 resolve(rows || [])
             })
+        })
+    }
+
+    getGuildPremium(guildID) {
+        return new Promise((resolve, reject) => {
+            this.db.get("SELECT * FROM guild_premium WHERE guildID = ?", [guildID], (err, result) => {
+                if (err) {
+                    console.error('Error getting guild premium:', err)
+                    resolve({ bonusCredits: 0, csvUnlocked: false })
+                    return
+                }
+                if (result === undefined) {
+                    resolve({ bonusCredits: 0, csvUnlocked: false })
+                } else {
+                    resolve({ bonusCredits: result.bonusCredits, csvUnlocked: !!result.csvUnlocked })
+                }
+            })
+        })
+    }
+
+    addGuildCredits(guildID, amount) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                "INSERT INTO guild_premium (guildID, bonusCredits) VALUES (?, ?) ON CONFLICT(guildID) DO UPDATE SET bonusCredits = bonusCredits + ?",
+                [guildID, amount, amount],
+                (err) => {
+                    if (err) {
+                        console.error('Error adding guild credits:', err)
+                        reject(err)
+                        return
+                    }
+                    resolve()
+                }
+            )
+        })
+    }
+
+    consumeGuildCredit(guildID) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                "UPDATE guild_premium SET bonusCredits = bonusCredits - 1 WHERE guildID = ? AND bonusCredits > 0",
+                [guildID],
+                function (err) {
+                    if (err) {
+                        console.error('Error consuming guild credit:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    unlockGuildCSV(guildID) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                "INSERT INTO guild_premium (guildID, csvUnlocked) VALUES (?, 1) ON CONFLICT(guildID) DO UPDATE SET csvUnlocked = 1",
+                [guildID],
+                (err) => {
+                    if (err) {
+                        console.error('Error unlocking guild CSV:', err)
+                        reject(err)
+                        return
+                    }
+                    resolve()
+                }
+            )
         })
     }
 }

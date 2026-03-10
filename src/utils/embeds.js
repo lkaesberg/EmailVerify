@@ -161,5 +161,21 @@ module.exports = {
     createVerificationSuccessEmbed,
     createCodeSentEmbed,
     createVerificationLogEmbed,
-    createVerificationFailedLogEmbed
+    createVerificationFailedLogEmbed,
+    createMailLimitReachedEmbed,
+    createCSVPremiumRequiredEmbed,
 };
+
+function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'premiumMailLimitTitle'))
+        .setDescription(getLocale(language, 'premiumMailLimitDescription', mailsSentMonth.toString(), freeLimit.toString()))
+        .setColor(0xFFA500);
+}
+
+function createCSVPremiumRequiredEmbed(language) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'premiumCsvRequiredTitle'))
+        .setDescription(getLocale(language, 'premiumCsvRequiredDescription'))
+        .setColor(0x5865F2);
+}
