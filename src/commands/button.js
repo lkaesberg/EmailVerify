@@ -16,7 +16,8 @@ module.exports = {
         .addStringOption(option => option
             .setName("buttontext")
             .setRequired(true)
-            .setDescription("Text shown on the verify button (e.g. 'Click to Verify')"))
+            .setMaxLength(80)
+            .setDescription("Text shown on the verify button (max 80 chars, e.g. 'Click to Verify')"))
         .addStringOption(option => option
             .setName("title")
             .setRequired(false)
@@ -31,7 +32,8 @@ module.exports = {
             .setDescription("Embed accent color in hex format (e.g. #5865F2, #FF0000)"))
         .setDefaultMemberPermissions(0),
     async execute(interaction) {
-        const buttonText = interaction.options.getString("buttontext", true)
+        const rawButtonText = interaction.options.getString("buttontext", true)
+        const buttonText = rawButtonText.substring(0, 80)
         const channel = interaction.options.getChannel("channel", true)
         const customMessage = interaction.options.getString("message")
         const customTitle = interaction.options.getString("title")
