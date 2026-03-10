@@ -15,7 +15,7 @@
     "discord-api-types": "^0.38.37",
     "discord.js": "^14.25.1",
     "express": "^5.2.1",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^8.0.1",
     "nodemailer-smtp-transport": "^2.7.4",
     "sqlite3": "^5.1.7",
     "topgg-autoposter": "^2.0.2"
