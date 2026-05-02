@@ -166,10 +166,14 @@ module.exports = {
     createCSVPremiumRequiredEmbed,
 };
 
-function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit) {
+function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit, includeRedeemHint = false) {
+    let description = getLocale(language, 'premiumMailLimitDescription', mailsSentMonth.toString(), freeLimit.toString())
+    if (includeRedeemHint) {
+        description += '\n\n' + getLocale(language, 'premiumRedeemHint')
+    }
     return new EmbedBuilder()
         .setTitle(getLocale(language, 'premiumMailLimitTitle'))
-        .setDescription(getLocale(language, 'premiumMailLimitDescription', mailsSentMonth.toString(), freeLimit.toString()))
+        .setDescription(description)
         .setColor(0xFFA500);
 }
 

@@ -407,13 +407,15 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
                 // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
-                // Also checks against uploaded email list
+                // Also checks against uploaded email list. If neither domains nor an allowedEmails
+                // list is configured, all valid email addresses are accepted (subject to blacklist).
                 const hasValidFormat = emailText.split("@").length - 1 === 1 && !emailText.includes(' ')
-                const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
                 const allowedEmails = serverSettings.allowedEmails || []
+                const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
+                const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
                 const isInAllowedList = allowedEmails.includes(emailText.toLowerCase())
-                
-                if (!hasValidFormat || (!matchesDomain && !isInAllowedList)) {
+
+                if (!hasValidFormat || (!noRestrictionsConfigured && !matchesDomain && !isInAllowedList)) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
@@ -438,7 +440,7 @@ bot.on('interactionCreate', async interaction => {
                 // Premium check: verify the guild hasn't exceeded its free monthly limit
                 const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
                 if (!premiumCheck.allowed) {
-                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit)
+                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true)
                     const { monetization } = require('../config/config.json')
                     const skus = monetization?.skus || {}
                     const row = new ActionRowBuilder().addComponents(
@@ -492,7 +494,7 @@ bot.on('interactionCreate', async interaction => {
                             interaction.webhook.deleteMessage(follow.id).catch(() => {})
                         }, 300000)
                     }
-                })
+                }, premiumCheck.source, serverSettings.emailStyle)
             })
             return
         }

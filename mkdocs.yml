@@ -18,5 +18,10 @@ nav:
   - 'statistics.md'
   - 'status.md'
   - 'contributing.md'
-  - 'legal.md'
+  - Legal:
+    - Impressum: 'legal/impressum.md'
+    - Datenschutz: 'legal/datenschutz.md'
+    - AGB: 'legal/agb.md'
+    - Widerruf: 'legal/widerruf.md'
+    - Terms: 'legal/terms.md'
   - Buy Me a Coffee❤️: https://buymeacoffee.com/sral12486

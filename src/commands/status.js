@@ -33,6 +33,7 @@ module.exports = {
     
     async execute(interaction) {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
+            const language = serverSettings.language || 'english'
             // Get guild statistics
             database.getGuildStats(interaction.guildId, async (guildStats) => {
                 const isConfigured = serverSettings.status
@@ -54,9 +55,10 @@ module.exports = {
                 const logChannel = serverSettings.logChannel ? interaction.guild.channels.cache.get(serverSettings.logChannel) : null
                 
                 // Format domains
-                const domainsDisplay = serverSettings.domains.length > 0 
+                const hasAllowedEmails = (serverSettings.allowedEmails || []).length > 0
+                const domainsDisplay = serverSettings.domains.length > 0
                     ? serverSettings.domains.map(d => `\`${d.replaceAll("*", "✱")}\``).join(', ')
-                    : '*None configured*'
+                    : (hasAllowedEmails ? getLocale(language, 'statusDomainsOnlyAllowedList') : getLocale(language, 'statusDomainsAllAccepted'))
                 
                 // Format blacklist
                 const blacklistDisplay = serverSettings.blacklist.length > 0
@@ -90,7 +92,8 @@ module.exports = {
                 const issues = []
                 const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
                 if (!hasAnyRoles) issues.push('• No verified roles configured (use `/role add` or `/domainrole add`)')
-                if (serverSettings.domains.length === 0 && (serverSettings.allowedEmails || []).length === 0) issues.push('• No email domains or allowed emails configured')
+                // Empty domain + empty allowedEmails is a valid configuration ("accept any email"),
+                // so it's no longer flagged as an issue here.
                 
                 // Get current month name for display
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 

@@ -110,6 +110,18 @@ class Database {
                 csvUnlocked INTEGER DEFAULT 0
             );`)
         })
+        this.runMigration(14, () => {
+            // Quota warning flags: idempotent thresholds for mobile-data-style reminders
+            this.db.run("ALTER TABLE guild_stats ADD warned80 INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warned95 INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warned100 INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warnedCreditsLow INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warnedCreditsZero INTEGER DEFAULT 0")
+        })
+        this.runMigration(15, () => {
+            // Per-guild email rendering style: 'plain' (default) or 'styled' (HTML)
+            this.db.run("ALTER TABLE guilds ADD emailStyle TEXT DEFAULT 'plain'")
+        })
     }
 
     runMigration(version, migration) {
@@ -140,8 +152,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles, allowedEmails) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails)])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain'])
     }
 
     async getServerSettings(guildID, callback) {
@@ -199,6 +211,8 @@ class Database {
                     } catch {
                         serverSettings.allowedEmails = []
                     }
+
+                    serverSettings.emailStyle = result.emailStyle === 'styled' ? 'styled' : 'plain'
                     
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
                     if (serverSettings.defaultRoles.length === 0 && serverSettings.verifiedRoleName) {
@@ -238,58 +252,77 @@ class Database {
         this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
             if (err) {
                 console.error('Error getting guild stats:', err)
-                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0 })
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
                 return
             }
             if (result === undefined) {
-                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0 })
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
                 return
             }
-            // Reset monthly counters if month changed
+            const warnedCreditsLow = result.warnedCreditsLow || 0
+            const warnedCreditsZero = result.warnedCreditsZero || 0
+            // Reset monthly counters (and monthly warned flags) if month changed
             if (result.statsMonth !== currentMonth) {
                 callback({
                     mailsSentTotal: result.mailsSentTotal,
                     mailsSentMonth: 0,
                     verificationsTotal: result.verificationsTotal,
-                    verificationsMonth: 0
+                    verificationsMonth: 0,
+                    warned80: 0,
+                    warned95: 0,
+                    warned100: 0,
+                    warnedCreditsLow,
+                    warnedCreditsZero
                 })
             } else {
                 callback({
                     mailsSentTotal: result.mailsSentTotal,
                     mailsSentMonth: result.mailsSentMonth,
                     verificationsTotal: result.verificationsTotal,
-                    verificationsMonth: result.verificationsMonth
+                    verificationsMonth: result.verificationsMonth,
+                    warned80: result.warned80 || 0,
+                    warned95: result.warned95 || 0,
+                    warned100: result.warned100 || 0,
+                    warnedCreditsLow,
+                    warnedCreditsZero
                 })
             }
         })
     }
 
     incrementMailsSent(guildID) {
+        // Fire-and-forget; legacy callers do not await
+        this.#incrementMailsSentAwaitable(guildID).catch(err => {
+            console.error('Error incrementing mails sent:', err)
+        })
+    }
+
+    #incrementMailsSentAwaitable(guildID) {
         const currentMonth = this.getCurrentMonth()
-        this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
-            if (err) {
-                console.error('Error incrementing mails sent:', err)
-                return
-            }
-            if (result === undefined) {
-                // Create new entry
-                this.db.run(
-                    "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 1, 1, 0, 0, ?)",
-                    [guildID, currentMonth]
-                )
-            } else if (result.statsMonth !== currentMonth) {
-                // Reset monthly counter for new month
-                this.db.run(
-                    "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ? WHERE guildID = ?",
-                    [currentMonth, guildID]
-                )
-            } else {
-                // Increment both counters
-                this.db.run(
-                    "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ?",
-                    [guildID]
-                )
-            }
+        return new Promise((resolve, reject) => {
+            this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+                if (err) return reject(err)
+                const cb = (e) => e ? reject(e) : resolve()
+                if (result === undefined) {
+                    this.db.run(
+                        "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 1, 1, 0, 0, ?)",
+                        [guildID, currentMonth],
+                        cb
+                    )
+                } else if (result.statsMonth !== currentMonth) {
+                    this.db.run(
+                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0 WHERE guildID = ?",
+                        [currentMonth, guildID],
+                        cb
+                    )
+                } else {
+                    this.db.run(
+                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ?",
+                        [guildID],
+                        cb
+                    )
+                }
+            })
         })
     }
 
@@ -307,9 +340,9 @@ class Database {
                     [guildID, currentMonth]
                 )
             } else if (result.statsMonth !== currentMonth) {
-                // Reset monthly counter for new month
+                // Reset monthly counter for new month (also resets monthly quota warned flags)
                 this.db.run(
-                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ? WHERE guildID = ?",
+                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0 WHERE guildID = ?",
                     [currentMonth, guildID]
                 )
             } else {
@@ -363,7 +396,104 @@ class Database {
                         reject(err)
                         return
                     }
-                    resolve()
+                    // Reset credit-related warning flags so admins get notified again on next exhaustion
+                    this.db.run(
+                        "UPDATE guild_stats SET warnedCreditsLow = 0, warnedCreditsZero = 0 WHERE guildID = ?",
+                        [guildID],
+                        () => resolve()
+                    )
+                }
+            )
+        })
+    }
+
+    /**
+     * Atomic increment + threshold-flag check. Returns the crossings that should trigger
+     * admin notifications. Each flag transitions 0 → 1 exactly once per period (month for
+     * the quota flags, until next top-up for the credit flags) thanks to a single
+     * `UPDATE ... WHERE flag = 0` query.
+     *
+     * @param {string} guildID
+     * @param {string} source - 'free' | 'credits' | 'subscription' | 'disabled'
+     * @param {number} freeLimit
+     */
+    async recordMailSentAndCheckThresholds(guildID, source, freeLimit) {
+        await this.#incrementMailsSentAwaitable(guildID)
+
+        const out = {
+            crossed80: false,
+            crossed95: false,
+            crossed100: false,
+            crossedCreditsLow: false,
+            crossedCreditsZero: false,
+            mailsSentMonth: null,
+            creditsRemaining: null
+        }
+
+        if (source === 'subscription' || source === 'disabled') {
+            return out
+        }
+
+        if (source === 'free') {
+            const stats = await new Promise(resolve => this.getGuildStats(guildID, resolve))
+            out.mailsSentMonth = stats.mailsSentMonth
+            const threshold80 = Math.ceil(freeLimit * 0.8)
+            const threshold95 = Math.ceil(freeLimit * 0.95)
+
+            out.crossed80 = await this.#tripFlag(guildID, 'warned80', threshold80)
+            out.crossed95 = await this.#tripFlag(guildID, 'warned95', threshold95)
+            out.crossed100 = await this.#tripFlag(guildID, 'warned100', freeLimit)
+            return out
+        }
+
+        if (source === 'credits') {
+            const premium = await this.getGuildPremium(guildID)
+            out.creditsRemaining = premium.bonusCredits
+
+            if (premium.bonusCredits <= 0) {
+                out.crossedCreditsZero = await this.#tripCreditFlag(guildID, 'warnedCreditsZero')
+                if (out.crossedCreditsZero) {
+                    out.crossedCreditsLow = await this.#tripCreditFlag(guildID, 'warnedCreditsLow')
+                }
+            } else if (premium.bonusCredits <= 10) {
+                out.crossedCreditsLow = await this.#tripCreditFlag(guildID, 'warnedCreditsLow')
+            }
+            return out
+        }
+
+        return out
+    }
+
+    #tripFlag(guildID, column, threshold) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `UPDATE guild_stats SET ${column} = 1 WHERE guildID = ? AND ${column} = 0 AND mailsSentMonth >= ?`,
+                [guildID, threshold],
+                function (err) {
+                    if (err) {
+                        console.error(`Error tripping flag ${column}:`, err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    #tripCreditFlag(guildID, column) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `INSERT INTO guild_stats (guildID, ${column}, statsMonth) VALUES (?, 1, ?)
+                 ON CONFLICT(guildID) DO UPDATE SET ${column} = 1 WHERE ${column} = 0`,
+                [guildID, this.getCurrentMonth()],
+                function (err) {
+                    if (err) {
+                        console.error(`Error tripping credit flag ${column}:`, err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
                 }
             )
         })

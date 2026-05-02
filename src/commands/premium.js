@@ -56,6 +56,7 @@ module.exports = {
                         { name: getLocale(language, 'premiumFieldEmails'), value: mailsValue, inline: false },
                         { name: getLocale(language, 'premiumFieldCredits'), value: getLocale(language, 'premiumCreditsRemaining', status.bonusCredits.toString()), inline: true },
                         { name: getLocale(language, 'premiumFieldCsv'), value: status.csvUnlocked || status.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked'), inline: true },
+                        { name: getLocale(language, 'premiumFieldRedeem'), value: getLocale(language, 'premiumRedeemInstructions'), inline: false },
                     )
 
                 if (!status.subscriptionTier) {
@@ -105,6 +106,14 @@ module.exports = {
 
                 if (results.creditsAdded > 0) {
                     embed.addFields({ name: getLocale(language, 'premiumCreditsAdded'), value: `+${results.creditsAdded}`, inline: true })
+                }
+
+                if (results.creditsAdded > 0 || results.csvUnlocked) {
+                    embed.addFields({
+                        name: getLocale(language, 'premiumRedeemMultiGuildWarningTitle'),
+                        value: getLocale(language, 'premiumRedeemMultiGuildWarning', interaction.guild?.name || ''),
+                        inline: false
+                    })
                 }
 
                 await interaction.editReply({ embeds: [embed] })

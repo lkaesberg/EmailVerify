@@ -104,6 +104,7 @@ Configure bot behavior and preferences.
 | `/settings verify-message [message]` | Set a custom message for verification emails (leave empty for default) |
 | `/settings auto-verify <enable>` | Automatically prompt new members to verify when they join |
 | `/settings auto-unverified <enable>` | Automatically assign the unverified role to new members |
+| `/settings email-style <plain\|styled> [confirm]` | Choose plain text (default) or HTML rendering for verification emails. Switching to `styled` requires `confirm:True` because HTML mail is more likely to be filtered as spam. |
 
 ### 🛡️ Moderation & Setup
 
@@ -115,6 +116,50 @@ Configure bot behavior and preferences.
 | `/set_error_notify channel <channel>` | Send error notifications to a specific channel |
 | `/set_error_notify user <user>` | Send error notifications to a specific user via DM |
 | `/set_error_notify status` | View current error notification settings |
+
+### 💎 Premium
+
+Manage paid plans, credit packs, and the CSV unlock.
+
+| Command | Description |
+|---------|-------------|
+| `/premium status` | Show this server's current plan, monthly email usage, remaining bonus credits, and CSV unlock status |
+| `/premium redeem` | Apply purchases (credit packs, CSV unlock) **to this server** |
+
+#### How redemption works
+
+EmailVerify's premium features are sold through Discord's native subscription
+and consumable system. There is one important detail to know:
+
+> **Purchases are bound per server, not per user.**
+>
+> When you click a Premium button (in `/premium status` or in the limit-reached
+> embed) and complete the purchase in Discord, the credits or unlock you bought
+> are not yet active. You must run `/premium redeem` **inside the Discord
+> server** where you want the purchase to apply. Subscriptions track the server
+> selected at the time of purchase. Credit packs and the CSV unlock are
+> consumed by `/premium redeem` and become permanently bound to that server —
+> they cannot be transferred to another server afterwards.
+
+If `/premium redeem` reports "no unredeemed purchases", check that:
+
+- you are running the command in the **correct server** (the one you want the
+  benefit applied to);
+- you are using the **same Discord account** that completed the purchase;
+- the purchase has finished processing (Discord usually takes 1–2 minutes).
+
+#### What free users get
+
+Each server gets a small monthly free quota of verification emails (default 25
+per month). The bot will warn admins via the configured error-notification
+channel as the quota approaches: at 80%, at 95%, and again when the limit is
+reached. Quota resets at the start of each calendar month.
+
+When subscriptions are active, mails for paying servers are routed through
+**Zoho ZeptoMail** (EU endpoint, premium deliverability). Free-tier and
+bonus-credit mails continue to be sent through the operator's SMTP. If
+ZeptoMail is unreachable, the bot falls back to self-SMTP and notifies the
+operator.
 
 ### 📊 Information
 

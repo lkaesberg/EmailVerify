@@ -21,15 +21,18 @@ class ServerSettings {
         this.domainRoles = {}
         // Allowed email addresses uploaded via CSV (array of lowercase email strings)
         this.allowedEmails = []
+        // Email rendering style: 'plain' (default, deliverability-optimized text) or 'styled' (HTML)
+        this.emailStyle = "plain"
     }
 
     get status() {
-        // Bot is configured if (domains exist OR allowedEmails exist) AND at least one role is configured
-        const hasRoles = this.defaultRoles.length > 0 || 
-                         Object.keys(this.domainRoles).length > 0 || 
+        // Bot is configured if at least one role is configured.
+        // Empty domains + empty allowedEmails = "accept any email" (default-open),
+        // so the email source no longer needs to be explicitly set.
+        const hasRoles = this.defaultRoles.length > 0 ||
+                         Object.keys(this.domainRoles).length > 0 ||
                          this.verifiedRoleName !== "" // Legacy support
-        const hasEmailSource = this.domains.length !== 0 || this.allowedEmails.length !== 0
-        return hasEmailSource && hasRoles
+        return hasRoles
     }
 }
 
