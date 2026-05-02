@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
+const { appStoreUrl } = require("../utils/premiumButtons");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,8 +8,10 @@ module.exports = {
         .setName('help')
         .setDescription('Learn how to set up and use the email verification bot')
         .setDefaultMemberPermissions(0),
-    
+
     async execute(interaction) {
+        const storeLink = appStoreUrl()
+        const storeLine = storeLink ? `\n[Browse plans on Discord](${storeLink})` : ''
         const helpEmbed = new EmbedBuilder()
             .setTitle('📚 Email Verification Bot - Setup Guide')
             .setDescription('Follow these steps to set up email verification for your server.')
@@ -75,6 +78,17 @@ module.exports = {
                     value:
                         '`/status` - View configuration & statistics\n' +
                         '`/help` - Show this help message'
+                },
+                {
+                    name: '💎 Premium',
+                    value:
+                        '`/premium status` - View your plan, available upgrades, and buy buttons\n' +
+                        '`/premium redeem` - Apply purchased credits or CSV unlock to this server\n' +
+                        '**Standard** - Unlimited verifications + premium ZeptoMail delivery\n' +
+                        '**Pro** - Standard + CSV import & export\n' +
+                        '**Credit packs** - One-time top-up of 100 / 500 / 2000 verifications\n' +
+                        '**CSV unlock** - One-time CSV features without a subscription' +
+                        storeLine
                 },
                 {
                     name: '👤 User Commands',

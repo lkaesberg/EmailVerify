@@ -142,5 +142,11 @@
   "statusDomainsAllAccepted": "*All domains accepted (no restrictions configured)*",
   "statusDomainsOnlyAllowedList": "*None — only the uploaded allowed-emails list is accepted*",
   "domainClearAcceptAll": "ℹ️ With no domains and no allowed-emails list, **all email addresses are now accepted** (subject to the blacklist). Add domains with `/domain add` to restrict verification.",
-  "domainClearStillRestricted": "ℹ️ Verification is still restricted to your uploaded allowed-emails list."
+  "domainClearStillRestricted": "ℹ️ Verification is still restricted to your uploaded allowed-emails list.",
+  "premiumAdHeader": "🛒 Available plans",
+  "premiumAdStandard": "⭐ **Standard subscription** — Unlimited verification emails per month + premium delivery via Zoho ZeptoMail (EU servers, much better inbox placement than the free tier).",
+  "premiumAdPro": "💎 **Pro subscription** — Everything in Standard, plus CSV import & export of allowed-email lists and verification logs.",
+  "premiumAdCsvUnlock": "📁 **CSV unlock** *(one-time)* — Get the Pro plan's CSV features for this server without committing to a subscription.",
+  "premiumAdCreditPacks": "🎟️ **Credit packs** *(one-time)* — Top up extra verifications: 100, 500, or 2,000. They never expire and roll over month to month. Used after your free 25 are gone.",
+  "premiumAdFooter": "Click a button below to see prices and buy. Purchases apply to this server only. Run /premium redeem after buying credits or the CSV unlock."
 }

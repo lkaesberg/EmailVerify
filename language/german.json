@@ -142,5 +142,11 @@
   "statusDomainsAllAccepted": "*Alle Domains erlaubt (keine Einschränkungen konfiguriert)*",
   "statusDomainsOnlyAllowedList": "*Keine — nur die hochgeladene erlaubte E-Mail-Liste wird akzeptiert*",
   "domainClearAcceptAll": "ℹ️ Ohne Domains und ohne erlaubte E-Mail-Liste werden **jetzt alle E-Mail-Adressen akzeptiert** (vorbehaltlich der Blacklist). Füge Domains mit `/domain add` hinzu, um die Verifizierung einzuschränken.",
-  "domainClearStillRestricted": "ℹ️ Die Verifizierung ist weiterhin auf deine hochgeladene erlaubte E-Mail-Liste beschränkt."
+  "domainClearStillRestricted": "ℹ️ Die Verifizierung ist weiterhin auf deine hochgeladene erlaubte E-Mail-Liste beschränkt.",
+  "premiumAdHeader": "🛒 Verfügbare Pläne",
+  "premiumAdStandard": "⭐ **Standard-Abo** — Unbegrenzte Verifizierungs-E-Mails pro Monat + Premium-Versand über Zoho ZeptoMail (EU-Server, deutlich bessere Zustellung als beim Free-Tier).",
+  "premiumAdPro": "💎 **Pro-Abo** — Alles aus Standard plus CSV-Import und -Export von erlaubten E-Mail-Listen und Verifizierungs-Logs.",
+  "premiumAdCsvUnlock": "📁 **CSV-Freischaltung** *(einmalig)* — Erhalte die CSV-Funktionen des Pro-Plans für diesen Server, ohne ein Abo abzuschließen.",
+  "premiumAdCreditPacks": "🎟️ **Guthaben-Pakete** *(einmalig)* — Stocke zusätzliche Verifizierungen auf: 100, 500 oder 2.000. Verfallen nie und übertragen sich von Monat zu Monat. Werden nach den 25 freien E-Mails verbraucht.",
+  "premiumAdFooter": "Klicke unten auf einen Button, um Preise zu sehen und zu kaufen. Käufe gelten nur auf diesem Server. Führe nach dem Kauf von Guthaben oder der CSV-Freischaltung /premium redeem aus."
 }

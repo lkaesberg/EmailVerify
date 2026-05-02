@@ -142,5 +142,11 @@
   "statusDomainsAllAccepted": "*Tüm alan adları kabul edilir (kısıtlama yapılandırılmadı)*",
   "statusDomainsOnlyAllowedList": "*Yok — yalnızca yüklenmiş izinli e-posta listesi kabul edilir*",
   "domainClearAcceptAll": "ℹ️ Alan adı ve izinli e-posta listesi olmadan, **tüm e-posta adresleri artık kabul ediliyor** (kara liste hariç). Doğrulamayı sınırlamak için `/domain add` ile alan adları ekle.",
-  "domainClearStillRestricted": "ℹ️ Doğrulama, yüklediğin izinli e-posta listesiyle sınırlı kalmaya devam ediyor."
+  "domainClearStillRestricted": "ℹ️ Doğrulama, yüklediğin izinli e-posta listesiyle sınırlı kalmaya devam ediyor.",
+  "premiumAdHeader": "🛒 Mevcut planlar",
+  "premiumAdStandard": "⭐ **Standard abonelik** — Aylık sınırsız doğrulama e-postası + Zoho ZeptoMail üzerinden premium teslimat (AB sunucuları, ücretsiz tier'a göre belirgin biçimde daha iyi gelen kutusu yerleşimi).",
+  "premiumAdPro": "💎 **Pro abonelik** — Standard'ın her şeyi artı izinli e-posta listeleri ve doğrulama loglarının CSV içe/dışa aktarımı.",
+  "premiumAdCsvUnlock": "📁 **CSV kilidi açma** *(tek seferlik)* — Aboneliğe bağlanmadan Pro planının CSV özelliklerini bu sunucu için elde et.",
+  "premiumAdCreditPacks": "🎟️ **Kredi paketleri** *(tek seferlik)* — Ek doğrulama doldur: 100, 500 veya 2.000. Süresi dolmaz, aydan aya devreder. 25 ücretsiz kullanıldıktan sonra harcanır.",
+  "premiumAdFooter": "Fiyatları görmek ve satın almak için aşağıdaki butona tıkla. Satın almalar yalnızca bu sunucuda geçerlidir. Kredi veya CSV kilidi satın aldıktan sonra /premium redeem çalıştır."
 }

@@ -1,11 +1,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { MessageFlags, EmbedBuilder } = require('discord.js');
 const premiumManager = require("../premium/PremiumManager");
 const database = require("../database/Database");
 const { getLocale } = require("../Language");
-const { monetization } = require('../../config/config.json');
-
-const skus = monetization?.skus || {}
+const { buildPlanButtons, appStoreUrl } = require("../utils/premiumButtons");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -59,24 +57,42 @@ module.exports = {
                         { name: getLocale(language, 'premiumFieldRedeem'), value: getLocale(language, 'premiumRedeemInstructions'), inline: false },
                     )
 
+                // Advertise upgradeable plans (different content based on current tier)
+                const adLines = []
                 if (!status.subscriptionTier) {
-                    embed.setFooter({ text: getLocale(language, 'premiumStatusFooter') })
+                    adLines.push(getLocale(language, 'premiumAdStandard'))
+                }
+                if (status.subscriptionTier !== 'tier2') {
+                    adLines.push(getLocale(language, 'premiumAdPro'))
+                }
+                if (!(status.csvUnlocked || status.subscriptionTier === 'tier2')) {
+                    adLines.push(getLocale(language, 'premiumAdCsvUnlock'))
+                }
+                adLines.push(getLocale(language, 'premiumAdCreditPacks'))
+
+                if (adLines.length > 0) {
+                    embed.addFields({
+                        name: getLocale(language, 'premiumAdHeader'),
+                        value: adLines.join('\n\n'),
+                        inline: false
+                    })
                 }
 
-                const components = []
-                if (!status.subscriptionTier && skus.subscriptionTier1) {
-                    const row = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setStyle(ButtonStyle.Premium)
-                            .setSKUId(skus.subscriptionTier1)
-                    )
-                    components.push(row)
+                const storeLink = appStoreUrl()
+                const footerLines = []
+                if (!status.subscriptionTier) {
+                    footerLines.push(getLocale(language, 'premiumStatusFooter'))
                 }
+                footerLines.push(getLocale(language, 'premiumAdFooter'))
+                embed.setFooter({ text: footerLines.join(' • ') })
+                if (storeLink) embed.setURL(storeLink)
+
+                const components = buildPlanButtons(status, { context: 'status' })
 
                 try {
                     await interaction.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral })
                 } catch (err) {
-                    // SKU may be unavailable/unpublished – retry without premium button
+                    // SKU may be unavailable/unpublished – retry without premium buttons
                     if (components.length > 0 && err.code === 50035) {
                         await interaction.reply({ embeds: [embed], components: [], flags: MessageFlags.Ephemeral })
                     } else {

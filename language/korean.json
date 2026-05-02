@@ -142,5 +142,11 @@
   "statusDomainsAllAccepted": "*모든 도메인 허용됨 (제한이 구성되지 않음)*",
   "statusDomainsOnlyAllowedList": "*없음 — 업로드된 허용 이메일 목록만 허용됨*",
   "domainClearAcceptAll": "ℹ️ 도메인이 없고 허용 이메일 목록도 없으면 **모든 이메일 주소가 이제 허용됩니다** (블랙리스트 적용). 인증을 제한하려면 `/domain add`로 도메인을 추가하세요.",
-  "domainClearStillRestricted": "ℹ️ 인증은 업로드된 허용 이메일 목록으로 계속 제한됩니다."
+  "domainClearStillRestricted": "ℹ️ 인증은 업로드된 허용 이메일 목록으로 계속 제한됩니다.",
+  "premiumAdHeader": "🛒 사용 가능한 플랜",
+  "premiumAdStandard": "⭐ **Standard 구독** — 월 무제한 인증 이메일 + Zoho ZeptoMail을 통한 프리미엄 배달 (EU 서버, 무료 티어보다 훨씬 나은 받은 편지함 배치).",
+  "premiumAdPro": "💎 **Pro 구독** — Standard의 모든 것 + 허용 이메일 목록과 인증 로그의 CSV 가져오기 및 내보내기.",
+  "premiumAdCsvUnlock": "📁 **CSV 잠금 해제** *(일회성)* — 구독에 묶이지 않고 이 서버에 대한 Pro 플랜의 CSV 기능을 얻으세요.",
+  "premiumAdCreditPacks": "🎟️ **크레딧 팩** *(일회성)* — 추가 인증 충전: 100, 500 또는 2,000. 만료되지 않고 매달 이월됩니다. 무료 25회 후 사용됩니다.",
+  "premiumAdFooter": "아래 버튼을 클릭하여 가격을 보고 구매하세요. 구매는 이 서버에만 적용됩니다. 크레딧이나 CSV 잠금 해제를 구매한 후 /premium redeem을 실행하세요."
 }

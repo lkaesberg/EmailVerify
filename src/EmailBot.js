@@ -22,6 +22,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
+const { buildPlanButtons } = require('./utils/premiumButtons');
 const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
 const premiumManager = require('./premium/PremiumManager');
 
@@ -441,15 +442,10 @@ bot.on('interactionCreate', async interaction => {
                 const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
                 if (!premiumCheck.allowed) {
                     const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true)
-                    const { monetization } = require('../config/config.json')
-                    const skus = monetization?.skus || {}
-                    const row = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setStyle(ButtonStyle.Premium)
-                            .setSKUId(skus.subscriptionTier1)
-                    )
+                    const premiumStatus = await premiumManager.getPremiumStatus(userGuild.id, interaction.entitlements)
+                    const components = buildPlanButtons(premiumStatus, { context: 'mailLimit' })
                     try {
-                        await interaction.followUp({ embeds: [limitEmbed], components: [row], flags: MessageFlags.Ephemeral })
+                        await interaction.followUp({ embeds: [limitEmbed], components, flags: MessageFlags.Ephemeral })
                     } catch (err) {
                         if (err.code === 50035) {
                             await interaction.followUp({ embeds: [limitEmbed], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
