@@ -53,7 +53,7 @@ module.exports = {
             await database.getServerSettings(interaction.guildId, async serverSettings => {
                 if (!serverSettings.logChannel || serverSettings.logChannel === "") {
                     await interaction.editReply({
-                        content: "❌ **No log channel configured!**\n\nUse `/settings logchannel` to set up a verification log channel first.",
+                        content: "❌ **No log channel configured!**\n\nUse `/settings log-channel` to set up a verification log channel first.",
                     });
                     return;
                 }
@@ -106,39 +106,54 @@ module.exports = {
                         return;
                     }
 
-                    // Parse messages and build CSV
+                    // Parse messages first to collect unique user IDs.
+                    const parsedMessages = allMessages.map(message => ({
+                        message,
+                        parsed: parseLogMessage(message.content)
+                    }));
+                    let parseErrors = parsedMessages.filter(p => !p.parsed).length;
+
+                    // Batch-fetch all unique users that aren't already cached.
+                    // members.fetch({ user: [...] }) accepts up to 100 IDs per call.
+                    const uniqueUserIds = [...new Set(parsedMessages.filter(p => p.parsed).map(p => p.parsed.userId))];
+                    const usernameById = new Map();
+                    for (const id of uniqueUserIds) {
+                        const cached = interaction.guild.members.cache.get(id);
+                        if (cached) usernameById.set(id, cached.user.username);
+                    }
+                    const idsToFetch = uniqueUserIds.filter(id => !usernameById.has(id));
+                    for (let i = 0; i < idsToFetch.length; i += 100) {
+                        const chunk = idsToFetch.slice(i, i + 100);
+                        try {
+                            const members = await interaction.guild.members.fetch({ user: chunk });
+                            for (const member of members.values()) {
+                                usernameById.set(member.id, member.user.username);
+                            }
+                        } catch (e) {
+                            // Some IDs may have left the guild; leave them blank rather than aborting.
+                        }
+                    }
+
+                    // Build CSV
                     const csvRows = ['timestamp,user_id,username,email,type,verified_by,tags'];
                     let successCount = 0;
-                    let parseErrors = 0;
+                    for (const { message, parsed } of parsedMessages) {
+                        if (!parsed) continue;
+                        const username = usernameById.get(parsed.userId) || '';
+                        // Tags can contain commas, quotes, or newlines (Discord role names allow most chars).
+                        // Use the same CSV escape as username/email so the column boundary is safe.
+                        const tags = parsed.tags || '';
 
-                    for (const message of allMessages) {
-                        const parsed = parseLogMessage(message.content);
-                        if (parsed) {
-                            // Try to get username from mention
-                            let username = '';
-                            try {
-                                const member = await interaction.guild.members.fetch(parsed.userId).catch(() => null);
-                                username = member ? member.user.username : '';
-                            } catch {
-                                username = '';
-                            }
-
-                            // Replace commas in tags with semicolons to avoid CSV issues
-                            const tags = parsed.tags ? parsed.tags.replace(/,/g, ';') : '';
-                            
-                            csvRows.push([
-                                message.createdAt.toISOString(),
-                                parsed.userId,
-                                escapeCsvField(username),
-                                escapeCsvField(parsed.email),
-                                parsed.type,
-                                parsed.verifiedBy || '',
-                                tags
-                            ].join(','));
-                            successCount++;
-                        } else {
-                            parseErrors++;
-                        }
+                        csvRows.push([
+                            message.createdAt.toISOString(),
+                            parsed.userId,
+                            escapeCsvField(username),
+                            escapeCsvField(parsed.email),
+                            parsed.type,
+                            parsed.verifiedBy || '',
+                            escapeCsvField(tags)
+                        ].join(','));
+                        successCount++;
                     }
 
                     if (successCount === 0) {

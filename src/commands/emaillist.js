@@ -1,10 +1,38 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
+const https = require('https');
+const { URL } = require('url');
 const database = require("../database/Database.js");
 const { getLocale } = require("../Language");
 const premiumManager = require("../premium/PremiumManager");
+const md5hash = require("../crypto/Crypto");
 const { createCSVPremiumRequiredEmbed } = require("../utils/embeds");
 const { buildPlanButtons } = require("../utils/premiumButtons");
+
+function downloadAttachment(rawUrl) {
+    return new Promise((resolve, reject) => {
+        const url = new URL(rawUrl);
+        https.get({
+            hostname: url.hostname,
+            path: url.pathname + url.search,
+            port: url.port || 443,
+            headers: { 'Accept': 'text/csv,text/plain,*/*' }
+        }, (res) => {
+            if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                downloadAttachment(res.headers.location).then(resolve, reject)
+                return
+            }
+            if (res.statusCode < 200 || res.statusCode >= 300) {
+                reject(new Error(`HTTP ${res.statusCode}`))
+                return
+            }
+            const chunks = []
+            res.on('data', c => chunks.push(c))
+            res.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')))
+            res.on('error', reject)
+        }).on('error', reject)
+    })
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,15 +75,9 @@ module.exports = {
                         flags: MessageFlags.Ephemeral
                     });
                 } else {
-                    const displayLimit = 20;
-                    const shown = emails.slice(0, displayLimit).map(e => `\`${e}\``).join('\n• ');
-                    const remaining = emails.length - displayLimit;
-                    let content = getLocale(language, "emaillistListHeader", emails.length.toString()) + `\n• ${shown}`;
-                    if (remaining > 0) {
-                        content += `\n\n... ${getLocale(language, "emaillistListMore", remaining.toString())}`;
-                    }
+                    // Stored as hashes for privacy — show count + a privacy note instead of plaintext.
                     await interaction.reply({
-                        content: content,
+                        content: getLocale(language, "emaillistListHashedHeader", emails.length.toString()),
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -121,40 +143,47 @@ module.exports = {
                 await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
                 try {
-                    const response = await fetch(attachment.url);
-                    const text = await response.text();
+                    const text = await downloadAttachment(attachment.url);
 
                     // Parse emails: one per row, handle CSV with commas, trim whitespace
-                    const emails = [];
+                    const parsedEmails = [];
                     const lines = text.split(/\r?\n/);
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
                     for (const line of lines) {
-                        // Split by comma to handle CSV with multiple columns
                         const parts = line.split(',');
                         for (const part of parts) {
                             const trimmed = part.trim().toLowerCase().replace(/^["']|["']$/g, '');
                             if (trimmed && emailRegex.test(trimmed)) {
-                                emails.push(trimmed);
+                                parsedEmails.push(trimmed);
                             }
                         }
                     }
 
-                    if (emails.length === 0) {
+                    if (parsedEmails.length === 0) {
                         await interaction.editReply({
                             content: getLocale(language, "emaillistNoValidEmails")
                         });
                         return;
                     }
 
-                    // Deduplicate
-                    const uniqueEmails = [...new Set(emails)];
+                    // Hash + dedup the new entries, then merge with the existing list (append, not replace).
+                    const newHashes = new Set(parsedEmails.map(e => md5hash(e)));
+                    const existingHashes = new Set(serverSettings.allowedEmails || []);
+                    let added = 0;
+                    for (const h of newHashes) {
+                        if (!existingHashes.has(h)) {
+                            existingHashes.add(h);
+                            added++;
+                        }
+                    }
+                    const total = existingHashes.size;
 
-                    serverSettings.allowedEmails = uniqueEmails;
+                    serverSettings.allowedEmails = Array.from(existingHashes);
                     database.updateServerSettings(interaction.guildId, serverSettings);
 
                     await interaction.editReply({
-                        content: getLocale(language, "emaillistUploaded", uniqueEmails.length.toString())
+                        content: getLocale(language, "emaillistUploaded", added.toString(), total.toString())
                     });
                 } catch (error) {
                     console.error('Error processing email list:', error);

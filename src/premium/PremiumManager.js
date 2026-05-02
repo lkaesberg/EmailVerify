@@ -11,7 +11,7 @@ class PremiumManager {
     }
 
     get freeMonthlyLimit() {
-        return monetization.freeMonthlyLimit ?? 50
+        return monetization.freeMonthlyLimit ?? 25
     }
 
     /**

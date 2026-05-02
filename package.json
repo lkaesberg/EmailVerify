@@ -8,6 +8,9 @@
   },
   "author": "Lars Benedikt Kaesberg",
   "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=16.11"
+  },
   "dependencies": {
     "@discordjs/builders": "^1.13.1",
     "@discordjs/rest": "^2.6.0",

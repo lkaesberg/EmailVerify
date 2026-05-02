@@ -414,7 +414,8 @@ bot.on('interactionCreate', async interaction => {
                 const allowedEmails = serverSettings.allowedEmails || []
                 const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
                 const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
-                const isInAllowedList = allowedEmails.includes(emailText.toLowerCase())
+                // allowedEmails are stored as MD5 hashes of the lowercased address (same scheme as userEmails)
+                const isInAllowedList = allowedEmails.includes(md5hash(emailText.toLowerCase()))
 
                 if (!hasValidFormat || (!noRestrictionsConfigured && !matchesDomain && !isInAllowedList)) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})

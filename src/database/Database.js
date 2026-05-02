@@ -122,6 +122,23 @@ class Database {
             // Per-guild email rendering style: 'plain' (default) or 'styled' (HTML)
             this.db.run("ALTER TABLE guilds ADD emailStyle TEXT DEFAULT 'plain'")
         })
+        this.runMigration(16, () => {
+            // Hash any existing plaintext entries in guilds.allowedEmails for parity
+            // with userEmails (which has been hashed since migration 2).
+            this.db.each("SELECT guildid, allowedEmails FROM guilds WHERE allowedEmails IS NOT NULL AND allowedEmails != '' AND allowedEmails != '[]'", (err, result) => {
+                if (err || !result) return
+                let parsed
+                try { parsed = JSON.parse(result.allowedEmails) } catch { return }
+                if (!Array.isArray(parsed) || parsed.length === 0) return
+                // Plaintext emails always contain '@'; MD5 base64 hashes don't.
+                const hashed = parsed.map(entry => {
+                    if (typeof entry !== 'string') return null
+                    return entry.includes('@') ? md5hash(entry.toLowerCase()) : entry
+                }).filter(Boolean)
+                const dedup = Array.from(new Set(hashed))
+                this.db.run("UPDATE guilds SET allowedEmails = ? WHERE guildid = ?", [JSON.stringify(dedup), result.guildid])
+            })
+        })
     }
 
     runMigration(version, migration) {
@@ -511,6 +528,24 @@ class Database {
                         return
                     }
                     resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    /**
+     * Refund a previously-consumed credit. Used when a send is admitted via a credit
+     * but the email provider then fails — the credit shouldn't be lost since no
+     * verification mail was actually delivered.
+     */
+    refundGuildCredit(guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT INTO guild_premium (guildID, bonusCredits) VALUES (?, 1) ON CONFLICT(guildID) DO UPDATE SET bonusCredits = bonusCredits + 1",
+                [guildID],
+                (err) => {
+                    if (err) console.error('Error refunding guild credit:', err)
+                    resolve()
                 }
             )
         })

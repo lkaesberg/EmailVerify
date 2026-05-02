@@ -42,7 +42,7 @@ module.exports = class MailSender {
         }
 
         this.zeptoFallbackLastWarn = new Map()
-        this.freeMonthlyLimit = config.monetization?.freeMonthlyLimit ?? 50
+        this.freeMonthlyLimit = config.monetization?.freeMonthlyLimit ?? 25
     }
 
     /**
@@ -122,6 +122,11 @@ module.exports = class MailSender {
                     if (info && info.response) {
                         console.log('SMTP Response:', info.response)
                     }
+                }
+                // canSendMail() consumed a credit before this attempt — refund it since
+                // no verification mail was actually delivered.
+                if (premiumSource === 'credits') {
+                    database.refundGuildCredit(serverId).catch(() => {})
                 }
                 const errorEmbed = new EmbedBuilder()
                     .setTitle(getLocale(language, "mailFailedTitle"))

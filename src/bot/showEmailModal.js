@@ -154,10 +154,9 @@ async function showEmailModal(interaction, guild, userGuilds) {
                 })
             }
         } else if (onlyEmailList) {
-            // Only email list, no domains - show default roles
-            const defaultRoleNamesDisplay = getRoleNames(defaultRoles)
-            if (defaultRoleNamesDisplay.length > 0) {
-                headerText += `\n\n${getLocale(language, "emailModalRolesAssigned")}: ${defaultRoleNamesDisplay.join(', ')}`
+            // Only email list, no domains - show default roles (already computed above as defaultRoleNames)
+            if (defaultRoleNames.length > 0) {
+                headerText += `\n\n${getLocale(language, "emailModalRolesAssigned")}: ${defaultRoleNames.join(', ')}`
             }
         } else {
             // Show formatted domain list with roles
