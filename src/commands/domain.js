@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
 const registerRemoveDomain = require("../bot/registerRemoveDomain");
+const { getLocale } = require("../Language");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -153,8 +154,14 @@ module.exports = {
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 await registerRemoveDomain(interaction.guildId, { data: this.data });
 
+                const language = serverSettings.language || 'english';
+                const hasAllowedEmails = (serverSettings.allowedEmails || []).length > 0;
+                const followup = hasAllowedEmails
+                    ? '\n\n' + getLocale(language, 'domainClearStillRestricted')
+                    : '\n\n' + getLocale(language, 'domainClearAcceptAll');
+
                 await interaction.reply({
-                    content: `🗑️ **All domains cleared!**\n\nRemoved ${count} ${count === 1 ? 'domain' : 'domains'}.\n\n⚠️ **Warning:** Users cannot verify until you add allowed domains with \`/domain add\`.`,
+                    content: `🗑️ **All domains cleared!**\n\nRemoved ${count} ${count === 1 ? 'domain' : 'domains'}.${followup}`,
                     flags: MessageFlags.Ephemeral
                 });
             }

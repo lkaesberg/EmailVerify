@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, EmbedBuilder } = require('discord.js');
 const database = require("../database/Database.js");
-const { languages } = require("../Language");
+const { languages, getLocale } = require("../Language");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -64,6 +64,27 @@ module.exports = {
                         .setName('enable')
                         .setDescription('Enable or disable auto-assignment of unverified role')
                         .setRequired(true)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('email-style')
+                .setDescription('Choose how verification emails are rendered (plain text or HTML)')
+                .addStringOption(option =>
+                    option
+                        .setName('style')
+                        .setDescription('plain = deliverability-optimized text (default), styled = HTML (may trigger spam filters)')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: 'plain', value: 'plain' },
+                            { name: 'styled', value: 'styled' }
+                        )
+                )
+                .addBooleanOption(option =>
+                    option
+                        .setName('confirm')
+                        .setDescription('Required when switching to styled - acknowledges the spam-filter risk')
+                        .setRequired(false)
                 )
         )
         .setDefaultMemberPermissions(0),
@@ -149,7 +170,7 @@ module.exports = {
                 const enable = interaction.options.getBoolean('enable', true);
                 serverSettings.autoAddUnverified = +enable;
                 database.updateServerSettings(interaction.guildId, serverSettings);
-                
+
                 if (enable) {
                     const roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName);
                     if (roleUnverified) {
@@ -169,6 +190,33 @@ module.exports = {
                         flags: MessageFlags.Ephemeral
                     });
                 }
+                return;
+            }
+
+            if (subcommand === 'email-style') {
+                const language = serverSettings.language || 'english';
+                const style = interaction.options.getString('style', true);
+                const confirm = interaction.options.getBoolean('confirm') || false;
+
+                if (style === 'styled' && !confirm) {
+                    const warningEmbed = new EmbedBuilder()
+                        .setTitle(getLocale(language, 'emailStyleSpamWarningTitle'))
+                        .setDescription(getLocale(language, 'emailStyleSpamWarning'))
+                        .setColor(0xFFA500);
+                    await interaction.reply({ embeds: [warningEmbed], flags: MessageFlags.Ephemeral });
+                    return;
+                }
+
+                serverSettings.emailStyle = style;
+                database.updateServerSettings(interaction.guildId, serverSettings);
+
+                const titleKey = style === 'styled' ? 'emailStyleSetStyledTitle' : 'emailStyleSetPlainTitle';
+                const descKey = style === 'styled' ? 'emailStyleSetStyledDescription' : 'emailStyleSetPlainDescription';
+                const confirmEmbed = new EmbedBuilder()
+                    .setTitle(getLocale(language, titleKey))
+                    .setDescription(getLocale(language, descKey))
+                    .setColor(style === 'styled' ? 0xFFA500 : 0x57F287);
+                await interaction.reply({ embeds: [confirmEmbed], flags: MessageFlags.Ephemeral });
             }
         });
     }

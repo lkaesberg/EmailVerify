@@ -1,7 +1,8 @@
 const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
-
+const premiumManager = require("../premium/PremiumManager");
+const { getLocale } = require("../Language");
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('View bot configuration, verification statistics, and check setup issues').setDefaultMemberPermissions(0),
     
@@ -32,6 +33,7 @@ module.exports = {
     
     async execute(interaction) {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
+            const language = serverSettings.language || 'english'
             // Get guild statistics
             database.getGuildStats(interaction.guildId, async (guildStats) => {
                 const isConfigured = serverSettings.status
@@ -53,9 +55,10 @@ module.exports = {
                 const logChannel = serverSettings.logChannel ? interaction.guild.channels.cache.get(serverSettings.logChannel) : null
                 
                 // Format domains
-                const domainsDisplay = serverSettings.domains.length > 0 
+                const hasAllowedEmails = (serverSettings.allowedEmails || []).length > 0
+                const domainsDisplay = serverSettings.domains.length > 0
                     ? serverSettings.domains.map(d => `\`${d.replaceAll("*", "✱")}\``).join(', ')
-                    : '*None configured*'
+                    : (hasAllowedEmails ? getLocale(language, 'statusDomainsOnlyAllowedList') : getLocale(language, 'statusDomainsAllAccepted'))
                 
                 // Format blacklist
                 const blacklistDisplay = serverSettings.blacklist.length > 0
@@ -89,7 +92,8 @@ module.exports = {
                 const issues = []
                 const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
                 if (!hasAnyRoles) issues.push('• No verified roles configured (use `/role add` or `/domainrole add`)')
-                if (serverSettings.domains.length === 0) issues.push('• No email domains configured')
+                // Empty domain + empty allowedEmails is a valid configuration ("accept any email"),
+                // so it's no longer flagged as an issue here.
                 
                 // Get current month name for display
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -129,6 +133,12 @@ module.exports = {
                         {
                             name: '📧 Allowed Domains',
                             value: domainsDisplay
+                        },
+                        {
+                            name: '📋 Allowed Email List',
+                            value: (serverSettings.allowedEmails || []).length > 0 
+                                ? `${serverSettings.allowedEmails.length} email address(es)` 
+                                : '*None uploaded*'
                         },
                         {
                             name: '🚫 Blacklisted Emails',
@@ -171,6 +181,27 @@ module.exports = {
                     statusEmbed.addFields({
                         name: '⚠️ Issues to Fix',
                         value: issues.join('\n')
+                    })
+                }
+                
+                // Add premium info when monetization is enabled
+                if (premiumManager.enabled) {
+                    const premiumStatus = await premiumManager.getPremiumStatus(interaction.guildId, interaction.entitlements)
+                    const lang = serverSettings.language || 'english'
+                    const tierName = premiumStatus.subscriptionTier
+                        ? getLocale(lang, premiumStatus.subscriptionTier === 'tier2' ? 'premiumPlanPro' : 'premiumPlanStandard')
+                        : getLocale(lang, 'premiumPlanFree')
+                    const mailsInfo = premiumStatus.hasUnlimitedMails
+                        ? getLocale(lang, 'premiumMailsUnlimited', premiumStatus.mailsSentMonth.toString())
+                        : getLocale(lang, 'premiumMailsLimited', premiumStatus.mailsSentMonth.toString(), premiumStatus.freeLimit.toString(), premiumStatus.freeRemaining.toString())
+                    
+                    statusEmbed.addFields({
+                        name: '💳 Premium',
+                        value:
+                            `**${getLocale(lang, 'premiumFieldPlan')}:** ${tierName}\n` +
+                            `**${getLocale(lang, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
+                            `**${getLocale(lang, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
+                            `**${getLocale(lang, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(lang, 'premiumCsvUnlocked') : getLocale(lang, 'premiumCsvLocked')}`
                     })
                 }
                 

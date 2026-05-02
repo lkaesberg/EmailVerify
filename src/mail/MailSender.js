@@ -1,117 +1,208 @@
-let {smtpHost, email, username, password, isGoogle, isSecure, smtpPort} = require("../../config/config.json");
+const config = require("../../config/config.json")
+const { defaultLanguage, getLocale } = require("../Language")
+const database = require("../database/Database")
+const { MessageFlags, EmbedBuilder } = require('discord.js')
+const ErrorNotifier = require('../utils/ErrorNotifier')
+const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
+const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 
-const nodemailer = require("nodemailer");
-const {defaultLanguage, getLocale} = require("../Language");
-const database = require("../database/Database");
-const { MessageFlags, EmbedBuilder } = require('discord.js');
-
-// Ensure username is set (used for SMTP auth AND From address for policy compliance)
-if (typeof username === 'undefined') {
-    username = email;
-}
+const ZEPTO_FALLBACK_WARN_INTERVAL_MS = 60 * 60 * 1000
 
 module.exports = class MailSender {
     constructor(serverStatsAPI) {
         this.serverStatsAPI = serverStatsAPI
-        
-        let nodemailerOptions = {
-            host: smtpHost,
-            port: smtpPort || 587,           // Default to STARTTLS port
-            secure: isSecure || false,        // false = STARTTLS on 587, true = implicit TLS on 465
-            name: smtpHost,
-            auth: {
-                user: username,
-                pass: password
-            },
-            tls: {
-                rejectUnauthorized: true      // Enforce TLS certificate verification (required by many university mail servers)
+
+        const username = typeof config.username === 'undefined' ? config.email : config.username
+        this.username = username
+
+        this.selfProvider = new SelfSmtpProvider({
+            smtpHost: config.smtpHost,
+            username,
+            password: config.password,
+            smtpPort: config.smtpPort,
+            isSecure: config.isSecure,
+            isGoogle: config.isGoogle
+        })
+
+        const zeptoCfg = config.zeptomail || {}
+        if (zeptoCfg.enabled && zeptoCfg.apiToken && zeptoCfg.fromAddress) {
+            try {
+                this.zeptoProvider = new ZeptoMailProvider({
+                    apiToken: zeptoCfg.apiToken,
+                    endpoint: zeptoCfg.endpoint,
+                    fromAddress: zeptoCfg.fromAddress,
+                    fromName: zeptoCfg.fromName
+                })
+            } catch (err) {
+                console.error('[MailSender] ZeptoMail disabled - bad config:', err.message)
+                this.zeptoProvider = null
             }
+        } else {
+            this.zeptoProvider = null
         }
-        
-        // Gmail uses its own service configuration
-        if (isGoogle) {
-          this.transporter = nodemailer.createTransport({
-              service: 'gmail',
-              auth: {
-                  user: username,
-                  pass: password
-              }
-          });
-      } else {
-          this.transporter = nodemailer.createTransport(nodemailerOptions);
-      }
+
+        this.zeptoFallbackLastWarn = new Map()
+        this.freeMonthlyLimit = config.monetization?.freeMonthlyLimit ?? 25
     }
 
     /**
      * Send verification email
-     * @param {string} toEmail - Email address to send to
-     * @param {string} code - Verification code
+     * @param {string} toEmail
+     * @param {string} code
      * @param {string} name - Server name
-     * @param {Interaction} interaction - Discord interaction (modal/button)
-     * @param {boolean} emailNotify - Whether to log email events to console
+     * @param {Interaction} interaction
+     * @param {boolean} emailNotify
      * @param {Function} callback - Called with accepted email on success
+     * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'free' | 'disabled'
+     * @param {string} [emailStyle='plain'] - 'plain' | 'styled'
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback) {
-        const serverId = interaction.guildId;
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain') {
+        const serverId = interaction.guildId
 
-        await database.getServerSettings(serverId, serverSettings => {
-            const language = serverSettings.language || defaultLanguage;
-            
-            // Use localized email text from language files
-            // getLocale handles %VAR% replacement: first = server name, second = verification code
-            const plainText = getLocale(language, "emailText", name, code);
-            const emailSubject = getLocale(language, "emailSubject");
-            const emailSenderName = getLocale(language, "emailSenderName");
+        await database.getServerSettings(serverId, async (serverSettings) => {
+            const language = serverSettings.language || defaultLanguage
+            const plainText = getLocale(language, "emailText", name, code)
+            const emailSubject = getLocale(language, "emailSubject")
+            const emailSenderName = getLocale(language, "emailSenderName")
+            const html = emailStyle === 'styled'
+                ? this.#buildLocalizedHtmlEmail(language, name, code)
+                : null
 
-            const mailOptions = {
-                from: `"${emailSenderName}" <${username}>`,  // MUST match authenticated user for DMARC/SPF alignment
+            const sendOpts = {
+                fromName: emailSenderName,
+                from: this.username,
                 to: toEmail,
                 subject: emailSubject,
                 text: plainText,
-                // No HTML - plain text only for maximum deliverability
+                html,
                 headers: {
                     'X-Mailer': 'EmailVerify',
-                    'List-Unsubscribe': `<mailto:${username}?subject=unsubscribe>`,
+                    'List-Unsubscribe': `<mailto:${this.username}?subject=unsubscribe>`,
                     'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
                 }
-            };
-            
-            this.transporter.sendMail(mailOptions, async (error, info) => {
-                if (error || info.rejected.length > 0) {
+            }
+
+            const useZepto = this.zeptoProvider && premiumSource === 'subscription'
+            let info = null
+            let usedProvider = null
+            let lastError = null
+
+            if (useZepto) {
+                try {
+                    info = await this.zeptoProvider.sendMail(sendOpts)
+                    usedProvider = 'zeptomail'
+                } catch (err) {
+                    lastError = err
                     if (emailNotify) {
-                        console.log('EMAIL ERROR for:', toEmail);
-                        console.log('Error details:', error);
-                        if (info && info.rejected.length > 0) {
-                            console.log('Rejected emails:', info.rejected);
-                        }
-                        if (info && info.response) {
-                            console.log('SMTP Response:', info.response);
-                        }
+                        console.warn('[MailSender] ZeptoMail send failed, falling back to self-SMTP:', err.message)
                     }
-                    // Show error message to the user
-                    const errorEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(language, "mailFailedTitle"))
-                        .setDescription(getLocale(language, "mailFailedDescription", toEmail))
-                        .setColor(0xED4245)
-                    
-                    if (interaction.deferred || interaction.replied) {
-                        await interaction.followUp({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
-                    } else {
-                        await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                    this.#warnZeptoFallback(interaction.guild, language, err)
+                }
+            }
+
+            if (!info) {
+                try {
+                    info = await this.selfProvider.sendMail(sendOpts)
+                    usedProvider = 'self-smtp'
+                } catch (err) {
+                    lastError = err
+                    info = null
+                }
+            }
+
+            const failed = !info || (info.rejected && info.rejected.length > 0)
+
+            if (failed) {
+                if (emailNotify) {
+                    console.log('EMAIL ERROR for:', toEmail)
+                    console.log('Error details:', lastError)
+                    if (info && info.rejected && info.rejected.length > 0) {
+                        console.log('Rejected emails:', info.rejected)
                     }
-                } else {
-                    this.serverStatsAPI.increaseMailSend()
-                    database.incrementMailsSent(serverId)
-                    callback(info.accepted[0])
-                    if (emailNotify) {
-                        console.log('EMAIL SUCCESS for:', toEmail);
-                        console.log('Accepted emails:', info.accepted);
-                        console.log('Message ID:', info.messageId);
-                        console.log('SMTP Response:', info.response);
+                    if (info && info.response) {
+                        console.log('SMTP Response:', info.response)
                     }
                 }
-            });
+                // canSendMail() consumed a credit before this attempt — refund it since
+                // no verification mail was actually delivered.
+                if (premiumSource === 'credits') {
+                    database.refundGuildCredit(serverId).catch(() => {})
+                }
+                const errorEmbed = new EmbedBuilder()
+                    .setTitle(getLocale(language, "mailFailedTitle"))
+                    .setDescription(getLocale(language, "mailFailedDescription", toEmail))
+                    .setColor(0xED4245)
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.followUp({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                } else {
+                    await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                }
+                return
+            }
+
+            this.serverStatsAPI.increaseMailSend()
+
+            try {
+                const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
+                this.#fireQuotaWarnings(interaction.guild, language, crossings)
+            } catch (e) {
+                console.error('[MailSender] Failed to record/check thresholds:', e)
+                database.incrementMailsSent(serverId)
+            }
+
+            const accepted = info.accepted && info.accepted.length > 0 ? info.accepted[0] : toEmail
+            callback(accepted)
+
+            if (emailNotify) {
+                console.log('EMAIL SUCCESS for:', toEmail, 'via', usedProvider)
+                if (info.messageId) console.log('Message ID:', info.messageId)
+                if (info.response) console.log('Provider response:', info.response)
+            }
         })
+    }
+
+    #fireQuotaWarnings(guild, language, crossings) {
+        if (!guild || !crossings) return
+
+        const fire = (titleKey, msgKey, ...vars) => {
+            ErrorNotifier.notify({
+                guild,
+                errorTitle: getLocale(language, titleKey),
+                errorMessage: getLocale(language, msgKey, ...vars),
+                language
+            }).catch(() => {})
+        }
+
+        if (crossings.crossed80) {
+            fire('quotaWarn80Title', 'quotaWarn80Message', String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+        }
+        if (crossings.crossed95) {
+            fire('quotaWarn95Title', 'quotaWarn95Message', String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+        }
+        if (crossings.crossed100) {
+            fire('quotaWarn100Title', 'quotaWarn100Message', String(this.freeMonthlyLimit))
+        }
+        if (crossings.crossedCreditsLow) {
+            fire('quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', String(crossings.creditsRemaining ?? 0))
+        }
+        if (crossings.crossedCreditsZero) {
+            fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage')
+        }
+    }
+
+    #warnZeptoFallback(guild, language, err) {
+        if (!guild) return
+        const last = this.zeptoFallbackLastWarn.get(guild.id) || 0
+        const now = Date.now()
+        if (now - last < ZEPTO_FALLBACK_WARN_INTERVAL_MS) return
+        this.zeptoFallbackLastWarn.set(guild.id, now)
+
+        ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(language, 'zeptoFallbackTitle'),
+            errorMessage: getLocale(language, 'zeptoFallbackMessage', err?.message || 'unknown error'),
+            language
+        }).catch(() => {})
     }
 
     #escapeHtml(input) {
@@ -124,22 +215,24 @@ module.exports = class MailSender {
             .replace(/'/g, '&#39;')
     }
 
-    /**
-     * Build system-like HTML email that matches plain text exactly.
-     * Designed to look like transactional/notification mail (GitHub, GitLab style).
-     * Avoids: bold "verification", red colors, warning icons, exclamation marks, countdown/expiration.
-     */
-    #buildSystemHtmlEmail(serverName, code) {
+    #buildLocalizedHtmlEmail(language, serverName, code) {
         const safeServerName = this.#escapeHtml(serverName || '')
         const safeCode = this.#escapeHtml(code || '')
 
+        const greeting = this.#escapeHtml(getLocale(language, 'emailHtmlGreeting'))
+        const serverIntro = this.#escapeHtml(getLocale(language, 'emailHtmlServerIntro'))
+        const codeIntro = this.#escapeHtml(getLocale(language, 'emailHtmlCodeIntro'))
+        const ignoreNote = this.#escapeHtml(getLocale(language, 'emailHtmlIgnoreNote'))
+        const noReply = this.#escapeHtml(getLocale(language, 'emailHtmlNoReply'))
+        const moreInfo = this.#escapeHtml(getLocale(language, 'emailHtmlMoreInfo'))
+
         return `<!doctype html>
-<html lang="en">
+<html lang="${this.#escapeHtml(language).slice(0, 5)}">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="x-apple-disable-message-reformatting" />
-    <title>EmailVerify notification</title>
+    <title>EmailVerify</title>
     <style>
       a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
     </style>
@@ -152,16 +245,16 @@ module.exports = class MailSender {
             <tr>
               <td style="padding:32px 40px;">
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#24292f; font-size:14px; line-height:1.6;">
-                  <p style="margin:0 0 16px 0;">Hello,</p>
-                  <p style="margin:0 0 16px 0;">This message was generated by EmailVerify for the Discord server:</p>
-                  <p style="margin:0 0 16px 0;">${safeServerName}</p>
-                  <p style="margin:0 0 16px 0;">To continue, enter the following value in Discord:</p>
+                  <p style="margin:0 0 16px 0;">${greeting}</p>
+                  <p style="margin:0 0 16px 0;">${serverIntro}</p>
+                  <p style="margin:0 0 16px 0;"><strong>${safeServerName}</strong></p>
+                  <p style="margin:0 0 16px 0;">${codeIntro}</p>
                   <p style="margin:0 0 24px 0;">
                     <code style="display:inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:18px; letter-spacing:1px; padding:10px 16px; background:#f6f8fa; color:#24292f; border:1px solid #d0d7de; border-radius:6px;">${safeCode}</code>
                   </p>
-                  <p style="margin:0 0 16px 0; color:#57606a;">If you did not request this message, you can ignore it.<br />No reply is required.</p>
+                  <p style="margin:0 0 16px 0; color:#57606a;">${ignoreNote}<br />${noReply}</p>
                   <hr style="border:none; border-top:1px solid #d8dee4; margin:24px 0;" />
-                  <p style="margin:0; color:#57606a; font-size:12px;">More information: <a href="https://emailbot.larskaesberg.de/" style="color:#0969da; text-decoration:none;">https://emailbot.larskaesberg.de/</a></p>
+                  <p style="margin:0; color:#57606a; font-size:12px;">${moreInfo} <a href="https://emailbot.larskaesberg.de/" style="color:#0969da; text-decoration:none;">https://emailbot.larskaesberg.de/</a></p>
                 </div>
               </td>
             </tr>

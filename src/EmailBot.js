@@ -20,9 +20,11 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
-const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
+const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
+const { buildPlanButtons } = require('./utils/premiumButtons');
 const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
+const premiumManager = require('./premium/PremiumManager');
 
 const bot = new Discord.Client({
     intents: [
@@ -406,10 +408,16 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
                 // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
+                // Also checks against uploaded email list. If neither domains nor an allowedEmails
+                // list is configured, all valid email addresses are accepted (subject to blacklist).
                 const hasValidFormat = emailText.split("@").length - 1 === 1 && !emailText.includes(' ')
+                const allowedEmails = serverSettings.allowedEmails || []
+                const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
                 const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
-                
-                if (!hasValidFormat || !matchesDomain) {
+                // allowedEmails are stored as MD5 hashes of the lowercased address (same scheme as userEmails)
+                const isInAllowedList = allowedEmails.includes(md5hash(emailText.toLowerCase()))
+
+                if (!hasValidFormat || (!noRestrictionsConfigured && !matchesDomain && !isInAllowedList)) {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
@@ -430,6 +438,22 @@ bot.on('interactionCreate', async interaction => {
                 }
                 userTimeout.timestamp = Date.now()
                 userTimeout.increaseWaitTime()
+
+                // Premium check: verify the guild hasn't exceeded its free monthly limit
+                const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
+                if (!premiumCheck.allowed) {
+                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true)
+                    const premiumStatus = await premiumManager.getPremiumStatus(userGuild.id, interaction.entitlements)
+                    const components = buildPlanButtons(premiumStatus, { context: 'mailLimit' })
+                    try {
+                        await interaction.followUp({ embeds: [limitEmbed], components, flags: MessageFlags.Ephemeral })
+                    } catch (err) {
+                        if (err.code === 50035) {
+                            await interaction.followUp({ embeds: [limitEmbed], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
+                        }
+                    }
+                    return
+                }
 
                 const code = Math.floor((Math.random() + 1) * 100000).toString()
                 // Send email and store code on success
@@ -467,7 +491,7 @@ bot.on('interactionCreate', async interaction => {
                             interaction.webhook.deleteMessage(follow.id).catch(() => {})
                         }, 300000)
                     }
-                })
+                }, premiumCheck.source, serverSettings.emailStyle)
             })
             return
         }
@@ -648,7 +672,7 @@ bot.on('interactionCreate', async interaction => {
         try {
             // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
             // Allow /globalstats for owner check to happen inside the command
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats") {
+            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats" || interaction.commandName === "premium") {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({

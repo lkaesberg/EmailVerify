@@ -1,0 +1,31 @@
+{
+    "token": "YOUR_DISCORD_BOT_TOKEN",
+    "clientId": "YOUR_DISCORD_CLIENT_ID",
+    "email": "verify@example.com",
+    "username": "smtp-username",
+    "password": "smtp-password",
+    "smtpHost": "smtp.example.com",
+    "smtpPort": 587,
+    "isSecure": false,
+    "isGoogle": false,
+    "topggToken": "",
+    "monetization": {
+        "enabled": false,
+        "freeMonthlyLimit": 25,
+        "skus": {
+            "subscriptionTier1": "",
+            "subscriptionTier2": "",
+            "credits100": "",
+            "credits500": "",
+            "credits2000": "",
+            "csvUnlock": ""
+        }
+    },
+    "zeptomail": {
+        "enabled": false,
+        "apiToken": "Zoho-enczapikey YOUR_ZEPTOMAIL_TOKEN",
+        "endpoint": "https://api.zeptomail.eu/v1.1/email",
+        "fromAddress": "verify@yourdomain.example",
+        "fromName": "EmailVerify"
+    }
+}
