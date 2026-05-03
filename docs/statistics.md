@@ -4,25 +4,27 @@
 # Statistics
 
 <style>
-/* Accent colors stay constant; structural colors come from Material so the page
-   tracks the active light/dark palette automatically. */
+/* Accent colors stay constant. Structural colors are explicit per scheme so
+   cards stand out against the page background instead of blending into it. */
 :root {
     --accent-gold: #d4940a;
     --accent-teal: #0d9488;
     --accent-blue: #2563eb;
-    --bg-card: var(--md-code-bg-color);
-    --bg-hover: var(--md-code-bg-color);
+    --bg-card: #f6f8fa;
+    --bg-hover: #eceff3;
     --text-primary: var(--md-default-fg-color);
     --text-muted: var(--md-default-fg-color--light);
-    --border-color: var(--md-default-fg-color--lightest);
-    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-hover: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+    --border-color: #d0d7de;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
 }
 
-/* Slightly lift the shadow in dark mode so cards stay legible. */
 [data-md-color-scheme="slate"] {
-    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-hover: 0 4px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    --bg-card: hsla(232, 15%, 22%, 1);
+    --bg-hover: hsla(232, 15%, 26%, 1);
+    --border-color: hsla(232, 15%, 32%, 1);
+    --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4);
 }
 
 .stats-wrapper {
@@ -261,6 +263,7 @@
     <button class="control-btn" data-days="14">14 Days</button>
     <button class="control-btn" data-days="30">30 Days</button>
     <button class="control-btn" data-days="90">90 Days</button>
+    <button class="control-btn" data-days="all">All Time</button>
 </div>
 
 <div class="chart-section">
@@ -529,12 +532,15 @@ async function updateCharts(days) {
     });
 }
 
-// Control buttons
+// Control buttons. "all" passes a large number so the API returns the full
+// recorded history (it caps at whatever the log file holds).
+const ALL_TIME_DAYS = 99999;
 document.querySelectorAll('.control-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        currentDays = parseInt(this.dataset.days);
+        const raw = this.dataset.days;
+        currentDays = raw === 'all' ? ALL_TIME_DAYS : parseInt(raw);
         updateCharts(currentDays);
     });
 });
