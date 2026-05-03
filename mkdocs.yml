@@ -6,7 +6,7 @@ theme:
   name: material
   icon:
     repo: fontawesome/brands/github
-  logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot-border.png
+  logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
     - media: "(prefers-color-scheme: light)"
