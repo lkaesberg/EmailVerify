@@ -1,4 +1,6 @@
 site_name: EmailVerify for Discord
+site_description: A Discord bot that verifies users own a specific email address — domain-based access control with privacy-first storage.
+site_url: https://emailbot.larskaesberg.de/
 repo_url: https://github.com/lkaesberg/EmailVerify
 theme:
   name: material
@@ -7,17 +9,65 @@ theme:
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot-border.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
-    scheme: default
-    primary: black
-    accent: yellow
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: yellow
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: yellow
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tracking
+    - navigation.top
+    - navigation.instant
+    - navigation.indexes
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.keys
+extra:
+  social:
+    - icon: fontawesome/brands/discord
+      link: https://discord.com/invite/fEBSHUQXu2
+      name: Support Discord
+    - icon: fontawesome/brands/github
+      link: https://github.com/lkaesberg/EmailVerify
+      name: GitHub repository
 nav:
-  - 'index.md'
-  - 'commands.md'
-  - 'statistics.md'
-  - 'status.md'
-  - 'contributing.md'
+  - Home: 'index.md'
+  - Premium: 'premium.md'
+  - Commands: 'commands.md'
+  - Statistics: 'statistics.md'
+  - Status: 'status.md'
+  - Contributing: 'contributing.md'
   - Legal:
     - Impressum: 'legal/impressum.md'
     - Datenschutz: 'legal/datenschutz.md'
