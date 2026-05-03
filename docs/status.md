@@ -12,10 +12,10 @@
 }
 
 .status-card {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--md-default-fg-color--lightest);
   border-radius: 8px;
   padding: 20px;
-  background: #fafafa;
+  background: var(--md-code-bg-color);
 }
 
 .status-card h3 {
@@ -56,20 +56,20 @@
 
 .status-text {
   font-size: 14px;
-  color: #666;
+  color: var(--md-default-fg-color--light);
   margin: 4px 0 0 24px;
 }
 
 .status-url {
   font-size: 12px;
-  color: #888;
+  color: var(--md-default-fg-color--lighter);
   margin: 8px 0 0 24px;
   font-family: monospace;
 }
 
 .last-checked {
   font-size: 12px;
-  color: #999;
+  color: var(--md-default-fg-color--lighter);
   margin-top: 16px;
   text-align: right;
 }

@@ -4,17 +4,25 @@
 # Statistics
 
 <style>
+/* Accent colors stay constant; structural colors come from Material so the page
+   tracks the active light/dark palette automatically. */
 :root {
     --accent-gold: #d4940a;
     --accent-teal: #0d9488;
     --accent-blue: #2563eb;
-    --bg-card: #ffffff;
-    --bg-hover: #fafafa;
-    --text-primary: #1f2937;
-    --text-muted: #6b7280;
-    --border-color: #e5e7eb;
+    --bg-card: var(--md-code-bg-color);
+    --bg-hover: var(--md-code-bg-color);
+    --text-primary: var(--md-default-fg-color);
+    --text-muted: var(--md-default-fg-color--light);
+    --border-color: var(--md-default-fg-color--lightest);
     --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
     --shadow-hover: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+/* Slightly lift the shadow in dark mode so cards stay legible. */
+[data-md-color-scheme="slate"] {
+    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-hover: 0 4px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .stats-wrapper {
@@ -303,72 +311,59 @@
 <script>
 const API_BASE = 'https://emailbotstats.larskaesberg.de';
 
-const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-        mode: 'index',
-        intersect: false
-    },
-    plugins: {
-        legend: {
-            display: false
-        }
-    },
-    scales: {
-        x: {
-            grid: {
-                color: 'rgba(0, 0, 0, 0.06)'
-            },
-            ticks: {
-                color: '#6b7280'
-            }
-        },
-        y: {
-            beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.06)'
-            },
-            ticks: {
-                color: '#6b7280',
-                precision: 0
-            }
-        }
-    }
-};
+// Pull colors from Material's CSS vars so charts follow the active theme.
+function getThemeColors() {
+    const styles = getComputedStyle(document.body);
+    return {
+        text: styles.getPropertyValue('--md-default-fg-color--light').trim() || '#6b7280',
+        // Neutral gridline that reads on both light and dark backgrounds.
+        grid: 'rgba(128, 128, 128, 0.18)'
+    };
+}
 
-const autoScaleOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-        mode: 'index',
-        intersect: false
-    },
-    plugins: {
-        legend: {
-            display: false
-        }
-    },
-    scales: {
-        x: {
-            grid: {
-                color: 'rgba(0, 0, 0, 0.06)'
+function buildBaseOptions() {
+    const c = getThemeColors();
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                grid: { color: c.grid },
+                ticks: { color: c.text }
             },
-            ticks: {
-                color: '#6b7280'
-            }
-        },
-        y: {
-            grid: {
-                color: 'rgba(0, 0, 0, 0.06)'
-            },
-            ticks: {
-                color: '#6b7280',
-                precision: 0
+            y: {
+                beginAtZero: true,
+                grid: { color: c.grid },
+                ticks: { color: c.text, precision: 0 }
             }
         }
-    }
-};
+    };
+}
+
+function buildAutoScaleOptions() {
+    const c = getThemeColors();
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                grid: { color: c.grid },
+                ticks: { color: c.text }
+            },
+            y: {
+                grid: { color: c.grid },
+                ticks: { color: c.text, precision: 0 }
+            }
+        }
+    };
+}
+
+let baseOptions = buildBaseOptions();
+let autoScaleOptions = buildAutoScaleOptions();
 
 let dailyChart, verificationRateChart, verifiedTotalChart, emailsTotalChart, serversChart;
 let currentDays = 7;
@@ -550,4 +545,17 @@ updateCharts(currentDays);
 
 // Auto-refresh every 30 seconds
 setInterval(fetchCurrentStats, 30000);
+
+// Re-render charts when the user toggles light/dark so axis colors stay legible.
+const themeObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+        if (m.attributeName === 'data-md-color-scheme') {
+            baseOptions = buildBaseOptions();
+            autoScaleOptions = buildAutoScaleOptions();
+            updateCharts(currentDays);
+            break;
+        }
+    }
+});
+themeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-md-color-scheme'] });
 </script>
