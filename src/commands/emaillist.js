@@ -51,11 +51,6 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
-                .setName('list')
-                .setDescription('View all currently allowed email addresses')
-        )
-        .addSubcommand(subcommand =>
-            subcommand
                 .setName('clear')
                 .setDescription('Remove all allowed email addresses from the list')
         )
@@ -66,23 +61,6 @@ module.exports = {
 
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             const language = serverSettings.language || 'english';
-
-            if (subcommand === 'list') {
-                const emails = serverSettings.allowedEmails || [];
-                if (emails.length === 0) {
-                    await interaction.reply({
-                        content: getLocale(language, "emaillistEmpty"),
-                        flags: MessageFlags.Ephemeral
-                    });
-                } else {
-                    // Stored as hashes for privacy — show count + a privacy note instead of plaintext.
-                    await interaction.reply({
-                        content: getLocale(language, "emaillistListHashedHeader", emails.length.toString()),
-                        flags: MessageFlags.Ephemeral
-                    });
-                }
-                return;
-            }
 
             if (subcommand === 'clear') {
                 const count = (serverSettings.allowedEmails || []).length;

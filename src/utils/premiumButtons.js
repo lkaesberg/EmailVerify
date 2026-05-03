@@ -35,8 +35,14 @@ function buildPlanButtons(status, opts = {}) {
     const hasCsv = !!status.csvUnlocked || tier === 'tier2'
 
     const subscriptions = []
-    if (!tier && skus.subscriptionTier1) subscriptions.push(skus.subscriptionTier1)
-    if (tier !== 'tier2' && skus.subscriptionTier2) subscriptions.push(skus.subscriptionTier2)
+    // In csvRequired context, only Tier 2 actually grants CSV access — don't push
+    // Tier 1, which would mislead the user into buying a plan that doesn't help.
+    if (context !== 'csvRequired' && !tier && skus.subscriptionTier1) {
+        subscriptions.push(skus.subscriptionTier1)
+    }
+    if (tier !== 'tier2' && skus.subscriptionTier2) {
+        subscriptions.push(skus.subscriptionTier2)
+    }
 
     const oneTime = []
     if (!hasCsv && skus.csvUnlock) oneTime.push(skus.csvUnlock)
@@ -50,11 +56,10 @@ function buildPlanButtons(status, opts = {}) {
     // Mail-limit prompts shouldn't show CSV unlock (it doesn't unblock the user's send).
     const includeCredits = context !== 'csvRequired'
     const includeCsv = context !== 'mailLimit'
-    const includeSubs = true
 
     const rows = []
     const topRow = []
-    if (includeSubs) topRow.push(...subscriptions.map(premiumButton))
+    topRow.push(...subscriptions.map(premiumButton))
     if (includeCsv) topRow.push(...oneTime.map(premiumButton))
     if (topRow.length > 0) rows.push(new ActionRowBuilder().addComponents(topRow.slice(0, 5)))
 

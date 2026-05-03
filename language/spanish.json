@@ -72,10 +72,6 @@
   "errorRoleAssignMessage": "No se pudo asignar el rol verificado/no verificado a un usuario. Por favor asegúrese de:\n• El rol del bot está más alto que los roles verificado/no verificado\n• Los roles todavía existen\n• El bot tiene el permiso 'Gestionar Roles'\n\n💡 **Consejo:** Mueva el rol de EmailBot por encima de los roles verificado/no verificado en Configuración del servidor → Roles, o asigne el rol verificado/no verificado directamente al bot.\n[Ver ejemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot No Configurado",
   "errorBotNotConfiguredMessage": "Un usuario intentó verificarse pero el bot no está configurado correctamente.\n\n**Requerido:**\n• Establecer roles predeterminados con `/role add` o roles específicos por dominio con `/domainrole add`\n\n**Opcional:**\n• Restringir la verificación a dominios de email específicos con `/domain add` (predeterminado: se acepta cualquier email)\n• Restringir la verificación a una lista específica de direcciones con `/emaillist upload`\n\nEjecuta `/status` para verificar la configuración actual.",
-  "emaillistEmpty": "📧 **No hay direcciones de email permitidas configuradas.**\n\nEsto es opcional — por defecto, se acepta cualquier email (sujeto a tus configuraciones de dominio y lista negra). Sube un archivo CSV con `/emaillist upload` para restringir la verificación a una lista específica de direcciones.",
-  "emaillistListHeader": "📧 **Direcciones de email permitidas (%VAR% en total):**",
-  "emaillistListMore": "y %VAR% más...",
-  "emaillistListHashedHeader": "📧 **Direcciones de email permitidas:** %VAR% almacenadas.\n\nPor privacidad, las direcciones se almacenan como hashes criptográficos (igual que todos los emails verificados). No se pueden mostrar entradas individuales. Para auditar tu lista, vuelve a subir tu CSV — los duplicados se omiten automáticamente. Usa `/emaillist clear` para empezar de cero.",
   "emaillistAlreadyEmpty": "⚠️ **La lista de emails ya está vacía.**",
   "emaillistCleared": "🗑️ **¡Lista de emails eliminada!**\n\n%VAR% dirección(es) de email eliminada(s).",
   "emaillistInvalidFile": "❌ **Tipo de archivo inválido.**\n\nPor favor sube un archivo `.csv` o `.txt` con una dirección de email por línea.",
@@ -149,5 +145,9 @@
   "premiumAdPro": "💎 **Suscripción Pro** — Todo lo de Standard, más importación y exportación CSV de listas de emails permitidos y logs de verificación.",
   "premiumAdCsvUnlock": "📁 **Desbloqueo CSV** *(una vez)* — Obtén las funciones CSV del plan Pro para este servidor sin comprometerte con una suscripción.",
   "premiumAdCreditPacks": "🎟️ **Packs de créditos** *(una vez)* — Recarga verificaciones extra: 100, 500 o 2.000. No expiran y se acumulan mes a mes. Se usan después de los 25 gratuitos.",
-  "premiumAdFooter": "Haz clic en un botón abajo para ver precios y comprar. Las compras aplican solo a este servidor. Ejecuta /premium redeem después de comprar créditos o el desbloqueo CSV."
+  "premiumAdFooter": "Haz clic en un botón abajo para ver precios y comprar. Las compras aplican solo a este servidor. Ejecuta /premium redeem después de comprar créditos o el desbloqueo CSV.",
+  "emaillistLockedUserTitle": "❌ Verificación temporalmente no disponible",
+  "emaillistLockedUserMessage": "La verificación está pausada en este servidor mientras los administradores resuelven un problema de configuración. Han sido notificados — por favor inténtalo más tarde.",
+  "emaillistLockedAdminTitle": "🛑 Lista de emails permitidos bloqueada — verificación pausada",
+  "emaillistLockedAdminMessage": "Este servidor tiene una lista de emails permitidos cargada, pero la **suscripción Pro** o el **desbloqueo CSV** necesarios para gestionarla ya no están activos. La verificación está pausada para todos hasta que elijas una de las siguientes opciones:\n\n• **Limpiar la lista:** ejecuta `/emaillist clear`. Después de eso, se aceptará cualquier email (sujeto a tus configuraciones de `/domain` y `/blacklist`).\n• **Restaurar acceso CSV:** abre `/premium status` y vuelve a comprar el plan **Pro** o el **desbloqueo CSV**. La lista existente seguirá funcionando en cuanto se restaure el acceso.\n\nEsta notificación está limitada a una vez por hora para no inundar el canal."
 }

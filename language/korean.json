@@ -72,10 +72,6 @@
   "errorRoleAssignMessage": "사용자에게 인증/미인증 역할을 할당하지 못했습니다. 확인해주세요:\n• 봇의 역할이 인증/미인증 역할보다 높은지\n• 역할이 여전히 존재하는지\n• 봇에 '역할 관리' 권한이 있는지\n\n💡 **팁:** 서버 설정 → 역할에서 EmailBot 역할을 인증/미인증 역할 위로 이동하거나, 인증/미인증 역할을 봇에 직접 할당하세요.\n[예시 보기](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "봇 미설정",
   "errorBotNotConfiguredMessage": "사용자가 인증을 시도했지만 봇이 올바르게 구성되지 않았습니다.\n\n**필수:**\n• `/role add`로 기본 역할을 설정하거나 `/domainrole add`로 도메인별 역할을 설정하세요\n\n**선택 사항:**\n• `/domain add`로 인증을 특정 이메일 도메인으로 제한 (기본: 모든 이메일 허용)\n• `/emaillist upload`로 인증을 특정 주소 목록으로 제한\n\n`/status`를 실행하여 현재 구성을 확인하세요.",
-  "emaillistEmpty": "📧 **허용된 이메일 주소가 설정되지 않았습니다.**\n\n이는 선택 사항입니다 — 기본적으로 모든 이메일이 허용됩니다 (도메인 설정과 블랙리스트에 따름). 인증을 특정 주소 목록으로 제한하려면 `/emaillist upload`로 CSV 파일을 업로드하세요.",
-  "emaillistListHeader": "📧 **허용된 이메일 주소 (총 %VAR%개):**",
-  "emaillistListMore": "그리고 %VAR%개 더...",
-  "emaillistListHashedHeader": "📧 **허용된 이메일 주소:** %VAR%개 등록됨.\n\n개인 정보 보호를 위해 주소는 암호화 해시로 저장됩니다 (모든 인증된 이메일과 동일한 방식). 개별 항목은 다시 표시할 수 없습니다. 목록을 확인하려면 CSV를 다시 업로드하세요 — 중복은 자동으로 건너뜁니다. 처음부터 시작하려면 `/emaillist clear`를 사용하세요.",
   "emaillistAlreadyEmpty": "⚠️ **이메일 목록이 이미 비어있습니다.**",
   "emaillistCleared": "🗑️ **이메일 목록이 삭제되었습니다!**\n\n%VAR%개의 이메일 주소가 제거되었습니다.",
   "emaillistInvalidFile": "❌ **잘못된 파일 형식입니다.**\n\n한 줄에 하나의 이메일 주소가 포함된 `.csv` 또는 `.txt` 파일을 업로드해주세요.",
@@ -149,5 +145,9 @@
   "premiumAdPro": "💎 **Pro 구독** — Standard의 모든 것 + 허용 이메일 목록과 인증 로그의 CSV 가져오기 및 내보내기.",
   "premiumAdCsvUnlock": "📁 **CSV 잠금 해제** *(일회성)* — 구독에 묶이지 않고 이 서버에 대한 Pro 플랜의 CSV 기능을 얻으세요.",
   "premiumAdCreditPacks": "🎟️ **크레딧 팩** *(일회성)* — 추가 인증 충전: 100, 500 또는 2,000. 만료되지 않고 매달 이월됩니다. 무료 25회 후 사용됩니다.",
-  "premiumAdFooter": "아래 버튼을 클릭하여 가격을 보고 구매하세요. 구매는 이 서버에만 적용됩니다. 크레딧이나 CSV 잠금 해제를 구매한 후 /premium redeem을 실행하세요."
+  "premiumAdFooter": "아래 버튼을 클릭하여 가격을 보고 구매하세요. 구매는 이 서버에만 적용됩니다. 크레딧이나 CSV 잠금 해제를 구매한 후 /premium redeem을 실행하세요.",
+  "emaillistLockedUserTitle": "❌ 인증 일시적으로 사용 불가",
+  "emaillistLockedUserMessage": "관리자가 구성 문제를 해결하는 동안 이 서버의 인증이 일시 중지되었습니다. 관리자에게 알림이 전송되었습니다 — 나중에 다시 시도해주세요.",
+  "emaillistLockedAdminTitle": "🛑 허용 이메일 목록 잠김 — 인증 일시 중지",
+  "emaillistLockedAdminMessage": "이 서버에는 업로드된 허용 이메일 목록이 있지만, 이를 관리하는 데 필요한 **Pro 구독** 또는 **CSV 잠금 해제**가 더 이상 활성화되어 있지 않습니다. 다음 중 하나를 선택할 때까지 모든 사용자에 대해 인증이 일시 중지됩니다:\n\n• **목록 지우기:** `/emaillist clear`를 실행하세요. 그 후에는 모든 이메일이 허용됩니다 (`/domain` 및 `/blacklist` 설정에 따름).\n• **CSV 액세스 복원:** `/premium status`를 열고 **Pro** 플랜이나 **CSV 잠금 해제**를 다시 구매하세요. 액세스가 복원되면 기존 목록이 즉시 다시 작동합니다.\n\n이 알림은 채널을 도배하지 않도록 시간당 1회로 제한됩니다."
 }

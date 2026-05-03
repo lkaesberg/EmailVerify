@@ -23,6 +23,21 @@ const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { buildPlanButtons } = require('./utils/premiumButtons');
+
+const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
+const emaillistLockedLastNotify = new Map()
+
+function notifyEmaillistLocked(guild, language) {
+    const last = emaillistLockedLastNotify.get(guild.id) || 0
+    if (Date.now() - last < EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS) return
+    emaillistLockedLastNotify.set(guild.id, Date.now())
+    ErrorNotifier.notify({
+        guild,
+        errorTitle: getLocale(language, 'emaillistLockedAdminTitle'),
+        errorMessage: getLocale(language, 'emaillistLockedAdminMessage'),
+        language
+    }).catch(() => {})
+}
 const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
 const premiumManager = require('./premium/PremiumManager');
 
@@ -406,6 +421,21 @@ bot.on('interactionCreate', async interaction => {
                         .setColor(0xED4245)
                     await interaction.followUp({ embeds: [blacklistEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
+                }
+                // Locked-list gate: an allowedEmails list exists from a prior Pro / CSV unlock,
+                // but the guild can no longer manage it. Block all verifications until the admin
+                // either clears the list (`/emaillist clear`) or restores CSV access.
+                if ((serverSettings.allowedEmails || []).length > 0) {
+                    const csvCheck = await premiumManager.canUseCSVFeature(userGuild.id, interaction.entitlements)
+                    if (!csvCheck.allowed) {
+                        const lockedUserEmbed = new EmbedBuilder()
+                            .setTitle(getLocale(serverSettings.language, 'emaillistLockedUserTitle'))
+                            .setDescription(getLocale(serverSettings.language, 'emaillistLockedUserMessage'))
+                            .setColor(0xED4245)
+                        await interaction.followUp({ embeds: [lockedUserEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                        notifyEmaillistLocked(userGuild, serverSettings.language)
+                        return
+                    }
                 }
                 // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
                 // Also checks against uploaded email list. If neither domains nor an allowedEmails

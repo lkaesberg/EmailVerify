@@ -72,10 +72,6 @@
   "errorRoleAssignMessage": "Falha ao atribuir a role verificado/não verificado a um usuário. Por favor verifique:\n• A role do bot está acima das roles verificado/não verificado\n• As roles ainda existem\n• O bot tem a permissão 'Gerenciar Cargos'\n\n💡 **Dica:** Mova a role do EmailBot acima das roles verificado/não verificado em Configurações do Servidor → Cargos, ou atribua a role verificado/não verificado diretamente ao bot.\n[Ver exemplo](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Não Configurado",
   "errorBotNotConfiguredMessage": "Um usuário tentou se verificar mas o bot não está configurado corretamente.\n\n**Obrigatório:**\n• Definir cargos padrão com `/role add` ou cargos específicos por domínio com `/domainrole add`\n\n**Opcional:**\n• Restringir a verificação a domínios de email específicos com `/domain add` (padrão: qualquer email é aceito)\n• Restringir a verificação a uma lista específica de endereços com `/emaillist upload`\n\nExecute `/status` para verificar a configuração atual.",
-  "emaillistEmpty": "📧 **Nenhum endereço de email permitido configurado.**\n\nIsso é opcional — por padrão, qualquer email é aceito (sujeito às suas configurações de domínio e lista negra). Envie um arquivo CSV com `/emaillist upload` para restringir a verificação a uma lista específica de endereços.",
-  "emaillistListHeader": "📧 **Endereços de email permitidos (%VAR% no total):**",
-  "emaillistListMore": "e mais %VAR%...",
-  "emaillistListHashedHeader": "📧 **Endereços de email permitidos:** %VAR% armazenados.\n\nPor privacidade, os endereços são armazenados como hashes criptográficos (mesmo esquema dos emails verificados). Entradas individuais não podem ser exibidas. Para auditar sua lista, reenvie seu CSV — duplicatas são ignoradas automaticamente. Use `/emaillist clear` para começar do zero.",
   "emaillistAlreadyEmpty": "⚠️ **A lista de emails já está vazia.**",
   "emaillistCleared": "🗑️ **Lista de emails limpa!**\n\n%VAR% endereço(s) de email removido(s).",
   "emaillistInvalidFile": "❌ **Tipo de arquivo inválido.**\n\nPor favor envie um arquivo `.csv` ou `.txt` com um endereço de email por linha.",
@@ -149,5 +145,9 @@
   "premiumAdPro": "💎 **Assinatura Pro** — Tudo do Standard, mais importação e exportação CSV de listas de emails permitidos e logs de verificação.",
   "premiumAdCsvUnlock": "📁 **Desbloqueio CSV** *(uma vez)* — Obtenha os recursos CSV do plano Pro para este servidor sem se comprometer com uma assinatura.",
   "premiumAdCreditPacks": "🎟️ **Pacotes de créditos** *(uma vez)* — Recarregue verificações extras: 100, 500 ou 2.000. Não expiram e acumulam mês a mês. Usados depois dos 25 gratuitos.",
-  "premiumAdFooter": "Clique em um botão abaixo para ver preços e comprar. As compras se aplicam apenas a este servidor. Execute /premium redeem após comprar créditos ou o desbloqueio CSV."
+  "premiumAdFooter": "Clique em um botão abaixo para ver preços e comprar. As compras se aplicam apenas a este servidor. Execute /premium redeem após comprar créditos ou o desbloqueio CSV.",
+  "emaillistLockedUserTitle": "❌ Verificação temporariamente indisponível",
+  "emaillistLockedUserMessage": "A verificação está pausada neste servidor enquanto os administradores resolvem um problema de configuração. Eles foram notificados — por favor tente novamente mais tarde.",
+  "emaillistLockedAdminTitle": "🛑 Lista de emails permitidos bloqueada — verificação pausada",
+  "emaillistLockedAdminMessage": "Este servidor tem uma lista de emails permitidos enviada, mas a **assinatura Pro** ou o **desbloqueio CSV** necessário para gerenciá-la não está mais ativo. A verificação está pausada para todos até que você escolha uma das opções a seguir:\n\n• **Limpar a lista:** execute `/emaillist clear`. Depois disso, qualquer email será aceito (sujeito às suas configurações de `/domain` e `/blacklist`).\n• **Restaurar acesso CSV:** abra `/premium status` e compre novamente o plano **Pro** ou o **desbloqueio CSV**. A lista existente voltará a funcionar assim que o acesso for restaurado.\n\nEsta notificação é limitada a uma vez por hora para não inundar o canal."
 }

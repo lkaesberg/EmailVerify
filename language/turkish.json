@@ -72,10 +72,6 @@
   "errorRoleAssignMessage": "Bir kullanıcıya doğrulanmış/doğrulanmamış rol atanamadı. Lütfen kontrol edin:\n• Bot rolü doğrulanmış/doğrulanmamış rollerden daha yüksekte\n• Roller hala mevcut\n• Bot 'Rolleri Yönet' iznine sahip\n\n💡 **İpucu:** Sunucu Ayarları → Roller'de EmailBot rolünü doğrulanmış/doğrulanmamış rollerin üzerine taşıyın veya doğrulanmış/doğrulanmamış rolü doğrudan bota atayın.\n[Örneğe bakın](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Yapılandırılmamış",
   "errorBotNotConfiguredMessage": "Bir kullanıcı doğrulamaya çalıştı ancak bot düzgün yapılandırılmamış.\n\n**Gerekli:**\n• `/role add` ile varsayılan rolleri veya `/domainrole add` ile alan adına özel rolleri ayarlayın\n\n**İsteğe bağlı:**\n• `/domain add` ile doğrulamayı belirli e-posta alan adlarıyla kısıtlayın (varsayılan: herhangi bir e-posta kabul edilir)\n• `/emaillist upload` ile doğrulamayı belirli bir adres listesine kısıtlayın\n\nMevcut yapılandırmayı kontrol etmek için `/status` çalıştırın.",
-  "emaillistEmpty": "📧 **İzin verilen e-posta adresi yapılandırılmamış.**\n\nBu isteğe bağlıdır — varsayılan olarak herhangi bir e-posta kabul edilir (alan adı ayarların ve kara listene tabidir). Doğrulamayı belirli bir adres listesine kısıtlamak için `/emaillist upload` ile bir CSV dosyası yükle.",
-  "emaillistListHeader": "📧 **İzin verilen e-posta adresleri (toplam %VAR%):**",
-  "emaillistListMore": "ve %VAR% daha...",
-  "emaillistListHashedHeader": "📧 **İzin verilen e-posta adresleri:** Kayıtlı %VAR%.\n\nGizlilik için adresler kriptografik özet olarak saklanır (tüm doğrulanmış e-postalarla aynı şema). Tek tek girişler tekrar gösterilemez. Listeyi kontrol etmek için CSV'yi yeniden yükle — yinelenenler otomatik olarak atlanır. Sıfırdan başlamak için `/emaillist clear` kullan.",
   "emaillistAlreadyEmpty": "⚠️ **E-posta listesi zaten boş.**",
   "emaillistCleared": "🗑️ **E-posta listesi temizlendi!**\n\n%VAR% e-posta adresi kaldırıldı.",
   "emaillistInvalidFile": "❌ **Geçersiz dosya türü.**\n\nLütfen her satırda bir e-posta adresi olan bir `.csv` veya `.txt` dosyası yükleyin.",
@@ -149,5 +145,9 @@
   "premiumAdPro": "💎 **Pro abonelik** — Standard'ın her şeyi artı izinli e-posta listeleri ve doğrulama loglarının CSV içe/dışa aktarımı.",
   "premiumAdCsvUnlock": "📁 **CSV kilidi açma** *(tek seferlik)* — Aboneliğe bağlanmadan Pro planının CSV özelliklerini bu sunucu için elde et.",
   "premiumAdCreditPacks": "🎟️ **Kredi paketleri** *(tek seferlik)* — Ek doğrulama doldur: 100, 500 veya 2.000. Süresi dolmaz, aydan aya devreder. 25 ücretsiz kullanıldıktan sonra harcanır.",
-  "premiumAdFooter": "Fiyatları görmek ve satın almak için aşağıdaki butona tıkla. Satın almalar yalnızca bu sunucuda geçerlidir. Kredi veya CSV kilidi satın aldıktan sonra /premium redeem çalıştır."
+  "premiumAdFooter": "Fiyatları görmek ve satın almak için aşağıdaki butona tıkla. Satın almalar yalnızca bu sunucuda geçerlidir. Kredi veya CSV kilidi satın aldıktan sonra /premium redeem çalıştır.",
+  "emaillistLockedUserTitle": "❌ Doğrulama geçici olarak kullanılamıyor",
+  "emaillistLockedUserMessage": "Yöneticiler bir yapılandırma sorununu çözerken bu sunucuda doğrulama duraklatıldı. Bilgilendirildiler — lütfen daha sonra tekrar dene.",
+  "emaillistLockedAdminTitle": "🛑 İzinli e-posta listesi kilitli — doğrulama duraklatıldı",
+  "emaillistLockedAdminMessage": "Bu sunucuda yüklü bir izinli e-posta listesi var, ancak listeyi yönetmek için gerekli **Pro abonelik** veya **CSV kilidi açma** artık aktif değil. Aşağıdakilerden birini seçene kadar herkes için doğrulama duraklatıldı:\n\n• **Listeyi temizle:** `/emaillist clear` çalıştır. Sonrasında herhangi bir e-posta kabul edilir (`/domain` ve `/blacklist` ayarlarına tabi).\n• **CSV erişimini geri yükle:** `/premium status` aç ve **Pro** planını veya **CSV kilidi açma**yı yeniden satın al. Erişim geri yüklenir yüklenmez mevcut liste tekrar çalışmaya başlar.\n\nBu bildirim, kanalı doldurmamak için saatte bir ile sınırlandırılmıştır."
 }

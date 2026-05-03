@@ -72,10 +72,6 @@
   "errorRoleAssignMessage": "Failed to assign the verified/unverified role to a user. Please ensure:\n• The bot's role is higher than the verified/unverified roles\n• The roles still exist\n• The bot has 'Manage Roles' permission\n\n💡 **Tip:** Either move the EmailBot role above the verified/unverified roles in Server Settings → Roles, or assign the verified/unverified role to the bot directly.\n[See example](https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/bothierarchy.png)",
   "errorBotNotConfiguredTitle": "Bot Not Configured",
   "errorBotNotConfiguredMessage": "A user tried to verify but the bot is not properly configured.\n\n**Required:**\n• Set default roles with `/role add` or domain-specific roles with `/domainrole add`\n\n**Optional:**\n• Restrict verification to specific email domains with `/domain add` (default: any email is accepted)\n• Restrict verification to a specific list of addresses with `/emaillist upload`\n\nRun `/status` to check the current configuration.",
-  "emaillistEmpty": "📧 **No allowed email addresses configured.**\n\nThis is optional — by default, any email is accepted (subject to your domain settings and blacklist). Upload a CSV file with `/emaillist upload` to restrict verification to a specific list of addresses.",
-  "emaillistListHeader": "📧 **Allowed email addresses (%VAR% total):**",
-  "emaillistListMore": "and %VAR% more...",
-  "emaillistListHashedHeader": "📧 **Allowed email addresses:** %VAR% on file.\n\nFor privacy, addresses are stored as cryptographic hashes (matching how all verified emails are stored). Individual entries can't be displayed back. To audit your list, re-upload your CSV — duplicates will be skipped automatically. Use `/emaillist clear` to start fresh.",
   "emaillistAlreadyEmpty": "⚠️ **Email list is already empty.**",
   "emaillistCleared": "🗑️ **Email list cleared!**\n\nRemoved %VAR% email address(es).",
   "emaillistInvalidFile": "❌ **Invalid file type.**\n\nPlease upload a `.csv` or `.txt` file with one email address per row.",
@@ -149,5 +145,9 @@
   "premiumAdPro": "💎 **Pro subscription** — Everything in Standard, plus CSV import & export of allowed-email lists and verification logs.",
   "premiumAdCsvUnlock": "📁 **CSV unlock** *(one-time)* — Get the Pro plan's CSV features for this server without committing to a subscription.",
   "premiumAdCreditPacks": "🎟️ **Credit packs** *(one-time)* — Top up extra verifications: 100, 500, or 2,000. They never expire and roll over month to month. Used after your free 25 are gone.",
-  "premiumAdFooter": "Click a button below to see prices and buy. Purchases apply to this server only. Run /premium redeem after buying credits or the CSV unlock."
+  "premiumAdFooter": "Click a button below to see prices and buy. Purchases apply to this server only. Run /premium redeem after buying credits or the CSV unlock.",
+  "emaillistLockedUserTitle": "❌ Verification temporarily unavailable",
+  "emaillistLockedUserMessage": "Verification is paused on this server while the admins resolve a configuration issue. They've been notified — please try again later.",
+  "emaillistLockedAdminTitle": "🛑 Allowed-emails list is locked — verification paused",
+  "emaillistLockedAdminMessage": "This server has an uploaded allowed-emails list, but the **Pro subscription** or **CSV unlock** required to manage it is no longer active. Verification is paused for everyone until you choose one of the following:\n\n• **Clear the list:** run `/emaillist clear`. After that, any email is accepted (subject to your `/domain` and `/blacklist` settings).\n• **Restore CSV access:** open `/premium status` and re-buy the **Pro** plan or the **CSV unlock**. The existing list will continue to work as soon as access is restored.\n\nThis notification is throttled to once per hour so we don't flood the channel."
 }
