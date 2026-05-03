@@ -4,27 +4,19 @@
 # Statistics
 
 <style>
-/* Accent colors stay constant. Structural colors are explicit per scheme so
-   cards stand out against the page background instead of blending into it. */
+/* Palette aligned with the EmailBot logo (blue circle + green verified
+   checkmark). Neutral cool card surfaces let the brand colors do the work. */
 :root {
-    --accent-gold: #d4940a;
-    --accent-teal: #0d9488;
-    --accent-blue: #2563eb;
+    --accent-blue: #5865f2;   /* logo circle (Discord-blurple-adjacent) */
+    --accent-green: #22c55e;  /* logo checkmark */
+    --accent-teal: #0d9488;   /* supporting color for "emails" stat */
     --bg-card: #f6f8fa;
-    --bg-hover: #eceff3;
-    --text-primary: var(--md-default-fg-color);
-    --text-muted: var(--md-default-fg-color--light);
+    --bg-hover: #eef2f7;
+    --text-primary: #1f2937;
+    --text-muted: #6b7280;
     --border-color: #d0d7de;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
-}
-
-[data-md-color-scheme="slate"] {
-    --bg-card: hsla(232, 15%, 22%, 1);
-    --bg-hover: hsla(232, 15%, 26%, 1);
-    --border-color: hsla(232, 15%, 32%, 1);
-    --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4);
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.06);
 }
 
 .stats-wrapper {
@@ -105,7 +97,7 @@
 .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--accent-gold);
+    color: var(--accent-green);
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     margin-bottom: 2px;
 }
@@ -177,14 +169,14 @@
 
 .control-btn:hover {
     background: var(--bg-hover);
-    border-color: var(--accent-gold);
+    border-color: var(--accent-green);
     color: var(--text-primary);
 }
 
 .control-btn.active {
-    background: var(--accent-gold);
+    background: var(--accent-green);
     color: white;
-    border-color: var(--accent-gold);
+    border-color: var(--accent-green);
 }
 
 .legend {
@@ -209,7 +201,7 @@
     border-radius: 50%;
 }
 
-.legend-dot.gold { background: var(--accent-gold); }
+.legend-dot.green { background: var(--accent-green); }
 .legend-dot.teal { background: var(--accent-teal); }
 .legend-dot.blue { background: var(--accent-blue); }
 
@@ -272,7 +264,7 @@
         <canvas id="dailyChart"></canvas>
     </div>
     <div class="legend">
-        <div class="legend-item"><span class="legend-dot gold"></span> Users Verified</div>
+        <div class="legend-item"><span class="legend-dot green"></span> Users Verified</div>
         <div class="legend-item"><span class="legend-dot teal"></span> Emails Sent</div>
     </div>
 </div>
@@ -283,7 +275,7 @@
         <canvas id="verificationRateChart"></canvas>
     </div>
     <div class="legend">
-        <div class="legend-item"><span class="legend-dot gold"></span> Verified / Emails Sent (%)</div>
+        <div class="legend-item"><span class="legend-dot green"></span> Verified / Emails Sent (%)</div>
     </div>
 </div>
 
@@ -447,7 +439,7 @@ async function updateCharts(days) {
         data: {
             labels: labels,
             datasets: [
-                createDataset(verifiedDaily, 'rgba(212, 148, 10, 1)', 'Users Verified'),
+                createDataset(verifiedDaily, 'rgba(34, 197, 94, 1)', 'Users Verified'),
                 createDataset(emailsDaily, 'rgba(13, 148, 136, 1)', 'Emails Sent')
             ]
         },
@@ -465,7 +457,7 @@ async function updateCharts(days) {
         data: {
             labels: labels,
             datasets: [
-                createDataset(verificationRate, 'rgba(212, 148, 10, 1)', 'Verification Rate (%)')
+                createDataset(verificationRate, 'rgba(34, 197, 94, 1)', 'Verification Rate (%)')
             ]
         },
         options: {
@@ -501,7 +493,7 @@ async function updateCharts(days) {
         data: {
             labels: labels,
             datasets: [
-                createDataset(verifiedTotal, 'rgba(212, 148, 10, 1)', 'Total Verified')
+                createDataset(verifiedTotal, 'rgba(34, 197, 94, 1)', 'Total Verified')
             ]
         },
         options: autoScaleOptions
@@ -551,17 +543,4 @@ updateCharts(currentDays);
 
 // Auto-refresh every 30 seconds
 setInterval(fetchCurrentStats, 30000);
-
-// Re-render charts when the user toggles light/dark so axis colors stay legible.
-const themeObserver = new MutationObserver((mutations) => {
-    for (const m of mutations) {
-        if (m.attributeName === 'data-md-color-scheme') {
-            baseOptions = buildBaseOptions();
-            autoScaleOptions = buildAutoScaleOptions();
-            updateCharts(currentDays);
-            break;
-        }
-    }
-});
-themeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-md-color-scheme'] });
 </script>

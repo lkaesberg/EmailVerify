@@ -9,20 +9,9 @@ theme:
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: black
-      accent: yellow
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
-      accent: yellow
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: default
+    primary: indigo
+    accent: green
   features:
     - navigation.tabs
     - navigation.tabs.sticky
