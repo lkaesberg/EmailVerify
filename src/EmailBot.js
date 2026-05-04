@@ -22,7 +22,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { buildPlanButtons } = require('./utils/premiumButtons');
+const { buildPlanButtons, appStoreUrl } = require('./utils/premiumButtons');
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
 const emaillistLockedLastNotify = new Map()
@@ -472,14 +472,15 @@ bot.on('interactionCreate', async interaction => {
                 // Premium check: verify the guild hasn't exceeded its free monthly limit
                 const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
                 if (!premiumCheck.allowed) {
-                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true)
+                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true, appStoreUrl())
                     const premiumStatus = await premiumManager.getPremiumStatus(userGuild.id, interaction.entitlements)
                     const components = buildPlanButtons(premiumStatus, { context: 'mailLimit' })
                     try {
                         await interaction.followUp({ embeds: [limitEmbed], components, flags: MessageFlags.Ephemeral })
                     } catch (err) {
                         if (err.code === 50035) {
-                            await interaction.followUp({ embeds: [limitEmbed], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
+                            const limitEmbedNoButtons = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true, null)
+                            await interaction.followUp({ embeds: [limitEmbedNoButtons], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
                         }
                     }
                     return

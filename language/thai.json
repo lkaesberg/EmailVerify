@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ ปลดล็อคแล้ว",
   "premiumCsvLocked": "🔒 ล็อคอยู่",
   "premiumStatusFooter": "สมัครสมาชิกหรือซื้อเครดิตเพื่อปลดล็อคฟีเจอร์เพิ่มเติม",
+  "premiumMobileHint": "📱 ใช้มือถืออยู่ใช่ไหม? ปุ่ม Premium ใช้งานได้เฉพาะบนเดสก์ท็อป/เบราว์เซอร์ — [เปิดร้านค้าในเบราว์เซอร์](%VAR%) เพื่อซื้อ",
   "premiumRedeemTitle": "🎁 แลกการซื้อ",
   "premiumCreditsAdded": "เพิ่มเครดิตแล้ว",
   "premiumNotEnabled": "การสร้างรายได้ไม่ได้เปิดใช้งานในอินสแตนซ์บอทนี้",

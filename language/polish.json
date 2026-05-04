@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ Odblokowane",
   "premiumCsvLocked": "🔒 Zablokowane",
   "premiumStatusFooter": "Subskrybuj lub kup kredyty aby odblokować więcej funkcji",
+  "premiumMobileHint": "📱 Na telefonie? Przyciski Premium działają tylko na komputerze/przeglądarce — [otwórz sklep w przeglądarce](%VAR%) aby kupić.",
   "premiumRedeemTitle": "🎁 Wymień Zakupy",
   "premiumCreditsAdded": "Dodano Kredyty",
   "premiumNotEnabled": "Monetyzacja nie jest włączona na tej instancji bota.",

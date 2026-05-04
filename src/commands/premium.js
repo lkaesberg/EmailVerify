@@ -70,15 +70,20 @@ module.exports = {
                 }
                 adLines.push(getLocale(language, 'premiumAdCreditPacks'))
 
+                const storeLink = appStoreUrl()
+
                 if (adLines.length > 0) {
+                    let adValue = adLines.join('\n\n')
+                    if (storeLink) {
+                        adValue += '\n\n' + getLocale(language, 'premiumMobileHint', storeLink)
+                    }
                     embed.addFields({
                         name: getLocale(language, 'premiumAdHeader'),
-                        value: adLines.join('\n\n'),
+                        value: adValue,
                         inline: false
                     })
                 }
 
-                const storeLink = appStoreUrl()
                 const footerLines = []
                 if (!status.subscriptionTier) {
                     footerLines.push(getLocale(language, 'premiumStatusFooter'))

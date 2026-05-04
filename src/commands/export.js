@@ -3,7 +3,7 @@ const { MessageFlags, AttachmentBuilder, PermissionFlagsBits } = require('discor
 const database = require("../database/Database.js");
 const premiumManager = require("../premium/PremiumManager");
 const { createCSVPremiumRequiredEmbed } = require("../utils/embeds");
-const { buildPlanButtons } = require("../utils/premiumButtons");
+const { buildPlanButtons, appStoreUrl } = require("../utils/premiumButtons");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,10 +36,10 @@ module.exports = {
                 await database.getServerSettings(interaction.guildId, async serverSettings => {
                     const language = serverSettings.language || 'english'
                     try {
-                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components, flags: MessageFlags.Ephemeral })
+                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, appStoreUrl())], components, flags: MessageFlags.Ephemeral })
                     } catch (err) {
                         if (err.code === 50035) {
-                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components: [], flags: MessageFlags.Ephemeral })
+                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, null)], components: [], flags: MessageFlags.Ephemeral })
                         } else {
                             throw err
                         }

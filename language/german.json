@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ Freigeschaltet",
   "premiumCsvLocked": "🔒 Gesperrt",
   "premiumStatusFooter": "Abonniere oder kaufe Guthaben um weitere Funktionen freizuschalten",
+  "premiumMobileHint": "📱 Auf dem Handy? Premium-Buttons funktionieren nur auf Desktop/Browser — [öffne den Store im Browser](%VAR%) um zu kaufen.",
   "premiumRedeemTitle": "🎁 Käufe einlösen",
   "premiumCreditsAdded": "Guthaben hinzugefügt",
   "premiumNotEnabled": "Monetarisierung ist auf dieser Bot-Instanz nicht aktiviert.",

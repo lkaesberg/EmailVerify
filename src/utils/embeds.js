@@ -166,10 +166,13 @@ module.exports = {
     createCSVPremiumRequiredEmbed,
 };
 
-function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit, includeRedeemHint = false) {
+function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit, includeRedeemHint = false, storeLink = null) {
     let description = getLocale(language, 'premiumMailLimitDescription', mailsSentMonth.toString(), freeLimit.toString())
     if (includeRedeemHint) {
         description += '\n\n' + getLocale(language, 'premiumRedeemHint')
+    }
+    if (storeLink) {
+        description += '\n\n' + getLocale(language, 'premiumMobileHint', storeLink)
     }
     return new EmbedBuilder()
         .setTitle(getLocale(language, 'premiumMailLimitTitle'))
@@ -177,9 +180,13 @@ function createMailLimitReachedEmbed(language, mailsSentMonth, freeLimit, includ
         .setColor(0xFFA500);
 }
 
-function createCSVPremiumRequiredEmbed(language) {
+function createCSVPremiumRequiredEmbed(language, storeLink = null) {
+    let description = getLocale(language, 'premiumCsvRequiredDescription')
+    if (storeLink) {
+        description += '\n\n' + getLocale(language, 'premiumMobileHint', storeLink)
+    }
     return new EmbedBuilder()
         .setTitle(getLocale(language, 'premiumCsvRequiredTitle'))
-        .setDescription(getLocale(language, 'premiumCsvRequiredDescription'))
+        .setDescription(description)
         .setColor(0x5865F2);
 }

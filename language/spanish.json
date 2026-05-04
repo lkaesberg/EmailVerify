@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ Desbloqueado",
   "premiumCsvLocked": "🔒 Bloqueado",
   "premiumStatusFooter": "Suscríbete o compra créditos para desbloquear más funciones",
+  "premiumMobileHint": "📱 ¿En móvil? Los botones Premium solo funcionan en escritorio/navegador — [abre la tienda en tu navegador](%VAR%) para comprar.",
   "premiumRedeemTitle": "🎁 Canjear Compras",
   "premiumCreditsAdded": "Créditos Añadidos",
   "premiumNotEnabled": "La monetización no está habilitada en esta instancia del bot.",

@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ Unlocked",
   "premiumCsvLocked": "🔒 Locked",
   "premiumStatusFooter": "Subscribe or purchase credits to unlock more features",
+  "premiumMobileHint": "📱 On mobile? Premium buttons only work on desktop/browser — [open the store in your browser](%VAR%) to purchase.",
   "premiumRedeemTitle": "🎁 Redeem Purchases",
   "premiumCreditsAdded": "Credits Added",
   "premiumNotEnabled": "Monetization is not enabled on this bot instance.",

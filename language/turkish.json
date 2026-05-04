@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ Açık",
   "premiumCsvLocked": "🔒 Kilitli",
   "premiumStatusFooter": "Daha fazla özellik açmak için abone olun veya kredi satın alın",
+  "premiumMobileHint": "📱 Mobilde misiniz? Premium butonları yalnızca masaüstü/tarayıcıda çalışır — satın almak için [mağazayı tarayıcınızda açın](%VAR%).",
   "premiumRedeemTitle": "🎁 Satın Alımları Kullan",
   "premiumCreditsAdded": "Kredi Eklendi",
   "premiumNotEnabled": "Bu bot örneğinde para kazanma etkin değil.",

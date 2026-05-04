@@ -94,6 +94,7 @@
   "premiumCsvUnlocked": "✅ פתוח",
   "premiumCsvLocked": "🔒 נעול",
   "premiumStatusFooter": "הירשם למנוי או רכוש קרדיטים כדי לפתוח תכונות נוספות",
+  "premiumMobileHint": "📱 בנייד? כפתורי Premium עובדים רק במחשב/דפדפן — [פתח את החנות בדפדפן](%VAR%) כדי לרכוש.",
   "premiumRedeemTitle": "🎁 מימוש רכישות",
   "premiumCreditsAdded": "קרדיטים נוספו",
   "premiumNotEnabled": "מוניטיזציה לא מופעלת במופע בוט זה.",

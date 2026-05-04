@@ -7,7 +7,7 @@ const { getLocale } = require("../Language");
 const premiumManager = require("../premium/PremiumManager");
 const md5hash = require("../crypto/Crypto");
 const { createCSVPremiumRequiredEmbed } = require("../utils/embeds");
-const { buildPlanButtons } = require("../utils/premiumButtons");
+const { buildPlanButtons, appStoreUrl } = require("../utils/premiumButtons");
 
 function downloadAttachment(rawUrl) {
     return new Promise((resolve, reject) => {
@@ -87,10 +87,10 @@ module.exports = {
                     const premiumStatus = await premiumManager.getPremiumStatus(interaction.guildId, interaction.entitlements)
                     const components = buildPlanButtons(premiumStatus, { context: 'csvRequired' })
                     try {
-                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components, flags: MessageFlags.Ephemeral })
+                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, appStoreUrl())], components, flags: MessageFlags.Ephemeral })
                     } catch (err) {
                         if (err.code === 50035) {
-                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language)], components: [], flags: MessageFlags.Ephemeral })
+                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, null)], components: [], flags: MessageFlags.Ephemeral })
                         } else {
                             throw err
                         }
