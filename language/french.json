@@ -123,8 +123,6 @@
     "quotaWarnCreditsLowMessage": "Il ne reste que **%VAR%** crédits bonus sur ce serveur. Une fois épuisés, les vérifications s'arrêteront jusqu'à ce que vous vous abonniez ou achetiez plus de crédits.",
     "quotaWarnCreditsZeroTitle": "🛑 Crédits bonus épuisés",
     "quotaWarnCreditsZeroMessage": "Tous les crédits bonus de ce serveur ont été utilisés. Les nouvelles vérifications seront refusées jusqu'à ce que vous vous abonniez ou achetiez plus de crédits.",
-    "zeptoFallbackTitle": "✉️ Repli sur le fournisseur d'email",
-    "zeptoFallbackMessage": "Le service email premium (Zoho ZeptoMail) est actuellement injoignable, donc les emails de vérification sont envoyés via le serveur SMTP de secours. Cet avertissement est limité à une fois par heure. Erreur sous-jacente : %VAR%",
     "emailStyleSpamWarningTitle": "⚠️ Confirmer : passer aux emails au format HTML ?",
     "emailStyleSpamWarning": "Les **emails de vérification stylés (HTML)** sont plus jolis, mais les fournisseurs d'email (Gmail, Outlook, etc.) les classent souvent comme marketing ou spam. Les emails en **texte brut** sont la valeur par défaut car ils ont une livraison nettement meilleure.\n\nSi des utilisateurs signalent qu'ils ne reçoivent pas les codes de vérification, repassez en `plain`.\n\nPour confirmer et passer en HTML, exécutez :\n`/settings email-style style:styled confirm:True`",
     "emailStyleSetStyledTitle": "✅ Style d'email défini sur HTML",

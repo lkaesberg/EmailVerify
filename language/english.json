@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "Only **%VAR%** bonus credits remain on this server. Once they're used up, verifications will stop until you subscribe or buy more credits.",
   "quotaWarnCreditsZeroTitle": "🛑 Bonus credits exhausted",
   "quotaWarnCreditsZeroMessage": "All bonus credits on this server have been used. New verifications will be denied until you subscribe or buy more credits.",
-  "zeptoFallbackTitle": "✉️ Email provider fallback",
-  "zeptoFallbackMessage": "The premium email service (Zoho ZeptoMail) is currently unreachable, so verification mail is being sent through the fallback SMTP server. This warning is throttled to once per hour. Underlying error: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ Confirm: switch to HTML-styled emails?",
   "emailStyleSpamWarning": "**Styled (HTML) verification emails** look nicer, but mail providers (Gmail, Outlook, etc.) often classify them as marketing or spam. **Plain text** emails are the default because they have noticeably better deliverability.\n\nIf users start reporting that they don't receive verification codes, switch back to plain.\n\nTo confirm and switch to HTML, run:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ Email style set to HTML",

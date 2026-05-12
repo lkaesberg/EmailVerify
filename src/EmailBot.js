@@ -293,6 +293,21 @@ bot.on('guildCreate', guild => {
     registerCommands(guild)
 })
 
+// Premium purchase lifecycle — log every entitlement event from Discord so we
+// have an audit trail of subscriptions, renewals, cancellations, and one-time
+// purchases. Redemption of consumables is logged separately in PremiumManager.
+bot.on('entitlementCreate', entitlement => {
+    console.log(`[Premium] Entitlement created: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type} consumed=${entitlement.consumed} startsAt=${entitlement.startsAt?.toISOString?.() ?? 'n/a'} endsAt=${entitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+})
+
+bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
+    console.log(`[Premium] Entitlement updated: sku=${newEntitlement.skuId} user=${newEntitlement.userId ?? 'n/a'} guild=${newEntitlement.guildId ?? 'n/a'} type=${newEntitlement.type} consumed=${newEntitlement.consumed} endsAt=${newEntitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+})
+
+bot.on('entitlementDelete', entitlement => {
+    console.log(`[Premium] Entitlement deleted: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type}`)
+})
+
 bot.on('messageCreate', async (message) => {
     if (message.author.bot) return
     if (message.content === "") return

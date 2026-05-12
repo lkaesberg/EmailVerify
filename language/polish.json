@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "Pozostało tylko **%VAR%** kredytów bonusowych na tym serwerze. Po ich wyczerpaniu weryfikacje zostaną zatrzymane, dopóki nie wykupisz subskrypcji lub nie kupisz więcej kredytów.",
   "quotaWarnCreditsZeroTitle": "🛑 Kredyty bonusowe wyczerpane",
   "quotaWarnCreditsZeroMessage": "Wszystkie kredyty bonusowe na tym serwerze zostały wykorzystane. Nowe weryfikacje będą odrzucane, dopóki nie wykupisz subskrypcji lub nie kupisz więcej kredytów.",
-  "zeptoFallbackTitle": "✉️ Fallback dostawcy email",
-  "zeptoFallbackMessage": "Premium dostawca email (Zoho ZeptoMail) jest aktualnie niedostępny, więc emaile weryfikacyjne są wysyłane przez zapasowy serwer SMTP. To ostrzeżenie jest ograniczone do raz na godzinę. Błąd: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ Potwierdź: przełączyć na emaile HTML?",
   "emailStyleSpamWarning": "**Stylizowane (HTML) emaile weryfikacyjne** wyglądają lepiej, ale dostawcy poczty (Gmail, Outlook itp.) często klasyfikują je jako marketing lub spam. Emaile w **zwykłym tekście** są domyślne, ponieważ mają zauważalnie lepszą dostarczalność.\n\nJeśli użytkownicy zaczną zgłaszać brak otrzymywania kodów weryfikacyjnych, wróć do plain.\n\nAby potwierdzić i przełączyć na HTML, wykonaj:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ Styl emaila ustawiony na HTML",

@@ -111,6 +111,7 @@ class PremiumManager {
                     await database.addGuildCredits(guildID, amount)
                     results.creditsAdded += amount
                     results.details.push(getLocale(lang, 'premiumRedeemCredits', amount.toString()))
+                    console.log(`[Premium] Credits redeemed: +${amount} guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
                 } catch (err) {
                     console.error('Failed to consume entitlement:', err)
                     results.details.push(getLocale(lang, 'premiumRedeemCreditsFailed', amount.toString()))
@@ -124,6 +125,7 @@ class PremiumManager {
                     await database.unlockGuildCSV(guildID)
                     results.csvUnlocked = true
                     results.details.push(getLocale(lang, 'premiumRedeemCsv'))
+                    console.log(`[Premium] CSV unlocked: guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
                 } catch (err) {
                     console.error('Failed to consume/unlock CSV:', err)
                     results.details.push(getLocale(lang, 'premiumRedeemCsvFailed'))

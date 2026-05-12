@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "Bu sunucuda yalnızca **%VAR%** bonus kredi kaldı. Bittikten sonra, sen abone olana veya daha fazla kredi satın alana kadar doğrulamalar duracak.",
   "quotaWarnCreditsZeroTitle": "🛑 Bonus krediler tükendi",
   "quotaWarnCreditsZeroMessage": "Bu sunucudaki tüm bonus krediler kullanıldı. Sen abone olana veya daha fazla kredi satın alana kadar yeni doğrulamalar reddedilecek.",
-  "zeptoFallbackTitle": "✉️ E-posta sağlayıcı yedeği",
-  "zeptoFallbackMessage": "Premium e-posta hizmeti (Zoho ZeptoMail) şu anda erişilemez durumda, bu nedenle doğrulama postaları yedek SMTP sunucusu üzerinden gönderiliyor. Bu uyarı saatte bir ile sınırlandırılmıştır. Hata: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ Onayla: HTML stilinde e-postalara geç?",
   "emailStyleSpamWarning": "**Stilize (HTML) doğrulama e-postaları** daha hoş görünür, ancak posta sağlayıcıları (Gmail, Outlook vb.) bunları sıklıkla pazarlama veya spam olarak sınıflandırır. **Düz metin** e-postalar varsayılandır çünkü teslim edilebilirlikleri belirgin biçimde daha iyidir.\n\nKullanıcılar doğrulama kodlarını almadıklarını bildirirse, plain'e geri dön.\n\nOnaylamak ve HTML'e geçmek için şunu çalıştır:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ E-posta stili HTML olarak ayarlandı",

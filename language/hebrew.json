@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "נותרו רק **%VAR%** קרדיטי בונוס בשרת זה. ברגע שייגמרו, האימותים יפסיקו עד שתירשם למנוי או תרכוש עוד קרדיטים.",
   "quotaWarnCreditsZeroTitle": "🛑 קרדיטי בונוס הסתיימו",
   "quotaWarnCreditsZeroMessage": "כל קרדיטי הבונוס בשרת זה נוצלו. אימותים חדשים יידחו עד שתירשם למנוי או תרכוש עוד קרדיטים.",
-  "zeptoFallbackTitle": "✉️ גיבוי ספק אימייל",
-  "zeptoFallbackMessage": "שירות האימייל הפרימיום (Zoho ZeptoMail) אינו זמין כרגע, ולכן אימיילי האימות נשלחים דרך שרת ה-SMTP הגיבוי. ההתראה הזו מוגבלת לפעם בשעה. שגיאה: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ אישור: לעבור לאימיילים בעיצוב HTML?",
   "emailStyleSpamWarning": "**אימיילי אימות בעיצוב (HTML)** נראים יפה יותר, אבל ספקי דואר (Gmail, Outlook וכו') מסווגים אותם לעיתים קרובות כשיווק או ספאם. אימיילים ב**טקסט פשוט** הם ברירת המחדל כי יש להם מסירות טובה משמעותית.\n\nאם משתמשים מדווחים שלא מקבלים קודי אימות, חזור ל-plain.\n\nכדי לאשר ולעבור ל-HTML, הרץ:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ סגנון אימייל נקבע ל-HTML",

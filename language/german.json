@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "Nur noch **%VAR%** Bonus-Guthaben auf diesem Server verfügbar. Sobald sie verbraucht sind, werden Verifizierungen abgelehnt, bis du abonnierst oder mehr Guthaben kaufst.",
   "quotaWarnCreditsZeroTitle": "🛑 Bonus-Guthaben verbraucht",
   "quotaWarnCreditsZeroMessage": "Alle Bonus-Guthaben auf diesem Server wurden verbraucht. Neue Verifizierungen werden abgelehnt, bis du abonnierst oder mehr Guthaben kaufst.",
-  "zeptoFallbackTitle": "✉️ E-Mail-Anbieter Fallback",
-  "zeptoFallbackMessage": "Der Premium-E-Mail-Dienst (Zoho ZeptoMail) ist derzeit nicht erreichbar. Verifizierungs-Mails werden vorübergehend über den Fallback-SMTP-Server versendet. Diese Meldung wird auf eine pro Stunde gedrosselt. Fehler: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ Bestätigung: Auf HTML-formatierte E-Mails umstellen?",
   "emailStyleSpamWarning": "**HTML-formatierte Verifizierungs-E-Mails** sehen schöner aus, werden aber von vielen Mail-Anbietern (Gmail, Outlook usw.) oft als Werbung oder Spam eingestuft. **Reiner Text** ist die Standardeinstellung, da er deutlich besser zugestellt wird.\n\nFalls Nutzer melden, dass sie keine Verifizierungscodes erhalten, schalte zurück auf `plain`.\n\nZum Bestätigen und Aktivieren von HTML, führe aus:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ E-Mail-Stil auf HTML gesetzt",

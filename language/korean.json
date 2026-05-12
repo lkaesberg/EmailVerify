@@ -123,8 +123,6 @@
   "quotaWarnCreditsLowMessage": "이 서버에 보너스 크레딧이 **%VAR%**개만 남았습니다. 모두 사용되면 구독하거나 더 많은 크레딧을 구매할 때까지 인증이 중단됩니다.",
   "quotaWarnCreditsZeroTitle": "🛑 보너스 크레딧 소진됨",
   "quotaWarnCreditsZeroMessage": "이 서버의 모든 보너스 크레딧이 사용되었습니다. 구독하거나 더 많은 크레딧을 구매할 때까지 새로운 인증이 거부됩니다.",
-  "zeptoFallbackTitle": "✉️ 이메일 제공자 폴백",
-  "zeptoFallbackMessage": "프리미엄 이메일 서비스(Zoho ZeptoMail)에 현재 연결할 수 없어 인증 메일이 폴백 SMTP 서버를 통해 전송되고 있습니다. 이 경고는 시간당 1회로 제한됩니다. 오류: %VAR%",
   "emailStyleSpamWarningTitle": "⚠️ 확인: HTML 스타일 이메일로 전환하시겠습니까?",
   "emailStyleSpamWarning": "**스타일 (HTML) 인증 이메일**은 더 보기 좋지만 메일 제공자(Gmail, Outlook 등)가 종종 마케팅이나 스팸으로 분류합니다. **일반 텍스트** 이메일은 전달성이 눈에 띄게 더 좋기 때문에 기본값입니다.\n\n사용자가 인증 코드를 받지 못한다고 보고하면 plain으로 다시 전환하세요.\n\nHTML로 확인하고 전환하려면 실행하세요:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ 이메일 스타일을 HTML로 설정",

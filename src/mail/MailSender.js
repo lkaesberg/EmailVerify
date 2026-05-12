@@ -6,8 +6,6 @@ const ErrorNotifier = require('../utils/ErrorNotifier')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 
-const ZEPTO_FALLBACK_WARN_INTERVAL_MS = 60 * 60 * 1000
-
 module.exports = class MailSender {
     constructor(serverStatsAPI) {
         this.serverStatsAPI = serverStatsAPI
@@ -41,7 +39,6 @@ module.exports = class MailSender {
             this.zeptoProvider = null
         }
 
-        this.zeptoFallbackLastWarn = new Map()
         this.freeMonthlyLimit = config.monetization?.freeMonthlyLimit ?? 25
     }
 
@@ -93,10 +90,7 @@ module.exports = class MailSender {
                     usedProvider = 'zeptomail'
                 } catch (err) {
                     lastError = err
-                    if (emailNotify) {
-                        console.warn('[MailSender] ZeptoMail send failed, falling back to self-SMTP:', err.message)
-                    }
-                    this.#warnZeptoFallback(interaction.guild, language, err)
+                    console.warn(`[MailSender] ZeptoMail send failed for guild=${interaction.guild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
                 }
             }
 
@@ -188,21 +182,6 @@ module.exports = class MailSender {
         if (crossings.crossedCreditsZero) {
             fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage')
         }
-    }
-
-    #warnZeptoFallback(guild, language, err) {
-        if (!guild) return
-        const last = this.zeptoFallbackLastWarn.get(guild.id) || 0
-        const now = Date.now()
-        if (now - last < ZEPTO_FALLBACK_WARN_INTERVAL_MS) return
-        this.zeptoFallbackLastWarn.set(guild.id, now)
-
-        ErrorNotifier.notify({
-            guild,
-            errorTitle: getLocale(language, 'zeptoFallbackTitle'),
-            errorMessage: getLocale(language, 'zeptoFallbackMessage', err?.message || 'unknown error'),
-            language
-        }).catch(() => {})
     }
 
     #escapeHtml(input) {
