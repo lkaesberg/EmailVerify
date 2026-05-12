@@ -23,6 +23,7 @@ const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { buildPlanButtons, appStoreUrl } = require('./utils/premiumButtons');
+const OperatorWebhook = require('./utils/OperatorWebhook');
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
 const emaillistLockedLastNotify = new Map()
@@ -250,6 +251,21 @@ bot.once('clientReady', async () => {
         type: "PLAYING",
         url: "https://emailbot.larskaesberg.de"
     });
+
+    // Operator notification: only fire from the primary shard to avoid N-per-restart spam.
+    if (isPrimary) {
+        const shardLabel = bot.shard?.ids?.join(',') ?? 'unsharded'
+        const totalShards = bot.shard?.count ?? 1
+        OperatorWebhook.notify({
+            title: '🟢 Bot online',
+            description: `Logged in as **${bot.user.tag}**.`,
+            fields: [
+                { name: 'Shard', value: `${shardLabel} / ${totalShards}`, inline: true },
+                { name: 'Guilds (this shard)', value: String(bot.guilds.cache.size), inline: true }
+            ],
+            level: 'success'
+        })
+    }
 });
 
 setInterval(function () {
@@ -296,16 +312,44 @@ bot.on('guildCreate', guild => {
 // Premium purchase lifecycle — log every entitlement event from Discord so we
 // have an audit trail of subscriptions, renewals, cancellations, and one-time
 // purchases. Redemption of consumables is logged separately in PremiumManager.
+function entitlementFields(entitlement) {
+    return [
+        { name: 'SKU', value: `\`${entitlement.skuId}\``, inline: true },
+        { name: 'User', value: entitlement.userId ? `<@${entitlement.userId}>` : 'n/a', inline: true },
+        { name: 'Guild', value: entitlement.guildId ? `\`${entitlement.guildId}\`` : 'n/a', inline: true },
+        { name: 'Type', value: String(entitlement.type), inline: true },
+        { name: 'Consumed', value: String(entitlement.consumed), inline: true },
+        { name: 'Ends at', value: entitlement.endsAt?.toISOString?.() ?? 'n/a', inline: true }
+    ]
+}
+
 bot.on('entitlementCreate', entitlement => {
     console.log(`[Premium] Entitlement created: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type} consumed=${entitlement.consumed} startsAt=${entitlement.startsAt?.toISOString?.() ?? 'n/a'} endsAt=${entitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+    OperatorWebhook.notify({
+        title: '💎 New premium purchase',
+        fields: entitlementFields(entitlement),
+        level: 'success'
+    })
 })
 
 bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     console.log(`[Premium] Entitlement updated: sku=${newEntitlement.skuId} user=${newEntitlement.userId ?? 'n/a'} guild=${newEntitlement.guildId ?? 'n/a'} type=${newEntitlement.type} consumed=${newEntitlement.consumed} endsAt=${newEntitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+    OperatorWebhook.notify({
+        title: '🔁 Premium subscription updated',
+        description: 'Likely a renewal, cancellation pending, or consumed flag change.',
+        fields: entitlementFields(newEntitlement),
+        level: 'info'
+    })
 })
 
 bot.on('entitlementDelete', entitlement => {
     console.log(`[Premium] Entitlement deleted: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type}`)
+    OperatorWebhook.notify({
+        title: '❌ Premium entitlement removed',
+        description: 'Subscription ended, was cancelled, or refunded.',
+        fields: entitlementFields(entitlement),
+        level: 'warn'
+    })
 })
 
 bot.on('messageCreate', async (message) => {
@@ -745,5 +789,32 @@ bot.on('interactionCreate', async interaction => {
 
 bot.login(token).catch((e) => {
     console.log("Failed to login: " + e.toString())
+    OperatorWebhook.notify({
+        title: '🚨 Bot failed to log in',
+        description: `\`\`\`${(e?.message || e).toString().slice(0, 1800)}\`\`\``,
+        level: 'error'
+    })
     process.exitCode = 1;
 });
+
+// Graceful shutdown: notify operator before the shard process exits so we can
+// distinguish planned restarts from crashes. Each shard fires its own signal,
+// so this fires per-shard — useful for spotting partial outages.
+let __shutdownInFlight = false
+async function __handleShutdownSignal(signal) {
+    if (__shutdownInFlight) return
+    __shutdownInFlight = true
+    const shardLabel = bot.shard?.ids?.join(',') ?? 'unsharded'
+    console.log(`[Shard ${shardLabel}] Received ${signal}, shutting down...`)
+    try {
+        await OperatorWebhook.notify({
+            title: '🔴 Bot shutting down',
+            description: `Shard \`${shardLabel}\` received \`${signal}\`.`,
+            level: 'warn'
+        })
+    } catch {}
+    try { bot.destroy() } catch {}
+    process.exit(0)
+}
+process.on('SIGTERM', () => __handleShutdownSignal('SIGTERM'))
+process.on('SIGINT', () => __handleShutdownSignal('SIGINT'))

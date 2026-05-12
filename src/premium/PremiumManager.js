@@ -1,6 +1,7 @@
 const database = require('../database/Database')
 const config = require('../../config/config.json')
 const { getLocale } = require('../Language')
+const OperatorWebhook = require('../utils/OperatorWebhook')
 
 const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
@@ -112,6 +113,17 @@ class PremiumManager {
                     results.creditsAdded += amount
                     results.details.push(getLocale(lang, 'premiumRedeemCredits', amount.toString()))
                     console.log(`[Premium] Credits redeemed: +${amount} guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
+                    OperatorWebhook.notify({
+                        title: '🎟️ Credits redeemed',
+                        fields: [
+                            { name: 'Amount', value: `+${amount}`, inline: true },
+                            { name: 'Guild', value: `\`${guildID}\` (${interaction.guild?.name || 'unknown'})`, inline: true },
+                            { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
+                            { name: 'SKU', value: `\`${entitlement.skuId}\``, inline: true },
+                            { name: 'Entitlement', value: `\`${entitlement.id}\``, inline: true }
+                        ],
+                        level: 'success'
+                    })
                 } catch (err) {
                     console.error('Failed to consume entitlement:', err)
                     results.details.push(getLocale(lang, 'premiumRedeemCreditsFailed', amount.toString()))
@@ -126,6 +138,16 @@ class PremiumManager {
                     results.csvUnlocked = true
                     results.details.push(getLocale(lang, 'premiumRedeemCsv'))
                     console.log(`[Premium] CSV unlocked: guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
+                    OperatorWebhook.notify({
+                        title: '📁 CSV unlocked',
+                        fields: [
+                            { name: 'Guild', value: `\`${guildID}\` (${interaction.guild?.name || 'unknown'})`, inline: true },
+                            { name: 'User', value: `<@${interaction.user.id}>`, inline: true },
+                            { name: 'SKU', value: `\`${entitlement.skuId}\``, inline: true },
+                            { name: 'Entitlement', value: `\`${entitlement.id}\``, inline: true }
+                        ],
+                        level: 'success'
+                    })
                 } catch (err) {
                     console.error('Failed to consume/unlock CSV:', err)
                     results.details.push(getLocale(lang, 'premiumRedeemCsvFailed'))

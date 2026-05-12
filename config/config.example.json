@@ -9,6 +9,7 @@
     "isSecure": false,
     "isGoogle": false,
     "topggToken": "",
+    "operatorWebhookUrl": "",
     "monetization": {
         "enabled": false,
         "freeMonthlyLimit": 25,

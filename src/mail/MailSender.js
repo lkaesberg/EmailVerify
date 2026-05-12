@@ -3,6 +3,7 @@ const { defaultLanguage, getLocale } = require("../Language")
 const database = require("../database/Database")
 const { MessageFlags, EmbedBuilder } = require('discord.js')
 const ErrorNotifier = require('../utils/ErrorNotifier')
+const OperatorWebhook = require('../utils/OperatorWebhook')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 
@@ -91,6 +92,15 @@ module.exports = class MailSender {
                 } catch (err) {
                     lastError = err
                     console.warn(`[MailSender] ZeptoMail send failed for guild=${interaction.guild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
+                    OperatorWebhook.notify({
+                        title: '✉️ ZeptoMail fallback',
+                        description: 'A premium mail send failed; falling back to self-SMTP. Verification still completes for the user.',
+                        fields: [
+                            { name: 'Guild', value: interaction.guild?.id ? `\`${interaction.guild.id}\` (${interaction.guild.name})` : 'n/a', inline: false },
+                            { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
+                        ],
+                        level: 'warn'
+                    })
                 }
             }
 
