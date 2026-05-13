@@ -7,9 +7,16 @@ const OperatorWebhook = require('../utils/OperatorWebhook')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 
+// ZeptoMail outages typically affect every guild at once, so throttle the
+// operator-webhook notification to one ping per 24h globally. The console.warn
+// still fires on every failure for forensic visibility — only the webhook is
+// rate-limited so the operator isn't spammed during a long outage.
+const ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS = 24 * 60 * 60 * 1000
+
 module.exports = class MailSender {
     constructor(serverStatsAPI) {
         this.serverStatsAPI = serverStatsAPI
+        this.zeptoFallbackLastWebhookAt = 0
 
         const username = typeof config.username === 'undefined' ? config.email : config.username
         this.username = username
@@ -92,15 +99,19 @@ module.exports = class MailSender {
                 } catch (err) {
                     lastError = err
                     console.warn(`[MailSender] ZeptoMail send failed for guild=${interaction.guild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
-                    OperatorWebhook.notify({
-                        title: '✉️ ZeptoMail fallback',
-                        description: 'A premium mail send failed; falling back to self-SMTP. Verification still completes for the user.',
-                        fields: [
-                            { name: 'Guild', value: interaction.guild?.id ? `\`${interaction.guild.id}\` (${interaction.guild.name})` : 'n/a', inline: false },
-                            { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
-                        ],
-                        level: 'warn'
-                    })
+                    const now = Date.now()
+                    if (now - this.zeptoFallbackLastWebhookAt >= ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS) {
+                        this.zeptoFallbackLastWebhookAt = now
+                        OperatorWebhook.notify({
+                            title: '✉️ ZeptoMail fallback',
+                            description: 'A premium mail send failed; falling back to self-SMTP. Verification still completes for the user. This alert is throttled to once per 24h — further fallbacks during this window are logged to stdout only.',
+                            fields: [
+                                { name: 'Guild', value: interaction.guild?.id ? `\`${interaction.guild.id}\` (${interaction.guild.name})` : 'n/a', inline: false },
+                                { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
+                            ],
+                            level: 'warn'
+                        })
+                    }
                 }
             }
 
