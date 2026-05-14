@@ -139,6 +139,14 @@ class Database {
                 this.db.run("UPDATE guilds SET allowedEmails = ? WHERE guildid = ?", [JSON.stringify(dedup), result.guildid])
             })
         })
+        this.runMigration(17, () => {
+            // Error notification redesign: per-user opt-in DMs, separate channel + ping config.
+            // Legacy errorNotifyType/errorNotifyTarget remain on the table and are migrated on read.
+            this.db.run("ALTER TABLE guilds ADD errorNotifyChannel TEXT DEFAULT ''")
+            this.db.run("ALTER TABLE guilds ADD errorNotifyPing TEXT DEFAULT 'none'")
+            this.db.run("ALTER TABLE guilds ADD errorNotifyUsers TEXT DEFAULT '[]'")
+            this.db.run("ALTER TABLE guilds ADD errorNotifyOwnerOptedOut INTEGER DEFAULT 0")
+        })
     }
 
     runMigration(version, migration) {
@@ -169,8 +177,8 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain'])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain'])
     }
 
     async getServerSettings(guildID, callback) {
@@ -191,6 +199,27 @@ class Database {
                     serverSettings.logChannel = result.logChannel
                     serverSettings.errorNotifyType = result.errorNotifyType || "owner"
                     serverSettings.errorNotifyTarget = result.errorNotifyTarget || ""
+                    serverSettings.errorNotifyChannel = result.errorNotifyChannel || ""
+                    serverSettings.errorNotifyPing = result.errorNotifyPing || "none"
+                    serverSettings.errorNotifyOwnerOptedOut = result.errorNotifyOwnerOptedOut ? 1 : 0
+                    try {
+                        serverSettings.errorNotifyUsers = result.errorNotifyUsers ? JSON.parse(result.errorNotifyUsers) : []
+                    } catch {
+                        serverSettings.errorNotifyUsers = []
+                    }
+                    if (!Array.isArray(serverSettings.errorNotifyUsers)) {
+                        serverSettings.errorNotifyUsers = []
+                    }
+
+                    // One-time read-side migration from legacy errorNotifyType/errorNotifyTarget.
+                    // We only fill new fields if the explicit new values are empty so we don't
+                    // overwrite anything an admin has set via the new command.
+                    if (serverSettings.errorNotifyType === 'channel' && serverSettings.errorNotifyTarget && !serverSettings.errorNotifyChannel) {
+                        serverSettings.errorNotifyChannel = serverSettings.errorNotifyTarget
+                    }
+                    if (serverSettings.errorNotifyType === 'user' && serverSettings.errorNotifyTarget && !serverSettings.errorNotifyUsers.includes(serverSettings.errorNotifyTarget)) {
+                        serverSettings.errorNotifyUsers.push(serverSettings.errorNotifyTarget)
+                    }
                     
                     // Parse domains (JSON array, with fallback for legacy comma-separated format)
                     try {

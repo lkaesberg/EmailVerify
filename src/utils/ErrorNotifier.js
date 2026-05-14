@@ -3,71 +3,135 @@ const { getLocale } = require('../Language');
 const database = require('../database/Database');
 
 /**
- * Centralized error notification system for the bot
- * Sends error messages to configured destination (owner, user, or channel)
- * Falls back to guild owner if configured destination fails
+ * Centralized error notification system for the bot.
+ *
+ * Each error notification has two parallel destinations:
+ *  - A single admin channel, resolved via fallback chain: errorNotifyChannel → logChannel.
+ *    The verify channel (channelID) is intentionally NOT in the chain because it's user-visible.
+ *  - DMs to every opted-in user (errorNotifyUsers) plus the guild owner unless they explicitly
+ *    opted out via errorNotifyOwnerOptedOut.
+ *
+ * Channel sends can optionally include a content ping (none / @everyone / @here / <roleId>).
  */
 class ErrorNotifier {
     /**
-     * Send an error notification to the appropriate destination
-     * @param {Object} options - Error notification options
-     * @param {Guild} options.guild - The Discord guild where the error occurred
-     * @param {string} options.errorTitle - Short title for the error
-     * @param {string} options.errorMessage - Detailed error message for admins
-     * @param {User} [options.user] - The user who triggered the error (optional)
-     * @param {Interaction} [options.interaction] - The interaction to reply to with generic message (optional)
-     * @param {string} [options.language] - Language code for localization (optional)
-     * @returns {Promise<boolean>} - Whether the notification was sent successfully
+     * Send an error notification to all configured destinations.
+     *
+     * @param {Object} options
+     * @param {import('discord.js').Guild} options.guild
+     * @param {string} options.errorTitle
+     * @param {string} options.errorMessage
+     * @param {import('discord.js').User} [options.user]
+     * @param {import('discord.js').Interaction} [options.interaction] - if provided, also replies to the user with a generic error
+     * @param {string} [options.language]
+     * @param {import('discord.js').ActionRowBuilder[]} [options.components] - optional rows of buttons attached to admin message
+     * @returns {Promise<boolean>} true if at least one destination received the message
      */
-    static async notify({ guild, errorTitle, errorMessage, user = null, interaction = null, language = 'english' }) {
+    static async notify({ guild, errorTitle, errorMessage, user = null, interaction = null, language = 'english', components = null }) {
         if (!guild) {
             console.error('[ErrorNotifier] No guild provided for error notification');
             return false;
         }
 
-        // Send generic error message to user if interaction provided
         if (interaction) {
             await this.sendGenericUserError(interaction, language);
         }
 
-        // Get server settings to determine where to send error
         return new Promise((resolve) => {
             database.getServerSettings(guild.id, async (serverSettings) => {
                 const lang = serverSettings.language || language;
-                const notifyType = serverSettings.errorNotifyType || 'owner';
-                const notifyTarget = serverSettings.errorNotifyTarget || '';
-
                 const errorEmbed = this.createAdminErrorEmbed(guild, errorTitle, errorMessage, user, lang);
 
-                let sent = false;
-                let fallbackReason = null;
+                let anySent = false;
+                const channelSent = await this.#sendChannelDestination(guild, serverSettings, errorEmbed, components, lang);
+                if (channelSent) anySent = true;
 
-                // Try to send to configured destination
-                if (notifyType === 'channel' && notifyTarget) {
-                    sent = await this.sendToChannel(guild, notifyTarget, errorEmbed);
-                    if (!sent) {
-                        fallbackReason = getLocale(lang, 'errorNotifyChannelFailed');
-                    }
-                } else if (notifyType === 'user' && notifyTarget) {
-                    sent = await this.sendToUser(guild, notifyTarget, errorEmbed);
-                    if (!sent) {
-                        fallbackReason = getLocale(lang, 'errorNotifyUserFailed');
-                    }
+                const dmRecipients = await this.#resolveDMRecipients(guild, serverSettings);
+                for (const member of dmRecipients) {
+                    const dmSent = await this.#sendDM(member, errorEmbed, components);
+                    if (dmSent) anySent = true;
                 }
 
-                // If not sent yet (either owner type or fallback), send to owner
-                if (!sent) {
-                    const ownerSent = await this.sendToOwner(guild, errorEmbed, fallbackReason, lang);
-                    resolve(ownerSent);
-                } else {
-                    resolve(true);
-                }
+                resolve(anySent);
             });
         });
     }
 
     /**
-     * Send generic error message to the user
+     * Resolve the admin channel via fallback chain and send the embed there.
+     */
+    static async #sendChannelDestination(guild, serverSettings, embed, components, language) {
+        const channelId = serverSettings.errorNotifyChannel || serverSettings.logChannel;
+        if (!channelId) return false;
+
+        const channel = guild.channels.cache.get(channelId);
+        if (!channel || !channel.isTextBased?.()) return false;
+
+        const pingContent = this.#resolvePing(serverSettings.errorNotifyPing);
+        const payload = { embeds: [embed] };
+        if (pingContent) payload.content = pingContent;
+        if (components && components.length > 0) payload.components = components;
+
+        try {
+            await channel.send(payload);
+            return true;
+        } catch (e) {
+            console.error(`[ErrorNotifier] Failed to send to channel ${channelId}:`, e.message);
+            return false;
+        }
+    }
+
+    /**
+     * Translate the stored ping setting into the message `content` string.
+     * Returns null when no ping should be prepended.
+     */
+    static #resolvePing(ping) {
+        if (!ping || ping === 'none') return null;
+        if (ping === 'everyone') return '@everyone';
+        if (ping === 'here') return '@here';
+        return `<@&${ping}>`;
+    }
+
+    /**
+     * Collect the GuildMembers who should receive a DM: explicit opt-ins plus the owner
+     * unless they've opted out. Members are fetched fresh so we don't DM users who left.
+     */
+    static async #resolveDMRecipients(guild, serverSettings) {
+        const ids = new Set();
+        for (const id of serverSettings.errorNotifyUsers || []) {
+            if (id) ids.add(id);
+        }
+        if (!serverSettings.errorNotifyOwnerOptedOut) {
+            try {
+                const owner = await guild.fetchOwner();
+                if (owner) ids.add(owner.id);
+            } catch (e) {
+                console.error(`[ErrorNotifier] Could not fetch owner for guild ${guild.id}:`, e.message);
+            }
+        }
+
+        const members = [];
+        for (const id of ids) {
+            const member = await guild.members.fetch(id).catch(() => null);
+            if (member) members.push(member);
+        }
+        return members;
+    }
+
+    static async #sendDM(member, embed, components) {
+        try {
+            const payload = { embeds: [embed] };
+            if (components && components.length > 0) payload.components = components;
+            await member.send(payload);
+            return true;
+        } catch (e) {
+            console.error(`[ErrorNotifier] Failed to DM ${member.id}:`, e.message);
+            return false;
+        }
+    }
+
+    /**
+     * Send generic error message to the user via their interaction.
      */
     static async sendGenericUserError(interaction, language) {
         const embed = new EmbedBuilder()
@@ -87,9 +151,6 @@ class ErrorNotifier {
         }
     }
 
-    /**
-     * Create the detailed error embed for admins
-     */
     static createAdminErrorEmbed(guild, errorTitle, errorMessage, user, language) {
         const embed = new EmbedBuilder()
             .setTitle(`⚠️ ${errorTitle}`)
@@ -109,73 +170,6 @@ class ErrorNotifier {
 
         return embed;
     }
-
-    /**
-     * Send error to a specific channel
-     */
-    static async sendToChannel(guild, channelId, embed) {
-        try {
-            const channel = guild.channels.cache.get(channelId);
-            if (!channel) {
-                return false;
-            }
-            await channel.send({ embeds: [embed] });
-            return true;
-        } catch (e) {
-            console.error(`[ErrorNotifier] Failed to send to channel ${channelId}:`, e.message);
-            return false;
-        }
-    }
-
-    /**
-     * Send error to a specific user via DM
-     */
-    static async sendToUser(guild, userId, embed) {
-        try {
-            const member = await guild.members.fetch(userId).catch(() => null);
-            if (!member) {
-                return false;
-            }
-            await member.send({ embeds: [embed] });
-            return true;
-        } catch (e) {
-            console.error(`[ErrorNotifier] Failed to send to user ${userId}:`, e.message);
-            return false;
-        }
-    }
-
-    /**
-     * Send error to guild owner via DM
-     * @param {Guild} guild - The Discord guild
-     * @param {EmbedBuilder} embed - The error embed
-     * @param {string|null} fallbackReason - Reason why fallback was triggered (if any)
-     * @param {string} language - Language code
-     */
-    static async sendToOwner(guild, embed, fallbackReason, language) {
-        try {
-            const owner = await guild.fetchOwner();
-            if (!owner) {
-                console.error(`[ErrorNotifier] Could not fetch owner for guild ${guild.id}`);
-                return false;
-            }
-
-            // If this is a fallback, add warning about the failed notification method
-            if (fallbackReason) {
-                embed.addFields({
-                    name: getLocale(language, 'errorFallbackWarning'),
-                    value: fallbackReason,
-                    inline: false
-                });
-            }
-
-            await owner.send({ embeds: [embed] });
-            return true;
-        } catch (e) {
-            console.error(`[ErrorNotifier] Failed to send to owner of guild ${guild.id}:`, e.message);
-            return false;
-        }
-    }
 }
 
 module.exports = ErrorNotifier;
-

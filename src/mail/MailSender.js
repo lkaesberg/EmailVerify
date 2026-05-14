@@ -6,6 +6,9 @@ const ErrorNotifier = require('../utils/ErrorNotifier')
 const OperatorWebhook = require('../utils/OperatorWebhook')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
+const premiumManager = require('../premium/PremiumManager')
+const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+const { createMailLimitReachedEmbed } = require('../utils/embeds')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
 // operator-webhook notification to one ping per 24h globally. The console.warn
@@ -159,7 +162,7 @@ module.exports = class MailSender {
 
             try {
                 const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
-                this.#fireQuotaWarnings(interaction.guild, language, crossings)
+                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings)
             } catch (e) {
                 console.error('[MailSender] Failed to record/check thresholds:', e)
                 database.incrementMailsSent(serverId)
@@ -176,15 +179,36 @@ module.exports = class MailSender {
         })
     }
 
-    #fireQuotaWarnings(guild, language, crossings) {
+    async #fireQuotaWarnings(interaction, language, serverSettings, crossings) {
+        const guild = interaction?.guild
         if (!guild || !crossings) return
 
+        const anyCrossed = crossings.crossed80 || crossings.crossed95 || crossings.crossed100
+            || crossings.crossedCreditsLow || crossings.crossedCreditsZero
+        if (!anyCrossed) return
+
+        // Build Premium buttons + website footer once so each crossing reuses them.
+        let components = null
+        try {
+            const premiumStatus = await premiumManager.getPremiumStatus(guild.id, interaction.entitlements)
+            const rows = buildPlanButtons(premiumStatus, { context: 'quotaWarn' })
+            if (rows.length > 0) components = rows
+        } catch (e) {
+            // Without premium status we still send the warning, just without buttons.
+            console.warn('[MailSender] Could not build premium buttons for quota warning:', e.message)
+        }
+
+        const websiteUrl = getWebsiteUrl()
+        const footer = this.#buildQuotaFooter(language, websiteUrl)
+
         const fire = (titleKey, msgKey, ...vars) => {
+            const baseMessage = getLocale(language, msgKey, ...vars)
             ErrorNotifier.notify({
                 guild,
                 errorTitle: getLocale(language, titleKey),
-                errorMessage: getLocale(language, msgKey, ...vars),
-                language
+                errorMessage: footer ? `${baseMessage}\n\n${footer}` : baseMessage,
+                language,
+                components
             }).catch(() => {})
         }
 
@@ -202,6 +226,36 @@ module.exports = class MailSender {
         }
         if (crossings.crossedCreditsZero) {
             fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage')
+        }
+
+        // Public-facing service notice in the verify channel: only on quota exhaustion
+        // (100% or zero credits), not advisory crossings. This is what regular members
+        // see so they can explain to themselves why verification stopped working.
+        if (crossings.crossed100 || crossings.crossedCreditsZero) {
+            this.#postPublicLimitNotice(interaction, language).catch(() => {})
+        }
+    }
+
+    #buildQuotaFooter(language, websiteUrl) {
+        const hint = getLocale(language, 'quotaWarnFooterHint')
+        if (!websiteUrl) return hint
+        const website = getLocale(language, 'quotaWarnFooterWebsite', websiteUrl)
+        return `${hint}\n${website}`
+    }
+
+    async #postPublicLimitNotice(interaction, language) {
+        // Post into the channel the user was actively verifying in — that's necessarily
+        // the verify channel (or wherever the admin placed the verify button), and the
+        // bot just used permissions there for the email modal, so the send should work.
+        // We deliberately don't fall back to serverSettings.channelID — that field is
+        // legacy reaction-flow state and isn't populated for new /button setups.
+        const channel = interaction?.channel
+        if (!channel || !channel.isTextBased?.()) return
+        try {
+            const embed = createMailLimitReachedEmbed(language, getWebsiteUrl())
+            await channel.send({ embeds: [embed] })
+        } catch (e) {
+            // Missing send permission is fine — the admin DM path still fires.
         }
     }
 

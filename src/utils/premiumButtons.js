@@ -3,6 +3,11 @@ const config = require('../../config/config.json')
 
 const skus = config.monetization?.skus || {}
 const appId = config.clientId
+const websiteUrl = (config.websiteUrl || '').trim()
+
+function getWebsiteUrl() {
+    return websiteUrl || null
+}
 
 /**
  * Build a public Discord store URL for a SKU.
@@ -26,7 +31,7 @@ function premiumButton(skuId) {
  * Build action rows offering relevant SKUs as Premium buttons.
  *
  * @param {{ subscriptionTier: 'tier1'|'tier2'|null, csvUnlocked: boolean }} status
- * @param {{ context?: 'status'|'mailLimit'|'csvRequired' }} [opts]
+ * @param {{ context?: 'status'|'mailLimit'|'csvRequired'|'quotaWarn' }} [opts]
  * @returns {ActionRowBuilder[]} 0-2 rows of Premium buttons (≤5 per row)
  */
 function buildPlanButtons(status, opts = {}) {
@@ -53,9 +58,9 @@ function buildPlanButtons(status, opts = {}) {
     if (skus.credits2000) credits.push(skus.credits2000)
 
     // CSV-required prompts shouldn't show credit packs (they're for email quota, not CSV).
-    // Mail-limit prompts shouldn't show CSV unlock (it doesn't unblock the user's send).
+    // Mail-limit and quotaWarn prompts shouldn't show CSV unlock (it doesn't unblock email sends).
     const includeCredits = context !== 'csvRequired'
-    const includeCsv = context !== 'mailLimit'
+    const includeCsv = context !== 'mailLimit' && context !== 'quotaWarn'
 
     const rows = []
     const topRow = []
@@ -73,5 +78,6 @@ function buildPlanButtons(status, opts = {}) {
 module.exports = {
     buildPlanButtons,
     storeUrl,
-    appStoreUrl
+    appStoreUrl,
+    getWebsiteUrl
 }

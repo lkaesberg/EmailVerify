@@ -11,10 +11,17 @@ class ServerSettings {
         this.language = "english"
         this.verifyMessage = ""
         this.logChannel = ""
-        // Error notification settings: 'owner' (default), 'user', or 'channel'
+        // Legacy error notification settings (kept for read-side migration only)
         this.errorNotifyType = "owner"
-        // The user ID or channel ID for error notifications (empty means use owner)
         this.errorNotifyTarget = ""
+        // Explicit error channel destination; "" falls back to logChannel
+        this.errorNotifyChannel = ""
+        // Ping mode for the error channel: "none" | "everyone" | "here" | <roleId>
+        this.errorNotifyPing = "none"
+        // User IDs explicitly opted into error DMs (excludes owner — see errorNotifyOwnerOptedOut)
+        this.errorNotifyUsers = []
+        // Owner is opted into error DMs by default; this flips to 1 if they run `/set_error_notify me off`
+        this.errorNotifyOwnerOptedOut = 0
         // Default roles assigned to all verified users (array of role IDs)
         this.defaultRoles = []
         // Domain-specific roles: { "@domain.com": ["roleId1", "roleId2"], "@*.edu": ["roleId3"] }

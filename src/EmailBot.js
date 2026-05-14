@@ -22,7 +22,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { buildPlanButtons, appStoreUrl } = require('./utils/premiumButtons');
+const { getWebsiteUrl } = require('./utils/premiumButtons');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
@@ -528,20 +528,14 @@ bot.on('interactionCreate', async interaction => {
                 userTimeout.timestamp = Date.now()
                 userTimeout.increaseWaitTime()
 
-                // Premium check: verify the guild hasn't exceeded its free monthly limit
+                // Premium check: verify the guild hasn't exceeded its free monthly limit.
+                // The user-facing embed deliberately omits quota numbers and purchase prompts —
+                // verifying members can't (and shouldn't) pay for a server-level SKU. The
+                // server's admins get the full purchase-enabled warning via ErrorNotifier instead.
                 const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
                 if (!premiumCheck.allowed) {
-                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true, appStoreUrl())
-                    const premiumStatus = await premiumManager.getPremiumStatus(userGuild.id, interaction.entitlements)
-                    const components = buildPlanButtons(premiumStatus, { context: 'mailLimit' })
-                    try {
-                        await interaction.followUp({ embeds: [limitEmbed], components, flags: MessageFlags.Ephemeral })
-                    } catch (err) {
-                        if (err.code === 50035) {
-                            const limitEmbedNoButtons = createMailLimitReachedEmbed(serverSettings.language, premiumCheck.mailsSentMonth, premiumCheck.freeLimit, true, null)
-                            await interaction.followUp({ embeds: [limitEmbedNoButtons], components: [], flags: MessageFlags.Ephemeral }).catch(() => {})
-                        }
-                    }
+                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, getWebsiteUrl())
+                    await interaction.followUp({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
 
