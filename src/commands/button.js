@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database");
-const {ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder} = require('discord.js');
+const {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder} = require('discord.js');
 const { MessageFlags } = require('discord.js');
 const {getLocale} = require("../Language");
 
@@ -12,7 +12,14 @@ module.exports = {
         .addChannelOption(option => option
             .setName("channel")
             .setRequired(true)
-            .setDescription("Channel where the verification embed will be posted"))
+            .setDescription("Channel where the verification embed will be posted")
+            .addChannelTypes(
+                ChannelType.GuildText,
+                ChannelType.GuildAnnouncement,
+                ChannelType.PublicThread,
+                ChannelType.PrivateThread,
+                ChannelType.AnnouncementThread,
+            ))
         .addStringOption(option => option
             .setName("buttontext")
             .setRequired(true)
@@ -40,6 +47,11 @@ module.exports = {
         const customColor = interaction.options.getString("color")
 
         await interaction.deferReply({flags: MessageFlags.Ephemeral})
+
+        if (typeof channel?.send !== "function") {
+            await interaction.editReply({content: "That channel type can't receive messages. Please pick a text channel, announcement channel, or thread.", flags: MessageFlags.Ephemeral})
+            return
+        }
 
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             const language = serverSettings.language
