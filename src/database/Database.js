@@ -147,6 +147,14 @@ class Database {
             this.db.run("ALTER TABLE guilds ADD errorNotifyUsers TEXT DEFAULT '[]'")
             this.db.run("ALTER TABLE guilds ADD errorNotifyOwnerOptedOut INTEGER DEFAULT 0")
         })
+        this.runMigration(18, () => {
+            // Per-guild mail-mode toggle for non-subscribed guilds:
+            //   'free'      (default): 25 self-SMTP sends/month, then credits if any
+            //   'zeptomail' (opt-in):  no free quota, every send via ZeptoMail and burns 1 credit;
+            //                          auto-flips back to 'free' when credits hit 0
+            // Ignored while a subscription is active (subscriptions always use ZeptoMail).
+            this.db.run("ALTER TABLE guild_premium ADD mailMode TEXT DEFAULT 'free'")
+        })
     }
 
     runMigration(version, migration) {
@@ -419,15 +427,52 @@ class Database {
             this.db.get("SELECT * FROM guild_premium WHERE guildID = ?", [guildID], (err, result) => {
                 if (err) {
                     console.error('Error getting guild premium:', err)
-                    resolve({ bonusCredits: 0, csvUnlocked: false })
+                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free' })
                     return
                 }
                 if (result === undefined) {
-                    resolve({ bonusCredits: 0, csvUnlocked: false })
+                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free' })
                 } else {
-                    resolve({ bonusCredits: result.bonusCredits, csvUnlocked: !!result.csvUnlocked })
+                    const mailMode = result.mailMode === 'zeptomail' ? 'zeptomail' : 'free'
+                    resolve({ bonusCredits: result.bonusCredits, csvUnlocked: !!result.csvUnlocked, mailMode })
                 }
             })
+        })
+    }
+
+    setGuildMailMode(guildID, mode) {
+        const normalized = mode === 'zeptomail' ? 'zeptomail' : 'free'
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT INTO guild_premium (guildID, mailMode) VALUES (?, ?) ON CONFLICT(guildID) DO UPDATE SET mailMode = ?",
+                [guildID, normalized, normalized],
+                (err) => {
+                    if (err) console.error('Error setting guild mail mode:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /**
+     * Atomic mailMode flip 'zeptomail' → 'free'. Resolves true exactly once per
+     * disable event (subsequent calls find the row already on 'free' and resolve false),
+     * so the caller can fire the owner notification without an extra dedup flag.
+     */
+    tryAutoDisableZeptoMode(guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "UPDATE guild_premium SET mailMode = 'free' WHERE guildID = ? AND mailMode = 'zeptomail'",
+                [guildID],
+                function (err) {
+                    if (err) {
+                        console.error('Error auto-disabling zepto mode:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
         })
     }
 
@@ -460,7 +505,7 @@ class Database {
      * `UPDATE ... WHERE flag = 0` query.
      *
      * @param {string} guildID
-     * @param {string} source - 'free' | 'credits' | 'subscription' | 'disabled'
+     * @param {string} source - 'free' | 'credits' | 'credits-zepto' | 'subscription' | 'disabled'
      * @param {number} freeLimit
      */
     async recordMailSentAndCheckThresholds(guildID, source, freeLimit) {
@@ -492,7 +537,7 @@ class Database {
             return out
         }
 
-        if (source === 'credits') {
+        if (source === 'credits' || source === 'credits-zepto') {
             const premium = await this.getGuildPremium(guildID)
             out.creditsRemaining = premium.bonusCredits
 

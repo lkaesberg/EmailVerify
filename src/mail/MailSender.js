@@ -90,7 +90,7 @@ module.exports = class MailSender {
                 }
             }
 
-            const useZepto = this.zeptoProvider && premiumSource === 'subscription'
+            const useZepto = this.zeptoProvider && (premiumSource === 'subscription' || premiumSource === 'credits-zepto')
             let info = null
             let usedProvider = null
             let lastError = null
@@ -143,7 +143,7 @@ module.exports = class MailSender {
                 }
                 // canSendMail() consumed a credit before this attempt — refund it since
                 // no verification mail was actually delivered.
-                if (premiumSource === 'credits') {
+                if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                     database.refundGuildCredit(serverId).catch(() => {})
                 }
                 const errorEmbed = new EmbedBuilder()
@@ -163,6 +163,9 @@ module.exports = class MailSender {
             try {
                 const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
                 this.#fireQuotaWarnings(interaction, language, serverSettings, crossings)
+                if (premiumSource === 'credits-zepto' && crossings.creditsRemaining !== null && crossings.creditsRemaining <= 0) {
+                    this.#maybeAutoDisableZeptoMode(interaction, language)
+                }
             } catch (e) {
                 console.error('[MailSender] Failed to record/check thresholds:', e)
                 database.incrementMailsSent(serverId)
@@ -177,6 +180,19 @@ module.exports = class MailSender {
                 if (info.response) console.log('Provider response:', info.response)
             }
         })
+    }
+
+    async #maybeAutoDisableZeptoMode(interaction, language) {
+        const guild = interaction?.guild
+        if (!guild) return
+        try {
+            const flipped = await database.tryAutoDisableZeptoMode(guild.id)
+            if (flipped) {
+                await premiumManager.notifyZeptoModeAutoDisabled(guild, language)
+            }
+        } catch (e) {
+            console.error('[MailSender] Failed to auto-disable zepto mode:', e)
+        }
     }
 
     async #fireQuotaWarnings(interaction, language, serverSettings, crossings) {

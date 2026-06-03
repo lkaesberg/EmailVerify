@@ -5,6 +5,8 @@ const OperatorWebhook = require('../utils/OperatorWebhook')
 
 const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
+const zeptoCfg = config.zeptomail || {}
+const zeptoConfigured = !!(zeptoCfg.enabled && zeptoCfg.apiToken && zeptoCfg.fromAddress)
 
 class PremiumManager {
     get enabled() {
@@ -13,6 +15,12 @@ class PremiumManager {
 
     get freeMonthlyLimit() {
         return monetization.freeMonthlyLimit ?? 25
+    }
+
+    /** Whether the operator has configured the ZeptoMail provider. Required for
+     *  guilds to opt into the 'zeptomail' mail mode. */
+    get zeptoConfigured() {
+        return zeptoConfigured
     }
 
     /**
@@ -29,34 +37,101 @@ class PremiumManager {
     /**
      * Determines whether the guild is allowed to send an email.
      * If credits are consumed, the credit is decremented atomically.
-     * Returns { allowed: boolean, reason: string|null, source: string }
+     * Returns { allowed, source, autoDisabled?, reason?, mailsSentMonth?, freeLimit? }.
+     * `autoDisabled` is true exactly once per zeptomail-mode exhaustion event so the
+     * caller knows to notify the owner.
      */
     async canSendMail(guildID, entitlements) {
         if (!this.enabled) return { allowed: true, source: 'disabled' }
 
-        // 1. Check subscription (unlimited)
+        // 1. Subscription → always allowed, always Zepto, free quota irrelevant.
         const tier = this.getSubscriptionTier(entitlements)
         if (tier) return { allowed: true, source: 'subscription' }
 
-        // 2. Check free monthly allowance
-        const stats = await new Promise(resolve => {
-            database.getGuildStats(guildID, resolve)
-        })
+        const premium = await database.getGuildPremium(guildID)
+
+        // 2. ZeptoMail-credits opt-in mode: no free quota, credit-funded Zepto sends.
+        //    When credits are exhausted we atomically flip the guild back to 'free' and
+        //    fall through to the standard free-quota path so the in-progress verification
+        //    still succeeds when there's free quota left.
+        if (premium.mailMode === 'zeptomail' && this.zeptoConfigured) {
+            const consumed = await database.consumeGuildCredit(guildID)
+            if (consumed) return { allowed: true, source: 'credits-zepto' }
+
+            const autoDisabled = await database.tryAutoDisableZeptoMode(guildID)
+            const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
+            if (stats.mailsSentMonth < this.freeMonthlyLimit) {
+                return { allowed: true, source: 'free', autoDisabled, autoDisabledReason: 'credits_exhausted' }
+            }
+            const consumedFallback = await database.consumeGuildCredit(guildID)
+            if (consumedFallback) return { allowed: true, source: 'credits', autoDisabled, autoDisabledReason: 'credits_exhausted' }
+            return {
+                allowed: false,
+                reason: 'limit_reached',
+                mailsSentMonth: stats.mailsSentMonth,
+                freeLimit: this.freeMonthlyLimit,
+                autoDisabled,
+                autoDisabledReason: 'credits_exhausted'
+            }
+        }
+
+        // 3. Default 'free' mode: free monthly allowance → credits → denied.
+        const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
         if (stats.mailsSentMonth < this.freeMonthlyLimit) {
             return { allowed: true, source: 'free' }
         }
-
-        // 3. Check bonus credits
         const consumed = await database.consumeGuildCredit(guildID)
         if (consumed) return { allowed: true, source: 'credits' }
-
-        // 4. Denied
         return {
             allowed: false,
             reason: 'limit_reached',
             mailsSentMonth: stats.mailsSentMonth,
             freeLimit: this.freeMonthlyLimit
         }
+    }
+
+    /**
+     * Notify the guild owner (via ErrorNotifier) and operator webhook that the
+     * guild's zeptomail-credits mode was auto-disabled. Idempotency must be
+     * guaranteed by the caller (only call when tryAutoDisableZeptoMode flipped).
+     */
+    async notifyZeptoModeAutoDisabled(guild, language) {
+        if (!guild) return
+        const lang = language || 'english'
+        const ErrorNotifier = require('../utils/ErrorNotifier')
+        const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+
+        let components = null
+        try {
+            const premiumStatus = await this.getPremiumStatus(guild.id, null)
+            const rows = buildPlanButtons(premiumStatus, { context: 'quotaWarn' })
+            if (rows.length > 0) components = rows
+        } catch (e) {
+            // Buttons are a bonus — proceed without them if SKUs aren't fetchable.
+        }
+
+        const websiteUrl = getWebsiteUrl()
+        let message = getLocale(lang, 'zeptoModeAutoDisabledMessage')
+        if (websiteUrl) {
+            message += '\n\n' + getLocale(lang, 'quotaWarnFooterWebsite', websiteUrl)
+        }
+
+        await ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(lang, 'zeptoModeAutoDisabledTitle'),
+            errorMessage: message,
+            language: lang,
+            components
+        }).catch(() => {})
+
+        OperatorWebhook.notify({
+            title: '🔌 ZeptoMail mode auto-disabled',
+            description: 'Guild ran out of credits in zeptomail-credits mode; switched back to the free self-SMTP path.',
+            fields: [
+                { name: 'Guild', value: `\`${guild.id}\` (${guild.name || 'unknown'})`, inline: false }
+            ],
+            level: 'warn'
+        })
     }
 
     /**
@@ -180,6 +255,8 @@ class PremiumManager {
             freeRemaining: Math.max(0, this.freeMonthlyLimit - stats.mailsSentMonth),
             bonusCredits: premium.bonusCredits,
             csvUnlocked: premium.csvUnlocked,
+            mailMode: premium.mailMode || 'free',
+            zeptoAvailable: this.zeptoConfigured,
             hasUnlimitedMails: !!tier
         }
     }

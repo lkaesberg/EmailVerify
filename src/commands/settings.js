@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 const database = require("../database/Database.js");
 const { languages, getLocale } = require("../Language");
+const premiumManager = require("../premium/PremiumManager");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -85,6 +86,21 @@ module.exports = {
                         .setName('confirm')
                         .setDescription('Required when switching to styled - acknowledges the spam-filter risk')
                         .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('mail-mode')
+                .setDescription('Choose mail delivery: free 25/month self-SMTP, or premium ZeptoMail paid per credit')
+                .addStringOption(option =>
+                    option
+                        .setName('mode')
+                        .setDescription('free = 25 self-SMTP sends/month, zeptomail = every send via ZeptoMail (1 credit each)')
+                        .setRequired(true)
+                        .addChoices(
+                            { name: 'free', value: 'free' },
+                            { name: 'zeptomail', value: 'zeptomail' }
+                        )
                 )
         )
         .setDefaultMemberPermissions(0),
@@ -190,6 +206,51 @@ module.exports = {
                         flags: MessageFlags.Ephemeral
                     });
                 }
+                return;
+            }
+
+            if (subcommand === 'mail-mode') {
+                const language = serverSettings.language || 'english';
+                const mode = interaction.options.getString('mode', true);
+
+                if (!premiumManager.enabled) {
+                    await interaction.reply({
+                        content: getLocale(language, 'premiumNotEnabled'),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                if (mode === 'zeptomail' && !premiumManager.zeptoConfigured) {
+                    await interaction.reply({
+                        content: getLocale(language, 'mailModeZeptoUnavailable'),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const premium = await database.getGuildPremium(interaction.guildId);
+                if (mode === 'zeptomail' && premium.bonusCredits <= 0) {
+                    const embed = new EmbedBuilder()
+                        .setTitle(getLocale(language, 'mailModeZeptoNoCreditsTitle'))
+                        .setDescription(getLocale(language, 'mailModeZeptoNoCreditsDescription'))
+                        .setColor(0xFFA500);
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+                    return;
+                }
+
+                await database.setGuildMailMode(interaction.guildId, mode);
+
+                const titleKey = mode === 'zeptomail' ? 'mailModeSetZeptoTitle' : 'mailModeSetFreeTitle';
+                const descKey = mode === 'zeptomail' ? 'mailModeSetZeptoDescription' : 'mailModeSetFreeDescription';
+                const descVars = mode === 'zeptomail'
+                    ? [premium.bonusCredits.toString()]
+                    : [premiumManager.freeMonthlyLimit.toString()];
+                const embed = new EmbedBuilder()
+                    .setTitle(getLocale(language, titleKey))
+                    .setDescription(getLocale(language, descKey, ...descVars))
+                    .setColor(mode === 'zeptomail' ? 0x5865F2 : 0x57F287);
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
                 return;
             }
 

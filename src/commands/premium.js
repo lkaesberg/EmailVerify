@@ -44,13 +44,22 @@ module.exports = {
 
                 const mailsValue = status.hasUnlimitedMails
                     ? getLocale(language, 'premiumMailsUnlimited', status.mailsSentMonth.toString())
-                    : getLocale(language, 'premiumMailsLimited', status.mailsSentMonth.toString(), status.freeLimit.toString(), status.freeRemaining.toString())
+                    : (status.mailMode === 'zeptomail' && !status.subscriptionTier
+                        ? getLocale(language, 'premiumMailsZeptoMode', status.bonusCredits.toString())
+                        : getLocale(language, 'premiumMailsLimited', status.mailsSentMonth.toString(), status.freeLimit.toString(), status.freeRemaining.toString()))
+
+                const modeValue = status.subscriptionTier
+                    ? getLocale(language, 'premiumMailModeSubscription')
+                    : (status.mailMode === 'zeptomail'
+                        ? getLocale(language, 'premiumMailModeZepto')
+                        : getLocale(language, 'premiumMailModeFree'))
 
                 const embed = new EmbedBuilder()
                     .setTitle(getLocale(language, 'premiumStatusTitle'))
                     .setColor(status.subscriptionTier ? 0x5865F2 : 0x99AAB5)
                     .addFields(
                         { name: getLocale(language, 'premiumFieldPlan'), value: tierName, inline: true },
+                        { name: getLocale(language, 'premiumFieldMailMode'), value: modeValue, inline: true },
                         { name: getLocale(language, 'premiumFieldEmails'), value: mailsValue, inline: false },
                         { name: getLocale(language, 'premiumFieldCredits'), value: getLocale(language, 'premiumCreditsRemaining', status.bonusCredits.toString()), inline: true },
                         { name: getLocale(language, 'premiumFieldCsv'), value: status.csvUnlocked || status.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked'), inline: true },

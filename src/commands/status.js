@@ -173,6 +173,11 @@ module.exports = {
                         {
                             name: getLocale(language, 'statusFieldVerifyMessage'),
                             value: serverSettings.verifyMessage ? `"${serverSettings.verifyMessage}"` : `*${getLocale(language, 'statusValueDefaultMessage')}*`
+                        },
+                        {
+                            name: getLocale(language, 'statusFieldEmailStyle'),
+                            value: getLocale(language, serverSettings.emailStyle === 'styled' ? 'statusEmailStyleStyled' : 'statusEmailStylePlain'),
+                            inline: true
                         }
                     )
 
@@ -190,12 +195,20 @@ module.exports = {
                         : getLocale(language, 'premiumPlanFree')
                     const mailsInfo = premiumStatus.hasUnlimitedMails
                         ? getLocale(language, 'premiumMailsUnlimited', premiumStatus.mailsSentMonth.toString())
-                        : getLocale(language, 'premiumMailsLimited', premiumStatus.mailsSentMonth.toString(), premiumStatus.freeLimit.toString(), premiumStatus.freeRemaining.toString())
+                        : (premiumStatus.mailMode === 'zeptomail' && !premiumStatus.subscriptionTier
+                            ? getLocale(language, 'premiumMailsZeptoMode', premiumStatus.bonusCredits.toString())
+                            : getLocale(language, 'premiumMailsLimited', premiumStatus.mailsSentMonth.toString(), premiumStatus.freeLimit.toString(), premiumStatus.freeRemaining.toString()))
+                    const modeLabel = premiumStatus.subscriptionTier
+                        ? getLocale(language, 'premiumMailModeSubscription')
+                        : (premiumStatus.mailMode === 'zeptomail'
+                            ? getLocale(language, 'premiumMailModeZepto')
+                            : getLocale(language, 'premiumMailModeFree'))
 
                     statusEmbed.addFields({
                         name: getLocale(language, 'statusFieldPremium'),
                         value:
                             `**${getLocale(language, 'premiumFieldPlan')}:** ${tierName}\n` +
+                            `**${getLocale(language, 'premiumFieldMailMode')}:** ${modeLabel}\n` +
                             `**${getLocale(language, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
                             `**${getLocale(language, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
                             `**${getLocale(language, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked')}`

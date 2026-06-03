@@ -533,6 +533,9 @@ bot.on('interactionCreate', async interaction => {
                 // verifying members can't (and shouldn't) pay for a server-level SKU. The
                 // server's admins get the full purchase-enabled warning via ErrorNotifier instead.
                 const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
+                if (premiumCheck.autoDisabled) {
+                    premiumManager.notifyZeptoModeAutoDisabled(userGuild, serverSettings.language).catch(() => {})
+                }
                 if (!premiumCheck.allowed) {
                     const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, getWebsiteUrl())
                     await interaction.followUp({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
