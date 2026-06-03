@@ -14,7 +14,7 @@ All purchases run through Discord's native subscription system. Discord handles 
 | | :material-account: **Free** | :material-star: **Standard** | :material-diamond: **Pro** |
 |---|---|---|---|
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
-| **Premium delivery (ZeptoMail)** | — | ✓ | ✓ |
+| **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
 | **Quota warnings (80% / 95% / 100%)** | ✓ | n/a | n/a |
 | **Domain rules, role mapping, blacklist** | ✓ | ✓ | ✓ |
@@ -92,6 +92,39 @@ For servers that don't want a recurring subscription. One-time purchase, no expi
 
 Credits **never expire**, **roll over from month to month**, and **only get consumed once your free 25 are gone**. So a 100-pack might last you a year if your usage is light.
 
+By default credits act as overflow on top of the free 25. If you'd rather pay one credit per send and get the premium delivery infrastructure from the first verification, see the next section.
+
+---
+
+## Pay-per-send ZeptoMail mode (credit-funded)
+
+If your deliverability needs are higher than what self-SMTP gives you — but you don't want a monthly subscription — you can opt into the **credit-funded ZeptoMail mode**.
+
+Run:
+
+```
+/settings mail-mode mode:zeptomail
+```
+
+and every verification email leaves the bot via Zoho ZeptoMail's EU transactional infrastructure instead of the self-SMTP server. The trade-off:
+
+- :material-email-fast: **Premium delivery on every mail.** Same inbox placement as the Standard/Pro subscription.
+- :material-ticket-percent: **1 credit per verification.** The 25/month free quota is **not** used in this mode — every send burns a bonus credit.
+- :material-shield-check: **Auto-disable on zero credits.** When your credit balance hits 0, the bot atomically flips back to the `free` mode and notifies the server owner. Verifications keep working using the regular free monthly quota — no manual cleanup needed.
+- :material-arrow-u-left-top: **Switch back any time** with `/settings mail-mode mode:free`.
+
+Useful for:
+
+- Sporadic events that need reliable inbox delivery but don't justify a monthly subscription.
+- Universities or organisations on strict spam filters where the self-SMTP server occasionally lands in junk.
+- Anyone who'd rather pay only for what they actually send.
+
+!!! info "Why the 'no free quota' rule?"
+    In `zeptomail` mode the goal is deterministic premium delivery — you know every verification went through ZeptoMail. Mixing in 25 self-SMTP sends per month would defeat the point, so the toggle is explicit: either use the free path with credits as overflow, or use the credit-funded ZeptoMail path with no fallback to self-SMTP until credits are exhausted.
+
+!!! warning "Switching to `zeptomail` with 0 credits is rejected"
+    The command refuses if your credit balance is 0 — there's no point enabling a mode that would auto-disable on the next verification. Run `/premium redeem` after buying a credit pack, then try the toggle again.
+
 ---
 
 ## CSV unlock (one-time)
@@ -134,7 +167,15 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
     The list is treated as an explicit security configuration — silently disabling it would be a regression for closed-group servers. Instead, the bot **pauses verification entirely** and notifies your admins (throttled to once per hour) until you do one of two things: (1) clear the list with `/emaillist clear` (after which any email is accepted, subject to your domain rules), or (2) restore CSV access by re-buying Pro or the one-time CSV unlock. The list resumes working immediately on restore.
 
 ??? question "How does ZeptoMail differ from the regular SMTP server?"
-    Free-tier and credit-pack mails go through `mail.larskaesberg.de`, the operator's own SMTP server. Subscriber mail routes through Zoho ZeptoMail (`api.zeptomail.eu`) — a transactional-only provider, EU-hosted, with significantly better inbox placement. If ZeptoMail is ever unreachable, paid sends fall back to the regular SMTP server automatically — no action needed on your side.
+    Free-tier mails (and bonus-credit overflow in the default `free` mode) go through `mail.larskaesberg.de`, the operator's own SMTP server. Mail for **Standard/Pro subscribers** and for servers in the **credit-funded `zeptomail` mode** routes through Zoho ZeptoMail (`api.zeptomail.eu`) — a transactional-only provider, EU-hosted, with significantly better inbox placement. If ZeptoMail is ever unreachable, paid sends fall back to the regular SMTP server automatically — no action needed on your side.
+
+??? question "What's the difference between the credit-funded ZeptoMail mode and the Standard subscription?"
+    Both route mail through Zoho ZeptoMail. The difference is the billing model:
+
+    - **Standard subscription** — fixed monthly fee, unlimited verifications.
+    - **`/settings mail-mode mode:zeptomail`** — pay-per-send. One credit per verification, no monthly commitment. Auto-disables when credits hit 0.
+
+    If you reliably send more than the credit cost per month would imply, Standard is cheaper. If your volume is bursty or seasonal, the credit-funded mode lets you only pay for what you actually use.
 
 ??? question "Are emails stored anywhere?"
     Plaintext only at the moment of sending the verification code. The bot stores email addresses as MD5 base64 hashes — same scheme for verified users and for the allowedEmails list. Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).

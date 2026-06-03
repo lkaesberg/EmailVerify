@@ -105,6 +105,7 @@ Configure bot behavior and preferences.
 | `/settings auto-verify <enable>` | Automatically prompt new members to verify when they join |
 | `/settings auto-unverified <enable>` | Automatically assign the unverified role to new members |
 | `/settings email-style <plain\|styled> [confirm]` | Choose plain text (default) or HTML rendering for verification emails. Switching to `styled` requires `confirm:True` because HTML mail is more likely to be filtered as spam. |
+| `/settings mail-mode <free\|zeptomail>` | Choose how verification emails leave the bot. `free` (default) uses the operator's self-SMTP server with the 25/month free quota. `zeptomail` is an opt-in **credit-funded** mode: no free quota — every verification routes through Zoho ZeptoMail and costs 1 bonus credit. Auto-disables back to `free` when credits hit 0 and notifies the server owner. Requires bonus credits to enable. |
 
 ### 🛡️ Moderation & Setup
 
@@ -155,11 +156,24 @@ per month). The bot will warn admins via the configured error-notification
 channel as the quota approaches: at 80%, at 95%, and again when the limit is
 reached. Quota resets at the start of each calendar month.
 
-When subscriptions are active, mails for paying servers are routed through
-**Zoho ZeptoMail** (EU endpoint, premium deliverability). Free-tier and
-bonus-credit mails continue to be sent through the operator's SMTP. If
-ZeptoMail is unreachable, the bot falls back to self-SMTP and notifies the
-operator.
+#### Mail delivery modes
+
+Non-subscribed servers can pick which delivery path to use via
+`/settings mail-mode`:
+
+- **`free` (default)** — Verification emails are sent through the operator's
+  self-SMTP server (`mail.larskaesberg.de`). The 25/month free quota applies.
+  Bonus credits, if any, are consumed as overflow once the free quota is gone.
+- **`zeptomail` (credit-funded)** — Every verification routes through
+  **Zoho ZeptoMail** (EU endpoint, premium deliverability) and costs **1
+  bonus credit** per send. The 25/month free quota is **not** used in this
+  mode. When credits reach 0, the server is automatically switched back to
+  `free` mode and the owner is notified.
+
+Subscribed servers (Standard or Pro) always use ZeptoMail with unlimited
+verifications — the `mail-mode` setting is ignored while a subscription is
+active. If ZeptoMail is ever unreachable, the bot falls back to self-SMTP and
+notifies the operator.
 
 ### 📊 Information
 

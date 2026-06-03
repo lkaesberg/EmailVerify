@@ -65,7 +65,9 @@ module.exports = {
                         '`/settings log-channel` - Set verification log channel\n' +
                         '`/settings verify-message` - Custom message in emails\n' +
                         '`/settings auto-verify` - Auto-prompt new members\n' +
-                        '`/settings auto-unverified` - Auto-assign unverified role'
+                        '`/settings auto-unverified` - Auto-assign unverified role\n' +
+                        '`/settings email-style` - Plain text (default) or HTML rendering\n' +
+                        '`/settings mail-mode` - `free` (25/month, self-SMTP) or `zeptomail` (credit-funded ZeptoMail)'
                 },
                 {
                     name: '🛡️ Moderation',
@@ -87,7 +89,8 @@ module.exports = {
                         '**Standard** - Unlimited verifications + premium ZeptoMail delivery\n' +
                         '**Pro** - Standard + CSV import & export\n' +
                         '**Credit packs** - One-time top-up of 100 / 500 / 2000 verifications\n' +
-                        '**CSV unlock** - One-time CSV features without a subscription' +
+                        '**CSV unlock** - One-time CSV features without a subscription\n' +
+                        '**Pay-per-send ZeptoMail** - `/settings mail-mode zeptomail` routes every mail through ZeptoMail at 1 credit each; auto-disables when credits hit 0' +
                         storeLine
                 },
                 {
