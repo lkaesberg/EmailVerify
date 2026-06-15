@@ -5,6 +5,30 @@ const skus = config.monetization?.skus || {}
 const appId = config.clientId
 const websiteUrl = (config.websiteUrl || '').trim()
 
+// Reverse map: Discord SKU snowflake → operator-facing product metadata. Built
+// once from config so logs and notifications can show "⭐ Standard subscription"
+// instead of a raw SKU id. Unset/empty SKU ids in config are skipped, so an
+// unconfigured product never collides on an empty-string key.
+const SKU_CATALOG = {}
+function registerSku(skuId, meta) {
+    if (typeof skuId === 'string' && skuId.trim().length > 0) SKU_CATALOG[skuId] = meta
+}
+registerSku(skus.subscriptionTier1, { label: '⭐ Standard subscription', kind: 'subscription' })
+registerSku(skus.subscriptionTier2, { label: '💎 Pro subscription', kind: 'subscription' })
+registerSku(skus.credits100, { label: '🎟️ 100 Credit Pack', kind: 'credits', credits: 100 })
+registerSku(skus.credits500, { label: '🎟️ 500 Credit Pack', kind: 'credits', credits: 500 })
+registerSku(skus.credits2000, { label: '🎟️ 2,000 Credit Pack', kind: 'credits', credits: 2000 })
+registerSku(skus.csvUnlock, { label: '📁 CSV unlock', kind: 'csv' })
+
+/**
+ * Resolve a SKU id to its operator-facing product info.
+ * @param {string} skuId
+ * @returns {{label:string, kind:'subscription'|'credits'|'csv', credits?:number}|null}
+ */
+function describeSku(skuId) {
+    return SKU_CATALOG[skuId] || null
+}
+
 function getWebsiteUrl() {
     return websiteUrl || null
 }
@@ -79,5 +103,6 @@ module.exports = {
     buildPlanButtons,
     storeUrl,
     appStoreUrl,
-    getWebsiteUrl
+    getWebsiteUrl,
+    describeSku
 }

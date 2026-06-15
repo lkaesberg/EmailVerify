@@ -22,7 +22,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { getWebsiteUrl } = require('./utils/premiumButtons');
+const { getWebsiteUrl, describeSku } = require('./utils/premiumButtons');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
@@ -309,35 +309,115 @@ bot.on('guildCreate', guild => {
     registerCommands(guild)
 })
 
-// Premium purchase lifecycle — log every entitlement event from Discord so we
-// have an audit trail of subscriptions, renewals, cancellations, and one-time
-// purchases. Redemption of consumables is logged separately in PremiumManager.
-function entitlementFields(entitlement) {
-    return [
-        { name: 'SKU', value: `\`${entitlement.skuId}\``, inline: true },
+// Premium purchase lifecycle — turn every Discord entitlement event into a
+// readable operator notification (and keep the raw log line as an audit trail).
+// We resolve the SKU snowflake to a product name, humanise the entitlement type,
+// render dates as Discord timestamps, and — for updates — diff old→new so the
+// title says whether it was a renewal, cancellation, or consumption rather than
+// guessing. Redemption of consumables is logged separately in PremiumManager.
+
+const ENTITLEMENT_TYPE_LABELS = {
+    [Discord.EntitlementType.Purchase]: 'One-time purchase',
+    [Discord.EntitlementType.PremiumSubscription]: 'Nitro subscription',
+    [Discord.EntitlementType.DeveloperGift]: 'Developer gift',
+    [Discord.EntitlementType.TestModePurchase]: 'Test-mode purchase',
+    [Discord.EntitlementType.FreePurchase]: 'Free purchase',
+    [Discord.EntitlementType.UserGift]: 'User gift',
+    [Discord.EntitlementType.PremiumPurchase]: 'Premium purchase',
+    [Discord.EntitlementType.ApplicationSubscription]: 'App subscription'
+}
+
+function entitlementProductName(entitlement) {
+    const info = describeSku(entitlement.skuId)
+    return info ? info.label : `Unknown product (\`${entitlement.skuId}\`)`
+}
+
+function formatEntitlementType(type) {
+    return ENTITLEMENT_TYPE_LABELS[type] ?? `Unknown (${type})`
+}
+
+// Discord renders <t:unix:f> / <t:unix:R> as a localized absolute + relative
+// time in the reader's own timezone — far more useful to an operator than a UTC
+// ISO string. Returns null for absent dates so callers can label them.
+function formatDiscordTime(date) {
+    if (!date) return null
+    const unix = Math.floor(date.getTime() / 1000)
+    return `<t:${unix}:f> (<t:${unix}:R>)`
+}
+
+function entitlementFields(entitlement, statusValue) {
+    const info = describeSku(entitlement.skuId)
+    const fields = [
+        { name: 'Product', value: entitlementProductName(entitlement), inline: true },
+        { name: 'Status', value: statusValue, inline: true },
+        { name: 'Type', value: formatEntitlementType(entitlement.type), inline: true },
+        {
+            name: 'Server',
+            value: entitlement.guildId
+                ? `${entitlement.guild?.name ? `${entitlement.guild.name} ` : ''}\`${entitlement.guildId}\``
+                : '— (user-level)',
+            inline: true
+        },
         { name: 'User', value: entitlement.userId ? `<@${entitlement.userId}>` : 'n/a', inline: true },
-        { name: 'Guild', value: entitlement.guildId ? `\`${entitlement.guildId}\`` : 'n/a', inline: true },
-        { name: 'Type', value: String(entitlement.type), inline: true },
-        { name: 'Consumed', value: String(entitlement.consumed), inline: true },
-        { name: 'Ends at', value: entitlement.endsAt?.toISOString?.() ?? 'n/a', inline: true }
+        { name: 'Active', value: entitlement.isActive() ? '✅ Yes' : '❌ No', inline: true }
     ]
+
+    const starts = formatDiscordTime(entitlement.startsAt)
+    if (starts) fields.push({ name: 'Started', value: starts, inline: true })
+    fields.push({ name: 'Renews / ends', value: formatDiscordTime(entitlement.endsAt) ?? 'Never expires', inline: true })
+
+    // "Consumed" is only meaningful for one-time consumables (credits / CSV);
+    // subscriptions never carry it, so showing it there would just be noise.
+    if (info && info.kind !== 'subscription') {
+        fields.push({ name: 'Consumed', value: entitlement.consumed ? 'Yes' : 'No', inline: true })
+    }
+
+    fields.push({ name: 'Entitlement ID', value: `\`${entitlement.id}\``, inline: false })
+    return fields
 }
 
 bot.on('entitlementCreate', entitlement => {
     console.log(`[Premium] Entitlement created: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type} consumed=${entitlement.consumed} startsAt=${entitlement.startsAt?.toISOString?.() ?? 'n/a'} endsAt=${entitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+    const status = entitlement.isTest() ? '🧪 Test purchase' : '🟢 Started'
     OperatorWebhook.notify({
-        title: '💎 New premium purchase',
-        fields: entitlementFields(entitlement),
+        title: `💎 New purchase — ${entitlementProductName(entitlement)}`,
+        fields: entitlementFields(entitlement, status),
         level: 'success'
     })
 })
 
 bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     console.log(`[Premium] Entitlement updated: sku=${newEntitlement.skuId} user=${newEntitlement.userId ?? 'n/a'} guild=${newEntitlement.guildId ?? 'n/a'} type=${newEntitlement.type} consumed=${newEntitlement.consumed} endsAt=${newEntitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
+
+    // Characterise the change by diffing old→new. Discord's update semantics are
+    // approximate, so we read the most reliable signals: a later end date is a
+    // renewal, an earlier/new one is a scheduled cancellation, the consumed flag
+    // flipping is a redemption, and the deleted flag flipping is a removal.
+    const oldEnds = oldEntitlement.endsTimestamp ?? null
+    const newEnds = newEntitlement.endsTimestamp ?? null
+    let status
+    if (!oldEntitlement.deleted && newEntitlement.deleted) {
+        status = '🔴 Deleted'
+    } else if (!oldEntitlement.consumed && newEntitlement.consumed) {
+        status = '✅ Consumed'
+    } else if (oldEnds !== null && newEnds !== null && newEnds > oldEnds) {
+        status = '🔄 Renewed'
+    } else if (oldEnds !== null && newEnds !== null && newEnds < oldEnds) {
+        status = '🚫 Cancelled (active until end date)'
+    } else if (oldEnds === null && newEnds !== null) {
+        status = '🚫 End date set (cancelled / scheduled)'
+    } else {
+        status = '🔁 Updated'
+    }
+
+    const fields = entitlementFields(newEntitlement, status)
+    if (oldEnds !== newEnds) {
+        fields.push({ name: 'Previous end', value: formatDiscordTime(oldEntitlement.endsAt) ?? 'None', inline: true })
+    }
+
     OperatorWebhook.notify({
-        title: '🔁 Premium subscription updated',
-        description: 'Likely a renewal, cancellation pending, or consumed flag change.',
-        fields: entitlementFields(newEntitlement),
+        title: `🔁 Subscription updated — ${entitlementProductName(newEntitlement)}`,
+        fields,
         level: 'info'
     })
 })
@@ -345,9 +425,9 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
 bot.on('entitlementDelete', entitlement => {
     console.log(`[Premium] Entitlement deleted: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type}`)
     OperatorWebhook.notify({
-        title: '❌ Premium entitlement removed',
-        description: 'Subscription ended, was cancelled, or refunded.',
-        fields: entitlementFields(entitlement),
+        title: `❌ Entitlement removed — ${entitlementProductName(entitlement)}`,
+        description: 'Subscription ended, was cancelled, refunded, or revoked.',
+        fields: entitlementFields(entitlement, '🔴 Removed'),
         level: 'warn'
     })
 })
