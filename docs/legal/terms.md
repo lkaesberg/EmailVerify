@@ -52,7 +52,7 @@ entfernt werden.
 ### Kontakt
 
 - Discord-Support-Server: <https://discord.com/invite/fEBSHUQXu2>
-- E-Mail: <emailbot@larskaesberg.de>
+- E-Mail: <contact@larskaesberg.de>
 
 ---
 
@@ -101,4 +101,4 @@ acceptance; alternatively, the bot can be removed from the server.
 ### Contact
 
 - Discord support: <https://discord.com/invite/fEBSHUQXu2>
-- Email: <emailbot@larskaesberg.de>
+- Email: <contact@larskaesberg.de>

@@ -11,7 +11,7 @@ Deutschland
 
 ## Kontakt
 
-E-Mail: [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de)
+E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
 
 ## Umsatzsteuer
 
@@ -76,7 +76,7 @@ Germany
 
 ## Contact
 
-Email: [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de)
+Email: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
 
 ## VAT
 

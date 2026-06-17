@@ -12,7 +12,7 @@ Lars Benedikt Kaesberg
 Hannoversche Straße 8
 37075 Göttingen
 Deutschland
-E-Mail: [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de)
+E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
 
 Ein Datenschutzbeauftragter ist gesetzlich nicht erforderlich (§ 38 BDSG, da
 weniger als 20 Personen mit der Datenverarbeitung beschäftigt sind).
@@ -100,7 +100,7 @@ Sie haben das Recht auf
   die Zukunft.
 
 Zur Wahrnehmung dieser Rechte genügt eine formlose E-Mail an
-<emailbot@larskaesberg.de>.
+<contact@larskaesberg.de>.
 
 ## 7. Löschung
 
@@ -135,7 +135,7 @@ EmailVerify processes personal data only as needed to deliver its verification
 service.
 
 **Controller:** Lars Benedikt Kaesberg, Hannoversche Straße 8, 37075 Göttingen,
-Germany — [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de).
+Germany — [contact@larskaesberg.de](mailto:contact@larskaesberg.de).
 
 **Data processed:** Discord user ID, server ID, hashed (MD5 of lowercase) email
 address, aggregate per-server statistics, server configuration set by admins.
@@ -158,5 +158,5 @@ leaves the server.
 
 **Your rights:** access, rectification, erasure, restriction, portability,
 objection, withdrawal of consent (GDPR Arts. 15–21, 7(3)). Email
-[emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de) to exercise them.
+[contact@larskaesberg.de](mailto:contact@larskaesberg.de) to exercise them.
 You may also lodge a complaint with a German Data Protection Authority.

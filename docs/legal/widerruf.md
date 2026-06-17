@@ -23,7 +23,7 @@ Um Ihr Widerrufsrecht auszuüben, müssen Sie uns
 > **Lars Benedikt Kaesberg**
 > Hannoversche Straße 8
 > 37075 Göttingen
-> E-Mail: [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de)
+> E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
 
 mittels einer eindeutigen Erklärung (z. B. per E-Mail) über Ihren Entschluss,
 diesen Vertrag zu widerrufen, informieren. Sie können dafür das untenstehende
@@ -75,7 +75,7 @@ ein Wertersatz anfallen.
 > Lars Benedikt Kaesberg
 > Hannoversche Straße 8
 > 37075 Göttingen
-> E-Mail: emailbot@larskaesberg.de
+> E-Mail: contact@larskaesberg.de
 >
 > Hiermit widerrufe(n) ich/wir (\*) den von mir/uns (\*) abgeschlossenen Vertrag
 > über den Kauf der folgenden Waren (\*) / die Erbringung der folgenden
@@ -112,7 +112,7 @@ To exercise this right, send a clear statement (email is enough) to:
 > Hannoversche Straße 8
 > 37075 Göttingen
 > Germany
-> Email: [emailbot@larskaesberg.de](mailto:emailbot@larskaesberg.de)
+> Email: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
 
 We will refund any payments received within 14 days of receiving the
 cancellation notice, using the same payment method as the original transaction.

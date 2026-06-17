@@ -302,9 +302,29 @@
 
 <div class="last-updated">Last updated: <span id="lastUpdated">-</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+(function () {
+'use strict';
 const API_BASE = 'https://emailbotstats.larskaesberg.de';
+
+// Load Chart.js on demand. With MkDocs Material's `navigation.instant`, page
+// content (including this script) is re-executed after the body is swapped in,
+// and a re-injected `<script src>` loads asynchronously — so `Chart` could be
+// undefined the moment we first try to draw. Loading it through a tracked
+// promise guarantees it's ready before `new Chart()` runs, on the first open
+// and on every instant navigation alike.
+function ensureChart() {
+    if (window.Chart) return Promise.resolve();
+    if (window.__chartLoading) return window.__chartLoading;
+    window.__chartLoading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        s.onload = () => resolve();
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+    return window.__chartLoading;
+}
 
 // Pull colors from Material's CSS vars so charts follow the active theme.
 function getThemeColors() {
@@ -375,6 +395,8 @@ function formatDate(dateStr) {
 }
 
 async function fetchCurrentStats() {
+    // The 30s refresh timer can outlive a navigation away from this page.
+    if (!document.getElementById('serverCount')) return;
     try {
         const res = await fetch(`${API_BASE}/stats/current`);
         const data = await res.json();
@@ -527,20 +549,50 @@ async function updateCharts(days) {
 // Control buttons. "all" passes a large number so the API returns the full
 // recorded history (it caps at whatever the log file holds).
 const ALL_TIME_DAYS = 99999;
-document.querySelectorAll('.control-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const raw = this.dataset.days;
-        currentDays = raw === 'all' ? ALL_TIME_DAYS : parseInt(raw);
-        updateCharts(currentDays);
+
+function initStatsPage() {
+    // This script also re-runs on pages that don't have the charts.
+    if (!document.getElementById('dailyChart')) return;
+
+    // Wire control buttons. The DOM is rebuilt on each instant navigation, so
+    // attach to the fresh elements; the guard keeps a re-run from stacking
+    // duplicate click handlers on the same element.
+    document.querySelectorAll('.control-btn').forEach(btn => {
+        if (btn.dataset.wired) return;
+        btn.dataset.wired = '1';
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const raw = this.dataset.days;
+            currentDays = raw === 'all' ? ALL_TIME_DAYS : parseInt(raw);
+            updateCharts(currentDays);
+        });
     });
-});
 
-// Initial load
-fetchCurrentStats();
-updateCharts(currentDays);
+    // Rebuild theme-dependent options now that the page's CSS is applied.
+    baseOptions = buildBaseOptions();
+    autoScaleOptions = buildAutoScaleOptions();
 
-// Auto-refresh every 30 seconds
-setInterval(fetchCurrentStats, 30000);
+    fetchCurrentStats();
+
+    // Wait for Chart.js before drawing so the very first open renders charts
+    // (previously this raced the CDN load and only worked after a button click).
+    ensureChart()
+        .then(() => updateCharts(currentDays))
+        .catch(err => console.error('Failed to load Chart.js:', err));
+
+    // Auto-refresh every 30 seconds. Clear any timer left over from a previous
+    // visit so it doesn't accumulate across instant navigations.
+    if (window.__statsRefreshTimer) clearInterval(window.__statsRefreshTimer);
+    window.__statsRefreshTimer = setInterval(fetchCurrentStats, 30000);
+}
+
+// Material re-executes this script after swapping in new page content, so
+// running init here covers both the first open and every later navigation.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStatsPage);
+} else {
+    initStatsPage();
+}
+})();
 </script>
