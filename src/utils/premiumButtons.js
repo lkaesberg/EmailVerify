@@ -1,5 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js')
 const config = require('../../config/config.json')
+const { getLocale } = require('../Language')
 
 const skus = config.monetization?.skus || {}
 const appId = config.clientId
@@ -45,6 +46,18 @@ function storeUrl(skuId) {
 function appStoreUrl() {
     if (!appId) return null
     return `https://discord.com/application-directory/${appId}/store`
+}
+
+/**
+ * Localized "on mobile? Premium buttons only work on desktop/browser" line with a
+ * store link. Discord's mobile apps can't complete SKU purchases, so every message
+ * that shows buy buttons should carry this hint. Returns null when no app id is
+ * configured (no store link to offer).
+ */
+function mobileHintLine(language) {
+    const link = appStoreUrl()
+    if (!link) return null
+    return getLocale(language || 'english', 'premiumMobileHint', link)
 }
 
 function premiumButton(skuId) {
@@ -107,6 +120,7 @@ module.exports = {
     buildPlanButtons,
     storeUrl,
     appStoreUrl,
+    mobileHintLine,
     getWebsiteUrl,
     describeSku
 }

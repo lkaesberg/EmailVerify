@@ -11,7 +11,9 @@ module.exports = {
 
     async execute(interaction) {
         const storeLink = appStoreUrl()
-        const storeLine = storeLink ? `\n[Browse plans on Discord](${storeLink})` : ''
+        const storeLine = storeLink
+            ? `\n[Browse plans on Discord](${storeLink})\n📱 *On mobile? Purchases only work on desktop/browser — open the store link there.*`
+            : ''
         const helpEmbed = new EmbedBuilder()
             .setTitle('📚 Email Verification Bot - Setup Guide')
             .setDescription('Follow these steps to set up email verification for your server.')

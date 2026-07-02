@@ -7,7 +7,7 @@ const OperatorWebhook = require('../utils/OperatorWebhook')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
-const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
 const { createMailLimitReachedEmbed } = require('../utils/embeds')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
@@ -355,13 +355,15 @@ module.exports = class MailSender {
     }
 
     #buildQuotaFooter(language, websiteUrl) {
-        const hint = getLocale(language, 'quotaWarnFooterHint')
+        const lines = [getLocale(language, 'quotaWarnFooterHint')]
         // Redeem reminder: buying a credit pack does nothing until /premium redeem is
         // run — spelling that out here prevents "I paid but nothing happened" refunds.
-        const redeem = getLocale(language, 'quotaWarnRedeemHint')
-        if (!websiteUrl) return `${hint}\n${redeem}`
-        const website = getLocale(language, 'quotaWarnFooterWebsite', websiteUrl)
-        return `${hint}\n${redeem}\n${website}`
+        lines.push(getLocale(language, 'quotaWarnRedeemHint'))
+        // Discord mobile can't complete SKU purchases — point mobile admins at desktop/browser.
+        const mobile = mobileHintLine(language)
+        if (mobile) lines.push(mobile)
+        if (websiteUrl) lines.push(getLocale(language, 'quotaWarnFooterWebsite', websiteUrl))
+        return lines.join('\n')
     }
 
     async #postPublicLimitNotice(interaction, language) {

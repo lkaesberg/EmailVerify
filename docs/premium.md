@@ -140,6 +140,9 @@ If you want only the CSV import/export features and no subscription, there's a o
 
 All purchases happen inside Discord. Open `/premium status` in your server or click the **Premium** button on any limit-reached message — Discord shows the current price and handles the checkout.
 
+!!! warning "Buying doesn't work in the mobile apps"
+    Discord's iOS/Android apps can't complete app-store (SKU) purchases. If you're on your phone, switch to **Discord on desktop or in a web browser** and complete the purchase there — the bot's buy buttons and store links work normally on those platforms. Every purchase prompt in the bot includes a store link you can open in a browser.
+
 !!! warning "Purchases attach to a specific server"
     Discord SKUs are bought in your personal account context, but the bot stores everything per-server. After purchase:
 

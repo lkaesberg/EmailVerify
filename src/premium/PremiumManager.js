@@ -83,7 +83,7 @@ class PremiumManager {
 
         const lang = language || 'english'
         const ErrorNotifier = require('../utils/ErrorNotifier')
-        const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+        const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
 
         let components = null
         try {
@@ -96,6 +96,10 @@ class PremiumManager {
 
         let message = getLocale(lang, 'mailDeniedWarnMessage', String(crossings.deniedMonth ?? 1))
         message += '\n\n' + getLocale(lang, 'quotaWarnRedeemHint')
+        const mobileHint = mobileHintLine(lang)
+        if (mobileHint) {
+            message += '\n' + mobileHint
+        }
         const websiteUrl = getWebsiteUrl()
         if (websiteUrl) {
             message += '\n' + getLocale(lang, 'quotaWarnFooterWebsite', websiteUrl)
@@ -175,7 +179,7 @@ class PremiumManager {
         if (!guild) return
         const lang = language || 'english'
         const ErrorNotifier = require('../utils/ErrorNotifier')
-        const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+        const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
 
         let components = null
         try {
@@ -186,10 +190,14 @@ class PremiumManager {
             // Buttons are a bonus — proceed without them if SKUs aren't fetchable.
         }
 
-        const websiteUrl = getWebsiteUrl()
         let message = getLocale(lang, 'zeptoModeAutoDisabledMessage')
+        const mobileHint = mobileHintLine(lang)
+        if (mobileHint) {
+            message += '\n\n' + mobileHint
+        }
+        const websiteUrl = getWebsiteUrl()
         if (websiteUrl) {
-            message += '\n\n' + getLocale(lang, 'quotaWarnFooterWebsite', websiteUrl)
+            message += (mobileHint ? '\n' : '\n\n') + getLocale(lang, 'quotaWarnFooterWebsite', websiteUrl)
         }
 
         await ErrorNotifier.notify({

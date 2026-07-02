@@ -2,7 +2,7 @@ const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 const premiumManager = require("../premium/PremiumManager");
-const { buildPlanButtons } = require("../utils/premiumButtons");
+const { buildPlanButtons, mobileHintLine } = require("../utils/premiumButtons");
 const { getLocale } = require("../Language");
 
 const MONTH_KEYS = [
@@ -243,12 +243,19 @@ module.exports = {
                         if (forecast) premiumValue += `\n${forecast}`
                     }
 
+                    components = buildPlanButtons(premiumStatus, { context: 'status' })
+
+                    // Discord mobile can't complete SKU purchases — when buy buttons are
+                    // shown, tell mobile admins to switch to desktop/browser.
+                    if (components.length > 0) {
+                        const mobileHint = mobileHintLine(language)
+                        if (mobileHint) premiumValue += `\n${mobileHint}`
+                    }
+
                     statusEmbed.addFields({
                         name: getLocale(language, 'statusFieldPremium'),
                         value: premiumValue
                     })
-
-                    components = buildPlanButtons(premiumStatus, { context: 'status' })
                 }
 
                 statusEmbed.setFooter({
