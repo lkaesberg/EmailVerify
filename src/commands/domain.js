@@ -3,6 +3,7 @@ const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
 const registerRemoveDomain = require("../bot/registerRemoveDomain");
 const { getLocale } = require("../Language");
+const { parseDomains } = require("../utils/parseDomains");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -67,22 +68,13 @@ module.exports = {
             if (subcommand === 'add') {
                 const domainsInput = interaction.options.getString('domains', true);
                 const addedDomains = [];
-                
-                domainsInput.split(",").forEach(domain => {
-                    domain = domain.trim();
-                    if (domain.startsWith("@") && domain.includes(".")) {
-                        if (!serverSettings.domains.includes(domain)) {
-                            serverSettings.domains.push(domain);
-                            addedDomains.push(domain);
-                        }
-                    } else if (!domain.includes("@") && domain.includes(".")) {
-                        const formattedDomain = "@" + domain;
-                        if (!serverSettings.domains.includes(formattedDomain)) {
-                            serverSettings.domains.push(formattedDomain);
-                            addedDomains.push(formattedDomain);
-                        }
+
+                for (const domain of parseDomains(domainsInput)) {
+                    if (!serverSettings.domains.includes(domain)) {
+                        serverSettings.domains.push(domain);
+                        addedDomains.push(domain);
                     }
-                });
+                }
 
                 if (addedDomains.length !== 0) {
                     database.updateServerSettings(interaction.guildId, serverSettings);

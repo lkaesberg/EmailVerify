@@ -63,11 +63,17 @@ module.exports = class MailSender {
      * @param {Function} callback - Called with accepted email on success
      * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'free' | 'disabled'
      * @param {string} [emailStyle='plain'] - 'plain' | 'styled'
+     * @param {import('discord.js').Guild} [guild=null] - resolved guild; required for the DM
+     *   verification flow where interaction.guild / interaction.guildId are null.
+     * @param {Object} [preloadedSettings=null] - already-loaded ServerSettings; when the
+     *   caller just read them, passing them here skips a redundant DB read.
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain') {
-        const serverId = interaction.guildId
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null) {
+        // Prefer the explicit guild: in the DM flow interaction.guild/guildId are null.
+        const ctxGuild = guild || interaction.guild || null
+        const serverId = ctxGuild?.id || interaction.guildId
 
-        await database.getServerSettings(serverId, async (serverSettings) => {
+        const proceed = async (serverSettings) => {
             const language = serverSettings.language || defaultLanguage
             const plainText = getLocale(language, "emailText", name, code)
             const emailSubject = getLocale(language, "emailSubject")
@@ -101,7 +107,7 @@ module.exports = class MailSender {
                     usedProvider = 'zeptomail'
                 } catch (err) {
                     lastError = err
-                    console.warn(`[MailSender] ZeptoMail send failed for guild=${interaction.guild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
+                    console.warn(`[MailSender] ZeptoMail send failed for guild=${ctxGuild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
                     const now = Date.now()
                     if (now - this.zeptoFallbackLastWebhookAt >= ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS) {
                         this.zeptoFallbackLastWebhookAt = now
@@ -109,7 +115,7 @@ module.exports = class MailSender {
                             title: '✉️ ZeptoMail fallback',
                             description: 'A premium mail send failed; falling back to self-SMTP. Verification still completes for the user. This alert is throttled to once per 24h — further fallbacks during this window are logged to stdout only.',
                             fields: [
-                                { name: 'Guild', value: interaction.guild?.id ? `\`${interaction.guild.id}\` (${interaction.guild.name})` : 'n/a', inline: false },
+                                { name: 'Guild', value: ctxGuild?.id ? `\`${ctxGuild.id}\` (${ctxGuild.name})` : 'n/a', inline: false },
                                 { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
                             ],
                             level: 'warn'
@@ -150,7 +156,11 @@ module.exports = class MailSender {
                     .setTitle(getLocale(language, "mailFailedTitle"))
                     .setDescription(getLocale(language, "mailFailedDescription", toEmail))
                     .setColor(0xED4245)
-                if (interaction.deferred || interaction.replied) {
+                // A deferred-but-unreplied interaction is resolved via editReply so the
+                // "Bot is thinking…" state never hangs on delivery failure.
+                if (interaction.deferred && !interaction.replied) {
+                    await interaction.editReply({ embeds: [errorEmbed] }).catch(() => {})
+                } else if (interaction.replied) {
                     await interaction.followUp({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                 } else {
                     await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
@@ -162,9 +172,9 @@ module.exports = class MailSender {
 
             try {
                 const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
-                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings)
+                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings, ctxGuild)
                 if (premiumSource === 'credits-zepto' && crossings.creditsRemaining !== null && crossings.creditsRemaining <= 0) {
-                    this.#maybeAutoDisableZeptoMode(interaction, language)
+                    this.#maybeAutoDisableZeptoMode(interaction, language, ctxGuild)
                 }
             } catch (e) {
                 console.error('[MailSender] Failed to record/check thresholds:', e)
@@ -179,11 +189,98 @@ module.exports = class MailSender {
                 if (info.messageId) console.log('Message ID:', info.messageId)
                 if (info.response) console.log('Provider response:', info.response)
             }
-        })
+        }
+
+        if (preloadedSettings) {
+            await proceed(preloadedSettings)
+        } else {
+            await database.getServerSettings(serverId, proceed)
+        }
     }
 
-    async #maybeAutoDisableZeptoMode(interaction, language) {
-        const guild = interaction?.guild
+    /**
+     * Verify the self-SMTP transport at boot (connect + auth, no mail sent).
+     * Returns { ok, error } instead of throwing.
+     */
+    async selfTest() {
+        try {
+            await this.selfProvider.verify()
+            return { ok: true }
+        } catch (e) {
+            return { ok: false, error: e?.message || String(e) }
+        }
+    }
+
+    /**
+     * Send a test verification email through the normal provider path (same template,
+     * same provider selection and fallback as real sends — that's the point of the
+     * test). The caller must have admitted the send via premiumManager.canSendMail
+     * and passes its `source`; on delivery failure a consumed credit is refunded.
+     * Counts against the guild's monthly counters (no threshold warnings fired —
+     * flags stay untripped, so the next real send still warns).
+     *
+     * @returns {Promise<{ok: boolean, provider?: string, messageId?: string, latencyMs?: number, error?: string}>}
+     */
+    async sendTestEmail({ toEmail, guildId, guildName, language, emailStyle, premiumSource }) {
+        const lang = language || defaultLanguage
+        const code = require('crypto').randomInt(100000, 1000000).toString()
+        const html = emailStyle === 'styled' ? this.#buildLocalizedHtmlEmail(lang, guildName, code) : null
+
+        const sendOpts = {
+            fromName: getLocale(lang, 'emailSenderName'),
+            from: this.username,
+            to: toEmail,
+            subject: getLocale(lang, 'emailSubject'),
+            text: getLocale(lang, 'emailText', guildName, code),
+            html,
+            headers: {
+                'X-Mailer': 'EmailVerify',
+                'List-Unsubscribe': `<mailto:${this.username}?subject=unsubscribe>`,
+                'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
+            }
+        }
+
+        const useZepto = this.zeptoProvider && (premiumSource === 'subscription' || premiumSource === 'credits-zepto')
+        const start = Date.now()
+        let info = null
+        let usedProvider = null
+        let lastError = null
+
+        if (useZepto) {
+            try {
+                info = await this.zeptoProvider.sendMail(sendOpts)
+                usedProvider = 'zeptomail'
+            } catch (err) {
+                lastError = err
+                console.warn(`[MailSender] ZeptoMail test send failed for guild=${guildId} — falling back to self-SMTP:`, err.message)
+            }
+        }
+        if (!info) {
+            try {
+                info = await this.selfProvider.sendMail(sendOpts)
+                usedProvider = 'self-smtp'
+            } catch (err) {
+                lastError = err
+                info = null
+            }
+        }
+
+        const failed = !info || (info.rejected && info.rejected.length > 0)
+        if (failed) {
+            if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
+                database.refundGuildCredit(guildId).catch(() => {})
+            }
+            const rejectedNote = info?.rejected?.length ? `Rejected: ${info.rejected.join(', ')}` : null
+            return { ok: false, error: lastError?.message || rejectedNote || 'unknown error' }
+        }
+
+        this.serverStatsAPI.increaseMailSend()
+        database.incrementMailsSent(guildId)
+        return { ok: true, provider: usedProvider, messageId: info.messageId || null, latencyMs: Date.now() - start }
+    }
+
+    async #maybeAutoDisableZeptoMode(interaction, language, guild = null) {
+        guild = guild || interaction?.guild
         if (!guild) return
         try {
             const flipped = await database.tryAutoDisableZeptoMode(guild.id)
@@ -195,8 +292,8 @@ module.exports = class MailSender {
         }
     }
 
-    async #fireQuotaWarnings(interaction, language, serverSettings, crossings) {
-        const guild = interaction?.guild
+    async #fireQuotaWarnings(interaction, language, serverSettings, crossings, guild = null) {
+        guild = guild || interaction?.guild
         if (!guild || !crossings) return
 
         const anyCrossed = crossings.crossed80 || crossings.crossed95 || crossings.crossed100
@@ -217,8 +314,9 @@ module.exports = class MailSender {
         const websiteUrl = getWebsiteUrl()
         const footer = this.#buildQuotaFooter(language, websiteUrl)
 
-        const fire = (titleKey, msgKey, ...vars) => {
-            const baseMessage = getLocale(language, msgKey, ...vars)
+        const fire = (titleKey, msgKey, extraLine, ...vars) => {
+            let baseMessage = getLocale(language, msgKey, ...vars)
+            if (extraLine) baseMessage += `\n\n${extraLine}`
             ErrorNotifier.notify({
                 guild,
                 errorTitle: getLocale(language, titleKey),
@@ -228,20 +326,24 @@ module.exports = class MailSender {
             }).catch(() => {})
         }
 
+        // Deadline framing beats percentage framing: append "on pace to run out
+        // around <date>" to the advisory warnings when the pace supports it.
+        const forecast = premiumManager.forecastLine(language, crossings.mailsSentMonth)
+
         if (crossings.crossed80) {
-            fire('quotaWarn80Title', 'quotaWarn80Message', String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+            fire('quotaWarn80Title', 'quotaWarn80Message', forecast, String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
         }
         if (crossings.crossed95) {
-            fire('quotaWarn95Title', 'quotaWarn95Message', String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+            fire('quotaWarn95Title', 'quotaWarn95Message', forecast, String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
         }
         if (crossings.crossed100) {
-            fire('quotaWarn100Title', 'quotaWarn100Message', String(this.freeMonthlyLimit))
+            fire('quotaWarn100Title', 'quotaWarn100Message', null, String(this.freeMonthlyLimit))
         }
         if (crossings.crossedCreditsLow) {
-            fire('quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', String(crossings.creditsRemaining ?? 0))
+            fire('quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', null, String(crossings.creditsRemaining ?? 0))
         }
         if (crossings.crossedCreditsZero) {
-            fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage')
+            fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage', null)
         }
 
         // Public-facing service notice in the verify channel: only on quota exhaustion
@@ -254,9 +356,12 @@ module.exports = class MailSender {
 
     #buildQuotaFooter(language, websiteUrl) {
         const hint = getLocale(language, 'quotaWarnFooterHint')
-        if (!websiteUrl) return hint
+        // Redeem reminder: buying a credit pack does nothing until /premium redeem is
+        // run — spelling that out here prevents "I paid but nothing happened" refunds.
+        const redeem = getLocale(language, 'quotaWarnRedeemHint')
+        if (!websiteUrl) return `${hint}\n${redeem}`
         const website = getLocale(language, 'quotaWarnFooterWebsite', websiteUrl)
-        return `${hint}\n${website}`
+        return `${hint}\n${redeem}\n${website}`
     }
 
     async #postPublicLimitNotice(interaction, language) {
@@ -267,6 +372,9 @@ module.exports = class MailSender {
         // legacy reaction-flow state and isn't populated for new /button setups.
         const channel = interaction?.channel
         if (!channel || !channel.isTextBased?.()) return
+        // In the DM verification flow the interaction channel is the user's DM — this
+        // notice is for the guild's verify channel, so skip it there.
+        if (channel.isDMBased?.()) return
         try {
             const embed = createMailLimitReachedEmbed(language, getWebsiteUrl())
             await channel.send({ embeds: [embed] })

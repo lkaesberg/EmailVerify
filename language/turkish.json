@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Doğrulama geçici olarak kullanılamıyor",
   "emaillistLockedUserMessage": "Yöneticiler bir yapılandırma sorununu çözerken bu sunucuda doğrulama duraklatıldı. Bilgilendirildiler — lütfen daha sonra tekrar dene.",
   "emaillistLockedAdminTitle": "🛑 İzinli e-posta listesi kilitli — doğrulama duraklatıldı",
-  "emaillistLockedAdminMessage": "Bu sunucuda yüklü bir izinli e-posta listesi var, ancak listeyi yönetmek için gerekli **Pro abonelik** veya **CSV kilidi açma** artık aktif değil. Aşağıdakilerden birini seçene kadar herkes için doğrulama duraklatıldı:\n\n• **Listeyi temizle:** `/emaillist clear` çalıştır. Sonrasında herhangi bir e-posta kabul edilir (`/domain` ve `/blacklist` ayarlarına tabi).\n• **CSV erişimini geri yükle:** `/premium status` aç ve **Pro** planını veya **CSV kilidi açma**yı yeniden satın al. Erişim geri yüklenir yüklenmez mevcut liste tekrar çalışmaya başlar.\n\nBu bildirim, kanalı doldurmamak için saatte bir ile sınırlandırılmıştır."
+  "emaillistLockedAdminMessage": "Bu sunucuda yüklü bir izinli e-posta listesi var, ancak listeyi yönetmek için gerekli **Pro abonelik** veya **CSV kilidi açma** artık aktif değil. Aşağıdakilerden birini seçene kadar herkes için doğrulama duraklatıldı:\n\n• **Listeyi temizle:** `/emaillist clear` çalıştır. Sonrasında herhangi bir e-posta kabul edilir (`/domain` ve `/blacklist` ayarlarına tabi).\n• **CSV erişimini geri yükle:** `/premium status` aç ve **Pro** planını veya **CSV kilidi açma**yı yeniden satın al. Erişim geri yüklenir yüklenmez mevcut liste tekrar çalışmaya başlar.\n\nBu bildirim, kanalı doldurmamak için saatte bir ile sınırlandırılmıştır.",
+  "unverifiedByOtherDm": "Başka biri bu e-posta adresiyle doğrulandığı için **%VAR%** sunucusundaki doğrulamanız kaldırıldı.",
+  "sessionExpiredTitle": "❌ Oturum süresi doldu",
+  "sessionExpiredDescription": "Doğrulama oturumunuzun süresi doldu veya düzgün başlatılmadı.\n\n**Nasıl düzeltilir:**\n1. Sunucunun doğrulama kanalına geri dönün\n2. Yeniden başlamak için doğrulama düğmesine tıklayın\n3. Yeni bir kod almak için e-posta adresinizi girin",
+  "sessionExpiredDescriptionShort": "Doğrulama oturumunuzun süresi doldu veya düzgün başlatılmadı.\n\n**Nasıl düzeltilir:**\n1. Sunucunun doğrulama kanalına geri dönün\n2. Yeniden başlamak için doğrulama düğmesine tıklayın",
+  "codeExpiredTitle": "⌛ Kodun süresi doldu",
+  "codeExpiredDescription": "Doğrulama kodunuzun süresi doldu veya zaten kullanıldı.\n\nYeni bir kod almak için doğrulamayı yeniden başlatın.",
+  "codeTooManyAttemptsTitle": "🚫 Çok fazla deneme",
+  "codeTooManyAttemptsDescription": "Çok fazla kez yanlış kod girdiniz.\n\nYeni bir kod almak için doğrulamayı yeniden başlatın.",
+  "resendCodeButton": "Kodu yeniden gönder",
+  "resendCooldownDescription": "Yeni bir kod istemeden önce lütfen **%VAR% saniye** bekleyin.\n\nSpam klasörünüzü de kontrol edin — son kod zaten orada olabilir.",
+  "mailDeniedWarnTitle": "🚫 Üyeler geri çevriliyor",
+  "mailDeniedWarnMessage": "Bu sunucunun e-posta sınırına ulaşıldığı için bu ay **%VAR%** doğrulama girişimi engellendi. Her biri katılmak isteyen ama doğrulanamayan bir üye.\n\nSınırsız doğrulama için abone olun veya onları içeri almak için aşağıdan bir kredi paketi satın alın.",
+  "premiumForecastRunOut": "📈 Mevcut hızla, ücretsiz aylık e-postalar yaklaşık %VAR% civarında tükenecek.",
+  "premiumBlockedThisMonth": "🚫 Bu ay posta sınırı nedeniyle **%VAR%** doğrulama girişimi engellendi",
+  "statusIssueNoErrorDestination": "Kota ve hata uyarılarının gideceği bir yer yok — `/set_error_notify channel` ile bir kanal veya log kanalı ayarlayın, yoksa önemli uyarılar kaçırılır",
+  "quotaWarnRedeemHint": "Kredi satın aldıktan sonra uygulamak için bu sunucuda `/premium redeem` çalıştırın — kredilerin süresi asla dolmaz."
 }

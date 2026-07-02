@@ -1,21 +1,55 @@
 const { EmbedBuilder } = require('discord.js');
-const { getLocale } = require('../Language');
+const { getLocale, defaultLanguage } = require('../Language');
 
 /**
  * Creates a "Session Expired" embed for when user is not linked to a guild
- * @param {boolean} includeEmailStep - Whether to include step 3 about entering email
+ * @param {string} [language] - Language code for localization
+ * @param {boolean} [includeEmailStep] - Whether to include the step about entering email
  * @returns {EmbedBuilder}
  */
-function createSessionExpiredEmbed(includeEmailStep = true) {
-    let description = 'Your verification session has expired or was not started properly.\n\n**How to fix:**\n1. Go back to the server\'s verification channel\n2. Click the verification button to start fresh';
-    if (includeEmailStep) {
-        description += '\n3. Enter your email to receive a new code';
-    }
-    
+function createSessionExpiredEmbed(language = defaultLanguage, includeEmailStep = true) {
     return new EmbedBuilder()
-        .setTitle('❌ Session Expired')
-        .setDescription(description)
+        .setTitle(getLocale(language, 'sessionExpiredTitle'))
+        .setDescription(getLocale(language, includeEmailStep ? 'sessionExpiredDescription' : 'sessionExpiredDescriptionShort'))
         .setColor(0xED4245);
+}
+
+/**
+ * Creates a "Code Expired" embed (the verification code TTL elapsed).
+ * @param {string} language - Language code for localization
+ * @returns {EmbedBuilder}
+ */
+function createCodeExpiredEmbed(language) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'codeExpiredTitle'))
+        .setDescription(getLocale(language, 'codeExpiredDescription'))
+        .setColor(0xED4245);
+}
+
+/**
+ * Creates a "Too Many Attempts" embed (max wrong-code submissions reached).
+ * @param {string} language - Language code for localization
+ * @returns {EmbedBuilder}
+ */
+function createTooManyAttemptsEmbed(language) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'codeTooManyAttemptsTitle'))
+        .setDescription(getLocale(language, 'codeTooManyAttemptsDescription'))
+        .setColor(0xED4245);
+}
+
+/**
+ * Creates the generic user-facing error embed ("something went wrong, admins notified").
+ * Single source of truth shared by ErrorNotifier and direct reply sites.
+ * @param {string} language - Language code for localization
+ * @returns {EmbedBuilder}
+ */
+function createGenericErrorEmbed(language) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'errorGenericTitle'))
+        .setDescription(getLocale(language, 'errorGenericDescription'))
+        .setColor(0xED4245)
+        .setTimestamp();
 }
 
 /**
@@ -156,6 +190,9 @@ function createVerificationFailedLogEmbed({ user, email, reason }) {
 
 module.exports = {
     createSessionExpiredEmbed,
+    createCodeExpiredEmbed,
+    createTooManyAttemptsEmbed,
+    createGenericErrorEmbed,
     createInvalidCodeEmbed,
     createInvalidEmailEmbed,
     createVerificationSuccessEmbed,

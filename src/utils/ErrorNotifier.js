@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const { getLocale } = require('../Language');
+const { createGenericErrorEmbed } = require('./embeds');
 const database = require('../database/Database');
 
 /**
@@ -132,16 +133,16 @@ class ErrorNotifier {
 
     /**
      * Send generic error message to the user via their interaction.
+     * A deferred-but-unreplied interaction is resolved via editReply so the
+     * "Bot is thinking…" state never hangs.
      */
     static async sendGenericUserError(interaction, language) {
-        const embed = new EmbedBuilder()
-            .setTitle(getLocale(language, 'errorGenericTitle'))
-            .setDescription(getLocale(language, 'errorGenericDescription'))
-            .setColor(0xED4245)
-            .setTimestamp();
+        const embed = createGenericErrorEmbed(language);
 
         try {
-            if (interaction.deferred || interaction.replied) {
+            if (interaction.deferred && !interaction.replied) {
+                await interaction.editReply({ embeds: [embed] });
+            } else if (interaction.replied) {
                 await interaction.followUp({ embeds: [embed], ephemeral: true });
             } else {
                 await interaction.reply({ embeds: [embed], ephemeral: true });

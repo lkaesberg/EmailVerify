@@ -14,7 +14,9 @@ for (const file of languageFiles) {
 // Function to get locales and replace variables
 function getLocale(language, string, ...vars) {
 
-    let locale = languages.get(language)[string];
+    // An unknown/missing language must not throw — fall back to the default language.
+    const table = languages.get(language) || languages.get(defaultLanguage);
+    let locale = table ? table[string] : undefined;
 
     if (locale === undefined) {
         locale = languages.get(defaultLanguage)[string];

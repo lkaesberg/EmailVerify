@@ -6,7 +6,7 @@ const ErrorNotifier = require("../utils/ErrorNotifier");
 /**
  * Send verification DM to user (used for autoVerify on member join)
  */
-module.exports = async function sendVerifyMessage(guild, user, userGuilds) {
+module.exports = async function sendVerifyMessage(guild, user) {
     await database.getServerSettings(guild.id, (async serverSettings => {
         if (!serverSettings.status) {
             // Send generic error to user
@@ -27,9 +27,7 @@ module.exports = async function sendVerifyMessage(guild, user, userGuilds) {
             });
             return
         }
-        
-        userGuilds.set(user.id, guild)
-        
+
         // Build verification DM message
         const embed = new EmbedBuilder()
             .setTitle(getLocale(serverSettings.language, 'verifyEmbedTitle'))
@@ -41,14 +39,17 @@ module.exports = async function sendVerifyMessage(guild, user, userGuilds) {
             embed.setFooter({ text: getLocale(serverSettings.language, 'verifyDmAdminWarning') })
         }
         
+        // These buttons are clicked in the user's DMs, where the interaction lands on
+        // shard 0 with no guild context. Encode the guild id in the customId so the
+        // handler knows which guild the verification belongs to.
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setCustomId('openEmailModal')
+                .setCustomId(`openEmailModal:${guild.id}`)
                 .setLabel(getLocale(serverSettings.language, 'verifyDmButton'))
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('📧'),
             new ButtonBuilder()
-                .setCustomId('openCodeModal')
+                .setCustomId(`openCodeModal:${guild.id}`)
                 .setLabel(getLocale(serverSettings.language, 'enterCodeButton'))
                 .setStyle(ButtonStyle.Secondary)
                 .setEmoji('🔑')

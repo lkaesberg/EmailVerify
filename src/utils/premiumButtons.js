@@ -76,10 +76,14 @@ function buildPlanButtons(status, opts = {}) {
     const oneTime = []
     if (!hasCsv && skus.csvUnlock) oneTime.push(skus.csvUnlock)
 
+    // Panic contexts (limit hit / quota warning) keep the choice small: the impulse
+    // exits are the small packs; the 2,000 pack lives in the calmer /premium & /status
+    // views where a bulk buyer will look for it anyway.
+    const panicContext = context === 'mailLimit' || context === 'quotaWarn'
     const credits = []
     if (skus.credits100) credits.push(skus.credits100)
     if (skus.credits500) credits.push(skus.credits500)
-    if (skus.credits2000) credits.push(skus.credits2000)
+    if (!panicContext && skus.credits2000) credits.push(skus.credits2000)
 
     // CSV-required prompts shouldn't show credit packs (they're for email quota, not CSV).
     // Mail-limit and quotaWarn prompts shouldn't show CSV unlock (it doesn't unblock email sends).

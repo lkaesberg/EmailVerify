@@ -2,6 +2,7 @@ const {SlashCommandBuilder} = require('@discordjs/builders');
 const database = require("../database/Database");
 const { MessageFlags, EmbedBuilder } = require('discord.js');
 const premiumManager = require("../premium/PremiumManager");
+const { buildPlanButtons } = require("../utils/premiumButtons");
 const { getLocale } = require("../Language");
 
 const MONTH_KEYS = [
@@ -9,6 +10,19 @@ const MONTH_KEYS = [
     'statusMonthMay', 'statusMonthJun', 'statusMonthJul', 'statusMonthAug',
     'statusMonthSep', 'statusMonthOct', 'statusMonthNov', 'statusMonthDec'
 ]
+
+// Discord caps embed field values at 1024 chars. A guild with many domains/roles can
+// exceed that and make the whole /status reply throw. Trim at a separator boundary and
+// flag the truncation so the command that diagnoses problems doesn't itself break.
+function clampField(value, max = 1024) {
+    if (typeof value !== 'string' || value.length <= max) return value
+    const ellipsis = ' …'
+    const budget = max - ellipsis.length
+    let cut = value.slice(0, budget)
+    const lastSep = Math.max(cut.lastIndexOf(', '), cut.lastIndexOf('\n'))
+    if (lastSep > budget * 0.5) cut = cut.slice(0, lastSep)
+    return cut + ellipsis
+}
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('View bot configuration, verification statistics, and check setup issues').setDefaultMemberPermissions(0),
@@ -95,6 +109,13 @@ module.exports = {
                 const issues = []
                 const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
                 if (!hasAnyRoles) issues.push('• ' + getLocale(language, 'statusIssueNoRoles'))
+                // Quota & error warnings need at least one reachable destination —
+                // otherwise upsell/quota alerts silently go nowhere.
+                const hasWarningDestination = !!serverSettings.errorNotifyChannel
+                    || !!serverSettings.logChannel
+                    || !serverSettings.errorNotifyOwnerOptedOut
+                    || (serverSettings.errorNotifyUsers || []).length > 0
+                if (!hasWarningDestination) issues.push('• ' + getLocale(language, 'statusIssueNoErrorDestination'))
 
                 const currentMonth = getLocale(language, MONTH_KEYS[new Date().getMonth()])
                 const enabledLabel = getLocale(language, 'statusValueEnabled')
@@ -107,12 +128,12 @@ module.exports = {
                     .addFields(
                         {
                             name: getLocale(language, 'statusFieldDefaultRoles'),
-                            value: defaultRolesDisplay,
+                            value: clampField(defaultRolesDisplay),
                             inline: false
                         },
                         {
                             name: getLocale(language, 'statusFieldDomainRoles'),
-                            value: domainRolesDisplay,
+                            value: clampField(domainRolesDisplay),
                             inline: false
                         },
                         {
@@ -132,7 +153,7 @@ module.exports = {
                         },
                         {
                             name: getLocale(language, 'statusFieldAllowedDomains'),
-                            value: domainsDisplay
+                            value: clampField(domainsDisplay)
                         },
                         {
                             name: getLocale(language, 'statusFieldAllowedEmailList'),
@@ -142,7 +163,7 @@ module.exports = {
                         },
                         {
                             name: getLocale(language, 'statusFieldBlacklist'),
-                            value: blacklistDisplay
+                            value: clampField(blacklistDisplay)
                         },
                         {
                             name: getLocale(language, 'statusFieldEmailsSent'),
@@ -188,6 +209,7 @@ module.exports = {
                     })
                 }
 
+                let components = []
                 if (premiumManager.enabled) {
                     const premiumStatus = await premiumManager.getPremiumStatus(interaction.guildId, interaction.entitlements)
                     const tierName = premiumStatus.subscriptionTier
@@ -204,15 +226,29 @@ module.exports = {
                             ? getLocale(language, 'premiumMailModeZepto')
                             : getLocale(language, 'premiumMailModeFree'))
 
+                    let premiumValue =
+                        `**${getLocale(language, 'premiumFieldPlan')}:** ${tierName}\n` +
+                        `**${getLocale(language, 'premiumFieldMailMode')}:** ${modeLabel}\n` +
+                        `**${getLocale(language, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
+                        `**${getLocale(language, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
+                        `**${getLocale(language, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked')}`
+
+                    // Lost demand + run-out forecast: the two numbers that actually
+                    // drive an upgrade decision, surfaced where admins diagnose problems.
+                    if (premiumStatus.mailsDeniedMonth > 0) {
+                        premiumValue += `\n${getLocale(language, 'premiumBlockedThisMonth', premiumStatus.mailsDeniedMonth.toString())}`
+                    }
+                    if (!premiumStatus.subscriptionTier && premiumStatus.mailMode !== 'zeptomail') {
+                        const forecast = premiumManager.forecastLine(language, premiumStatus.mailsSentMonth)
+                        if (forecast) premiumValue += `\n${forecast}`
+                    }
+
                     statusEmbed.addFields({
                         name: getLocale(language, 'statusFieldPremium'),
-                        value:
-                            `**${getLocale(language, 'premiumFieldPlan')}:** ${tierName}\n` +
-                            `**${getLocale(language, 'premiumFieldMailMode')}:** ${modeLabel}\n` +
-                            `**${getLocale(language, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
-                            `**${getLocale(language, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
-                            `**${getLocale(language, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked')}`
+                        value: premiumValue
                     })
+
+                    components = buildPlanButtons(premiumStatus, { context: 'status' })
                 }
 
                 statusEmbed.setFooter({
@@ -220,7 +256,16 @@ module.exports = {
                     iconURL: interaction.guild.iconURL({ dynamic: true })
                 })
 
-                await interaction.reply({ embeds: [statusEmbed], flags: MessageFlags.Ephemeral })
+                try {
+                    await interaction.reply({ embeds: [statusEmbed], components, flags: MessageFlags.Ephemeral })
+                } catch (err) {
+                    // SKU may be unavailable/unpublished – retry without premium buttons
+                    if (components.length > 0 && err.code === 50035) {
+                        await interaction.reply({ embeds: [statusEmbed], components: [], flags: MessageFlags.Ephemeral })
+                    } else {
+                        throw err
+                    }
+                }
             })
         })
     }

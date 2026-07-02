@@ -230,5 +230,21 @@
     "emaillistLockedUserTitle": "❌ Vérification temporairement indisponible",
     "emaillistLockedUserMessage": "La vérification est en pause sur ce serveur pendant que les administrateurs résolvent un problème de configuration. Ils ont été notifiés — veuillez réessayer plus tard.",
     "emaillistLockedAdminTitle": "🛑 Liste d'emails autorisés verrouillée — vérification en pause",
-    "emaillistLockedAdminMessage": "Ce serveur a une liste d'emails autorisés téléchargée, mais l'**abonnement Pro** ou le **déblocage CSV** nécessaire à sa gestion n'est plus actif. La vérification est en pause pour tout le monde jusqu'à ce que vous choisissiez l'une des options suivantes :\n\n• **Effacer la liste :** exécutez `/emaillist clear`. Ensuite, tout email sera accepté (sous réserve de vos paramètres `/domain` et `/blacklist`).\n• **Restaurer l'accès CSV :** ouvrez `/premium status` et rachetez le plan **Pro** ou le **déblocage CSV**. La liste existante refonctionnera dès que l'accès sera restauré.\n\nCette notification est limitée à une fois par heure pour ne pas inonder le canal."
+    "emaillistLockedAdminMessage": "Ce serveur a une liste d'emails autorisés téléchargée, mais l'**abonnement Pro** ou le **déblocage CSV** nécessaire à sa gestion n'est plus actif. La vérification est en pause pour tout le monde jusqu'à ce que vous choisissiez l'une des options suivantes :\n\n• **Effacer la liste :** exécutez `/emaillist clear`. Ensuite, tout email sera accepté (sous réserve de vos paramètres `/domain` et `/blacklist`).\n• **Restaurer l'accès CSV :** ouvrez `/premium status` et rachetez le plan **Pro** ou le **déblocage CSV**. La liste existante refonctionnera dès que l'accès sera restauré.\n\nCette notification est limitée à une fois par heure pour ne pas inonder le canal.",
+  "unverifiedByOtherDm": "Votre vérification sur **%VAR%** a été annulée car quelqu'un d'autre s'est vérifié avec cette adresse e-mail.",
+  "sessionExpiredTitle": "❌ Session expirée",
+  "sessionExpiredDescription": "Votre session de vérification a expiré ou n'a pas démarré correctement.\n\n**Comment résoudre :**\n1. Retournez dans le canal de vérification du serveur\n2. Cliquez sur le bouton de vérification pour recommencer\n3. Saisissez votre adresse e-mail pour recevoir un nouveau code",
+  "sessionExpiredDescriptionShort": "Votre session de vérification a expiré ou n'a pas démarré correctement.\n\n**Comment résoudre :**\n1. Retournez dans le canal de vérification du serveur\n2. Cliquez sur le bouton de vérification pour recommencer",
+  "codeExpiredTitle": "⌛ Code expiré",
+  "codeExpiredDescription": "Votre code de vérification a expiré ou a déjà été utilisé.\n\nVeuillez recommencer la vérification pour recevoir un nouveau code.",
+  "codeTooManyAttemptsTitle": "🚫 Trop de tentatives",
+  "codeTooManyAttemptsDescription": "Vous avez saisi un code incorrect trop de fois.\n\nVeuillez recommencer la vérification pour recevoir un nouveau code.",
+  "resendCodeButton": "Renvoyer le code",
+  "resendCooldownDescription": "Veuillez patienter **%VAR% secondes** avant de demander un nouveau code.\n\nPensez à vérifier votre dossier spam — le dernier code s'y trouve peut-être déjà.",
+  "mailDeniedWarnTitle": "🚫 Des membres sont refoulés",
+  "mailDeniedWarnMessage": "**%VAR%** tentative(s) de vérification ont été bloquées ce mois-ci car la limite d'e-mails de ce serveur est atteinte. Chacune représente un membre qui a voulu rejoindre mais n'a pas pu se vérifier.\n\nAbonnez-vous pour des vérifications illimitées ou achetez un pack de crédits ci-dessous pour les laisser entrer.",
+  "premiumForecastRunOut": "📈 Au rythme actuel, les e-mails gratuits du mois seront épuisés vers le %VAR%.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** tentative(s) de vérification bloquées ce mois-ci par la limite d'e-mails",
+  "statusIssueNoErrorDestination": "Les alertes de quota et d'erreur n'ont aucune destination — définissez un canal avec `/set_error_notify channel` ou un canal de logs, sinon des alertes importantes seront manquées",
+  "quotaWarnRedeemHint": "Après l'achat de crédits, exécutez `/premium redeem` sur ce serveur pour les appliquer — les crédits n'expirent jamais."
 }

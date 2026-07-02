@@ -7,6 +7,20 @@ class Database {
     constructor() {
         this.db = new sqlite3.Database('config/bot.db');
 
+        // All shard processes open this same file. busy_timeout makes a process wait
+        // briefly instead of erroring with SQLITE_BUSY when another shard is writing.
+        // WAL lets readers and a writer proceed concurrently. Both pragmas pass an
+        // error callback so a transient failure can never raise an unhandled 'error'
+        // event and crash the shard — notably, the WAL transition is rejected on the
+        // single boot where a schema migration is still in flight, and simply takes
+        // effect (persistently) on the next boot instead.
+        this.db.run("PRAGMA busy_timeout = 5000", (e) => {
+            if (e) console.warn('[DB] busy_timeout pragma not applied:', e.message)
+        })
+        this.db.run("PRAGMA journal_mode = WAL", (e) => {
+            if (e) console.warn('[DB] WAL not applied this boot (takes effect next boot):', e.message)
+        })
+
         this.runMigration(1, () => {
             this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
             this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
@@ -155,22 +169,77 @@ class Database {
             // Ignored while a subscription is active (subscriptions always use ZeptoMail).
             this.db.run("ALTER TABLE guild_premium ADD mailMode TEXT DEFAULT 'free'")
         })
+        this.runMigration(19, () => {
+            // Pending verification codes. Previously kept in an in-memory Map, which
+            // (a) lost every in-flight verification on restart, and (b) was unreachable
+            // from the shard a DM interaction lands on (always shard 0). Persisting here
+            // makes the flow restart-safe and shard-agnostic, and lets us enforce a code
+            // TTL and a max-attempts cap that the old map could not.
+            this.db.run(`CREATE TABLE IF NOT EXISTS pending_verifications(
+                userID TEXT NOT NULL,
+                guildID TEXT NOT NULL,
+                code TEXT NOT NULL,
+                emailHash TEXT NOT NULL,
+                logEmail TEXT NOT NULL,
+                attempts INTEGER DEFAULT 0,
+                lastSentAt INTEGER DEFAULT 0,
+                expiresAt INTEGER NOT NULL,
+                PRIMARY KEY (userID, guildID)
+            );`)
+        })
+        this.runMigration(20, () => {
+            // Revenue funnel: count verification attempts denied by the mail quota so
+            // admins can see the demand they're losing ("N members were turned away"),
+            // plus idempotent escalation flags for the 1st/5th/20th denial notifications.
+            this.db.run("ALTER TABLE guild_stats ADD mailsDeniedMonth INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warnedDenied1 INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warnedDenied5 INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_stats ADD warnedDenied20 INTEGER DEFAULT 0")
+        })
     }
 
+    /**
+     * Register a migration. Migrations are queued in registration order and applied
+     * strictly one after another by #applyMigrations — the old fire-and-forget version
+     * check let all pending migrations race each other on a fresh database (every
+     * check read user_version 0 concurrently), running e.g. ALTER TABLE before the
+     * CREATE TABLE migration had committed and crashing first-time installs.
+     */
     runMigration(version, migration) {
-        this.db.get("PRAGMA user_version;", (err, result) => {
-            if (err) {
-                throw err
-            }
-            if (result.user_version < version) {
-                console.log("Run Migration: " + version)
-                this.db.serialize(() => {
-                    migration()
-                })
-                console.log("Finished: " + version)
-                this.db.run(`PRAGMA user_version = ${version}`)
-            }
-        })
+        if (!this.pendingMigrations) {
+            this.pendingMigrations = []
+            // Defer the runner one tick so every constructor registration lands first.
+            setImmediate(() => this.applyMigrations())
+        }
+        this.pendingMigrations.push({ version, migration })
+    }
+
+    applyMigrations() {
+        // Sort by version so a registration-order mistake can never skip a migration
+        // (user_version only moves forward).
+        const queue = (this.pendingMigrations || []).slice().sort((a, b) => a.version - b.version)
+        const runNext = (index) => {
+            if (index >= queue.length) return
+            const { version, migration } = queue[index]
+            this.db.get("PRAGMA user_version;", (err, result) => {
+                if (err) {
+                    throw err
+                }
+                if (result.user_version < version) {
+                    console.log("Run Migration: " + version)
+                    this.db.serialize(() => {
+                        migration()
+                    })
+                    console.log("Finished: " + version)
+                    // The version bump is queued after the migration's statements on the
+                    // same connection; its callback marks this migration complete.
+                    this.db.run(`PRAGMA user_version = ${version}`, () => runNext(index + 1))
+                } else {
+                    runNext(index + 1)
+                }
+            })
+        }
+        runNext(0)
     }
 
     deleteUserData(userID) {
@@ -296,6 +365,120 @@ class Database {
         )
     }
 
+    /**
+     * Store (or replace) a pending verification code for a user in a guild.
+     * Replacing resets the attempt counter, so re-requesting a code gives a clean slate.
+     * @param {string} userID
+     * @param {string} guildID
+     * @param {{code: string, emailHash: string, logEmail: string, expiresAt: number}} data
+     */
+    setPendingVerification(userID, guildID, { code, emailHash, logEmail, expiresAt }) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO pending_verifications (userID, guildID, code, emailHash, logEmail, attempts, lastSentAt, expiresAt) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+                [userID, guildID, code, emailHash, logEmail, Date.now(), expiresAt],
+                (err) => {
+                    if (err) console.error('Error storing pending verification:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /**
+     * Fetch a pending verification. Returns null if none exists or it has expired
+     * (expired rows are deleted on read so they don't accumulate).
+     */
+    getPendingVerification(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.get(
+                "SELECT * FROM pending_verifications WHERE userID = ? AND guildID = ?",
+                [userID, guildID],
+                (err, row) => {
+                    if (err) {
+                        console.error('Error reading pending verification:', err)
+                        resolve(null)
+                        return
+                    }
+                    if (!row) {
+                        resolve(null)
+                        return
+                    }
+                    if (typeof row.expiresAt === 'number' && row.expiresAt < Date.now()) {
+                        this.deletePendingVerification(userID, guildID)
+                        resolve(null)
+                        return
+                    }
+                    resolve(row)
+                }
+            )
+        })
+    }
+
+    /**
+     * Atomically increment the attempt counter (single UPDATE … RETURNING statement).
+     * Resolves the new attempt count, `null` if the row no longer exists (consumed or
+     * expired), or the string 'error' on a DB failure — callers must fail closed on
+     * 'error' rather than treating it as "not at the cap".
+     */
+    incrementPendingAttempts(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.get(
+                "UPDATE pending_verifications SET attempts = attempts + 1 WHERE userID = ? AND guildID = ? RETURNING attempts",
+                [userID, guildID],
+                (err, row) => {
+                    if (err) {
+                        console.error('Error incrementing verification attempts:', err)
+                        resolve('error')
+                        return
+                    }
+                    resolve(row ? row.attempts : null)
+                }
+            )
+        })
+    }
+
+    /**
+     * Delete a pending verification. Resolves true only if this call actually removed
+     * the row — the atomic "consume" primitive that prevents the same code from being
+     * accepted twice by concurrent submissions (e.g. DM modal on shard 0 racing the
+     * guild-channel modal on the owning shard).
+     */
+    deletePendingVerification(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "DELETE FROM pending_verifications WHERE userID = ? AND guildID = ?",
+                [userID, guildID],
+                function (err) {
+                    if (err) {
+                        console.error('Error deleting pending verification:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    /** Delete all expired pending verifications. Run periodically from the primary shard. */
+    sweepExpiredPendingVerifications() {
+        return new Promise((resolve) => {
+            this.db.run(
+                "DELETE FROM pending_verifications WHERE expiresAt < ?",
+                [Date.now()],
+                function (err) {
+                    if (err) {
+                        console.error('Error sweeping expired pending verifications:', err)
+                        resolve(0)
+                        return
+                    }
+                    resolve(this.changes || 0)
+                }
+            )
+        })
+    }
+
     getCurrentMonth() {
         const now = new Date()
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -306,11 +489,11 @@ class Database {
         this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
             if (err) {
                 console.error('Error getting guild stats:', err)
-                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, mailsDeniedMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
                 return
             }
             if (result === undefined) {
-                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
+                callback({ mailsSentTotal: 0, mailsSentMonth: 0, verificationsTotal: 0, verificationsMonth: 0, mailsDeniedMonth: 0, warned80: 0, warned95: 0, warned100: 0, warnedCreditsLow: 0, warnedCreditsZero: 0 })
                 return
             }
             const warnedCreditsLow = result.warnedCreditsLow || 0
@@ -322,6 +505,7 @@ class Database {
                     mailsSentMonth: 0,
                     verificationsTotal: result.verificationsTotal,
                     verificationsMonth: 0,
+                    mailsDeniedMonth: 0,
                     warned80: 0,
                     warned95: 0,
                     warned100: 0,
@@ -334,6 +518,7 @@ class Database {
                     mailsSentMonth: result.mailsSentMonth,
                     verificationsTotal: result.verificationsTotal,
                     verificationsMonth: result.verificationsMonth,
+                    mailsDeniedMonth: result.mailsDeniedMonth || 0,
                     warned80: result.warned80 || 0,
                     warned95: result.warned95 || 0,
                     warned100: result.warned100 || 0,
@@ -365,7 +550,7 @@ class Database {
                     )
                 } else if (result.statsMonth !== currentMonth) {
                     this.db.run(
-                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0 WHERE guildID = ?",
+                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, mailsDeniedMonth = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
                         [currentMonth, guildID],
                         cb
                     )
@@ -396,7 +581,7 @@ class Database {
             } else if (result.statsMonth !== currentMonth) {
                 // Reset monthly counter for new month (also resets monthly quota warned flags)
                 this.db.run(
-                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0 WHERE guildID = ?",
+                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, mailsDeniedMonth = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
                     [currentMonth, guildID]
                 )
             } else {
@@ -555,10 +740,11 @@ class Database {
         return out
     }
 
-    #tripFlag(guildID, column, threshold) {
+    // Column names come from internal call sites only — never user input.
+    #tripFlag(guildID, column, threshold, counterColumn = 'mailsSentMonth') {
         return new Promise((resolve) => {
             this.db.run(
-                `UPDATE guild_stats SET ${column} = 1 WHERE guildID = ? AND ${column} = 0 AND mailsSentMonth >= ?`,
+                `UPDATE guild_stats SET ${column} = 1 WHERE guildID = ? AND ${column} = 0 AND ${counterColumn} >= ?`,
                 [guildID, threshold],
                 function (err) {
                     if (err) {
@@ -570,6 +756,49 @@ class Database {
                 }
             )
         })
+    }
+
+    /**
+     * Record a verification attempt denied by the mail quota and check the escalating
+     * notification thresholds (1st, 5th, 20th denial per month). Same idempotent
+     * flag pattern as the quota warnings: each flag trips 0 → 1 exactly once per month.
+     * Returns { deniedMonth, crossed1, crossed5, crossed20 }.
+     */
+    async recordMailDeniedAndCheckThresholds(guildID) {
+        const currentMonth = this.getCurrentMonth()
+        await new Promise((resolve, reject) => {
+            this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+                if (err) return reject(err)
+                const cb = (e) => e ? reject(e) : resolve()
+                if (result === undefined) {
+                    this.db.run(
+                        "INSERT INTO guild_stats (guildID, mailsDeniedMonth, statsMonth) VALUES (?, 1, ?)",
+                        [guildID, currentMonth],
+                        cb
+                    )
+                } else if (result.statsMonth !== currentMonth) {
+                    this.db.run(
+                        "UPDATE guild_stats SET mailsDeniedMonth = 1, mailsSentMonth = 0, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
+                        [currentMonth, guildID],
+                        cb
+                    )
+                } else {
+                    this.db.run(
+                        "UPDATE guild_stats SET mailsDeniedMonth = mailsDeniedMonth + 1 WHERE guildID = ?",
+                        [guildID],
+                        cb
+                    )
+                }
+            })
+        })
+
+        const out = { deniedMonth: null, crossed1: false, crossed5: false, crossed20: false }
+        out.crossed1 = await this.#tripFlag(guildID, 'warnedDenied1', 1, 'mailsDeniedMonth')
+        out.crossed5 = await this.#tripFlag(guildID, 'warnedDenied5', 5, 'mailsDeniedMonth')
+        out.crossed20 = await this.#tripFlag(guildID, 'warnedDenied20', 20, 'mailsDeniedMonth')
+        const stats = await new Promise(resolve => this.getGuildStats(guildID, resolve))
+        out.deniedMonth = stats.mailsDeniedMonth
+        return out
     }
 
     #tripCreditFlag(guildID, column) {

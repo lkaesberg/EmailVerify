@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Weryfikacja tymczasowo niedostępna",
   "emaillistLockedUserMessage": "Weryfikacja na tym serwerze jest wstrzymana, podczas gdy administratorzy rozwiązują problem konfiguracji. Zostali powiadomieni — spróbuj ponownie później.",
   "emaillistLockedAdminTitle": "🛑 Lista dozwolonych emaili zablokowana — weryfikacja wstrzymana",
-  "emaillistLockedAdminMessage": "Ten serwer ma przesłaną listę dozwolonych emaili, ale **subskrypcja Pro** lub **odblokowanie CSV** wymagane do jej zarządzania nie jest już aktywne. Weryfikacja jest wstrzymana dla wszystkich, dopóki nie wybierzesz jednej z poniższych opcji:\n\n• **Wyczyść listę:** wykonaj `/emaillist clear`. Potem każdy email będzie akceptowany (z zastrzeżeniem ustawień `/domain` i `/blacklist`).\n• **Przywróć dostęp CSV:** otwórz `/premium status` i kup ponownie plan **Pro** lub **odblokowanie CSV**. Istniejąca lista zacznie działać natychmiast po przywróceniu dostępu.\n\nTo powiadomienie jest ograniczone do raz na godzinę, aby nie zaśmiecać kanału."
+  "emaillistLockedAdminMessage": "Ten serwer ma przesłaną listę dozwolonych emaili, ale **subskrypcja Pro** lub **odblokowanie CSV** wymagane do jej zarządzania nie jest już aktywne. Weryfikacja jest wstrzymana dla wszystkich, dopóki nie wybierzesz jednej z poniższych opcji:\n\n• **Wyczyść listę:** wykonaj `/emaillist clear`. Potem każdy email będzie akceptowany (z zastrzeżeniem ustawień `/domain` i `/blacklist`).\n• **Przywróć dostęp CSV:** otwórz `/premium status` i kup ponownie plan **Pro** lub **odblokowanie CSV**. Istniejąca lista zacznie działać natychmiast po przywróceniu dostępu.\n\nTo powiadomienie jest ograniczone do raz na godzinę, aby nie zaśmiecać kanału.",
+  "unverifiedByOtherDm": "Twoja weryfikacja na **%VAR%** została cofnięta, ponieważ ktoś inny zweryfikował się tym adresem e-mail.",
+  "sessionExpiredTitle": "❌ Sesja wygasła",
+  "sessionExpiredDescription": "Twoja sesja weryfikacji wygasła lub nie została poprawnie rozpoczęta.\n\n**Jak to naprawić:**\n1. Wróć na kanał weryfikacji serwera\n2. Kliknij przycisk weryfikacji, aby zacząć od nowa\n3. Wpisz swój adres e-mail, aby otrzymać nowy kod",
+  "sessionExpiredDescriptionShort": "Twoja sesja weryfikacji wygasła lub nie została poprawnie rozpoczęta.\n\n**Jak to naprawić:**\n1. Wróć na kanał weryfikacji serwera\n2. Kliknij przycisk weryfikacji, aby zacząć od nowa",
+  "codeExpiredTitle": "⌛ Kod wygasł",
+  "codeExpiredDescription": "Twój kod weryfikacyjny wygasł lub został już użyty.\n\nRozpocznij weryfikację ponownie, aby otrzymać nowy kod.",
+  "codeTooManyAttemptsTitle": "🚫 Zbyt wiele prób",
+  "codeTooManyAttemptsDescription": "Zbyt wiele razy wpisałeś nieprawidłowy kod.\n\nRozpocznij weryfikację ponownie, aby otrzymać nowy kod.",
+  "resendCodeButton": "Wyślij kod ponownie",
+  "resendCooldownDescription": "Poczekaj **%VAR% sekund** przed poproszeniem o nowy kod.\n\nSprawdź też folder spam — poprzedni kod może już tam być.",
+  "mailDeniedWarnTitle": "🚫 Członkowie są odrzucani",
+  "mailDeniedWarnMessage": "**%VAR%** prób(y) weryfikacji zablokowano w tym miesiącu, ponieważ osiągnięto limit e-maili tego serwera. Każda z nich to członek, który chciał dołączyć, ale nie mógł się zweryfikować.\n\nWykup subskrypcję nielimitowanych weryfikacji lub pakiet kredytów poniżej, aby ich wpuścić.",
+  "premiumForecastRunOut": "📈 W obecnym tempie darmowe miesięczne e-maile wyczerpią się około %VAR%.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** prób(y) weryfikacji zablokowane w tym miesiącu przez limit e-maili",
+  "statusIssueNoErrorDestination": "Ostrzeżenia o limitach i błędach nie mają celu — ustaw kanał poleceniem `/set_error_notify channel` lub kanał logów, inaczej ważne alerty przepadną",
+  "quotaWarnRedeemHint": "Po zakupie kredytów uruchom `/premium redeem` na tym serwerze, aby je zastosować — kredyty nigdy nie wygasają."
 }

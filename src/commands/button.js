@@ -1,8 +1,9 @@
 const {SlashCommandBuilder} = require("@discordjs/builders");
 const database = require("../database/Database");
-const {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder} = require('discord.js');
+const {ChannelType} = require('discord.js');
 const { MessageFlags } = require('discord.js');
 const {getLocale} = require("../Language");
+const {buildVerifyEmbed, buildVerifyButtons} = require("../bot/verifyMessage");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -56,13 +57,8 @@ module.exports = {
         await database.getServerSettings(interaction.guildId, async serverSettings => {
             const language = serverSettings.language
 
-            // Use custom values or fall back to localized defaults
-            const title = customTitle || getLocale(language, "verifyEmbedTitle")
-            const description = customMessage || getLocale(language, "verifyEmbedInstructions")
-            const footerText = getLocale(language, "verifyEmbedFooter")
-
             // Parse color or use default Discord blurple
-            let embedColor = 0x5865F2
+            let embedColor = null
             if (customColor) {
                 const parsed = customColor.replace('#', '')
                 if (/^[0-9A-Fa-f]{6}$/.test(parsed)) {
@@ -70,28 +66,12 @@ module.exports = {
                 }
             }
 
-            const embed = new EmbedBuilder()
-                .setTitle(title)
-                .setDescription(description)
-                .setColor(embedColor)
-                .setFooter({ 
-                    text: `${interaction.guild.name} • ${footerText}`,
-                    iconURL: interaction.guild.iconURL({ dynamic: true })
-                })
-
-            const buttons = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId("verifyButton")
-                        .setLabel(buttonText)
-                        .setEmoji("📧")
-                        .setStyle(ButtonStyle.Success),
-                    new ButtonBuilder()
-                        .setCustomId("openCodeModal")
-                        .setLabel(getLocale(language, "enterCodeButton"))
-                        .setEmoji("🔑")
-                        .setStyle(ButtonStyle.Secondary),
-                );
+            const embed = buildVerifyEmbed(interaction.guild, language, {
+                title: customTitle,
+                description: customMessage,
+                color: embedColor ?? undefined
+            })
+            const buttons = buildVerifyButtons(language, buttonText);
 
             const message = await channel.send({embeds: [embed], components: [buttons]}).catch(async _ => {
                 await interaction.user.send("No permissions to write in that channel!").catch(async _ => {

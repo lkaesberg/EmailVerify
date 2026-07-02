@@ -1,6 +1,6 @@
 const {ModalBuilder, TextInputBuilder, TextInputStyle, LabelBuilder, TextDisplayBuilder, MessageFlags} = require('discord.js');
 const database = require("../database/Database");
-const {getLocale} = require("../Language");
+const {getLocale, defaultLanguage} = require("../Language");
 const {createSessionExpiredEmbed} = require("../utils/embeds");
 
 /**
@@ -76,27 +76,35 @@ function formatDomain(domain, language, roleNames = []) {
 }
 
 /**
- * Shows the email verification modal in response to an interaction
+ * Shows the email verification modal in response to an interaction.
+ *
+ * `guild` is optional and used ONLY to render role names in the modal header. It is
+ * never REST-fetched here: showModal is the interaction acknowledgement and cannot be
+ * deferred, so a cross-shard REST round-trip could blow the 3s ack window. When the
+ * guild isn't cached on this shard (DM flow for a guild owned by another shard) we open
+ * the modal without role names — verification itself still works, since role assignment
+ * happens later on the deferrable code-submit path.
+ *
  * @param {Interaction} interaction - The Discord interaction to respond to
- * @param {Guild} guild - The guild context for verification
- * @param {Map} userGuilds - Map to store user-guild associations
+ * @param {string} guildId - The guild the verification is for
+ * @param {Guild|null} [guild] - Cached guild for role-name display only (may be null)
  */
-async function showEmailModal(interaction, guild, userGuilds) {
-    if (!guild) {
-        await interaction.reply({ embeds: [createSessionExpiredEmbed(false)], flags: MessageFlags.Ephemeral }).catch(() => {})
+async function showEmailModal(interaction, guildId, guild = null) {
+    if (!guildId) {
+        await interaction.reply({ embeds: [createSessionExpiredEmbed(defaultLanguage, false)], flags: MessageFlags.Ephemeral }).catch(() => {})
         return false
     }
-    userGuilds.set(interaction.user.id, guild)
-    
-    await database.getServerSettings(guild.id, async serverSettings => {
+
+    await database.getServerSettings(guildId, async serverSettings => {
         const language = serverSettings.language
         const domains = serverSettings.domains || []
         const domainRoles = serverSettings.domainRoles || {}
         const defaultRoles = serverSettings.defaultRoles || []
         const allowedEmails = serverSettings.allowedEmails || []
-        
-        // Helper to get role names from IDs
+
+        // Helper to get role names from IDs (empty when the guild isn't cached here)
         const getRoleNames = (roleIds) => {
+            if (!guild) return []
             return roleIds
                 .map(id => {
                     const role = guild.roles.cache.get(id)
@@ -187,8 +195,11 @@ async function showEmailModal(interaction, guild, userGuilds) {
             headerText += getLocale(language, "emailModalAdminWarning")
         }
         
+        // Encode the guild id in the customId so the modal submit — which for the
+        // DM flow lands on shard 0 with no interaction.guild — knows which guild
+        // the verification is for without relying on per-shard in-memory state.
         const modal = new ModalBuilder()
-            .setCustomId('emailModal')
+            .setCustomId(`emailModal:${guildId}`)
             .setTitle(getLocale(language, "emailModalTitle"))
         
         // Build placeholder with smart domain hint

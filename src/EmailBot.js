@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const crypto = require('crypto');
 const {token, clientId} = require('../config/config.json');
 const database = require('./database/Database.js')
 const {stdin, stdout} = require('process')
@@ -20,10 +21,20 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
-const { createSessionExpiredEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
+const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
+const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { getWebsiteUrl, describeSku } = require('./utils/premiumButtons');
 const OperatorWebhook = require('./utils/OperatorWebhook');
+
+// Verification code lifetime and the number of wrong guesses tolerated before the
+// code is invalidated. The old in-memory codes had neither, leaving a 100k-keyspace
+// code brute-forceable with unlimited attempts and no expiry.
+const CODE_TTL_MS = 15 * 60 * 1000
+const MAX_CODE_ATTEMPTS = 5
+// Flat cooldown between "Resend code" clicks (separate from the escalating
+// email-request backoff — resending to the SAME address is lower-risk).
+const RESEND_COOLDOWN_MS = 60 * 1000
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
 const emaillistLockedLastNotify = new Map()
@@ -39,7 +50,7 @@ function notifyEmaillistLocked(guild, language) {
         language
     }).catch(() => {})
 }
-const { emailMatchesDomains, emailIsBlacklisted, getMatchingDomainPatterns } = require('./utils/wildcardMatch');
+const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
 const premiumManager = require('./premium/PremiumManager');
 
 const bot = new Discord.Client({
@@ -59,26 +70,170 @@ bot.serverStatsAPI = serverStatsAPI
 
 let emailNotify = true
 
-module.exports.userGuilds = userGuilds = new Map()
-
-const userCodes = new Map()
-
+// Pending verification codes now live in SQLite (see Database.pending_verifications)
+// so they survive restarts and are reachable from whichever shard a DM interaction
+// lands on. Only the best-effort, same-shard email-send rate limiter stays in memory.
 let userTimeouts = new Map()
 
 const mailSender = new MailSender(serverStatsAPI)
+// Exposed for commands that send mail outside the verification flow (/testmail)
+bot.mailSender = mailSender
 
-// Expose cross-shard state on the client for broadcastEval access
-bot.userGuilds = userGuilds
-bot.userCodes = userCodes
-bot.userTimeouts = userTimeouts
-bot.serverStatsAPI = serverStatsAPI
+// Track the ephemeral "code sent" prompt so we can delete it after code submission.
+// Values carry a timestamp so a periodic sweep can evict abandoned entries.
+const codePromptMessages = new Map()   // key: userId+guildId, value: { id, ts }
 
-// Track ephemeral prompt messages so we can delete them at the right time
-const verifyPromptMessages = new Map() // key: userId, value: messageId for "Enter Email" prompt
-const codePromptMessages = new Map()   // key: userId+guildId, value: messageId for "Enter Code" prompt
+/**
+ * Verification customIds carry the guild id as a `:`-suffix (e.g. `emailModal:123`)
+ * so DM interactions — which always land on shard 0 with no interaction.guild —
+ * still know which guild they belong to. Returns the suffix (or null) plus the bare action.
+ */
+function parseVerificationCustomId(customId) {
+    const idx = customId.indexOf(':')
+    if (idx === -1) return { action: customId, guildId: null }
+    return { action: customId.slice(0, idx), guildId: customId.slice(idx + 1) || null }
+}
 
-module.exports.verifyPromptMessages = verifyPromptMessages
-module.exports.codePromptMessages = codePromptMessages
+/**
+ * Resolve a Guild from its id on any shard. Returns the cached guild when this
+ * shard owns it; otherwise fetches it over REST (uncached — shard 0 receives no
+ * gateway events for foreign guilds, so caching them would freeze their roles
+ * forever and inflate guilds.cache.size in cross-shard stats). The REST guild
+ * payload already includes the full roles list, so no separate roles fetch is
+ * needed. Returns null if unavailable.
+ */
+async function resolveGuild(guildId) {
+    if (!guildId) return null
+    const cached = bot.guilds.cache.get(guildId)
+    if (cached) return cached
+    try {
+        const guild = await bot.guilds.fetch({ guild: guildId, cache: false })
+        // Paranoia fallback: the guild payload includes roles, but re-fetch if empty.
+        if (guild.roles.cache.size <= 1) {
+            await guild.roles.fetch().catch(() => {})
+        }
+        return guild
+    } catch (e) {
+        console.warn(`[resolveGuild] Could not fetch guild ${guildId}:`, e?.message ?? e)
+        return null
+    }
+}
+
+/**
+ * Entitlements for premium checks against a specific guild. DM interactions do not
+ * reliably carry another guild's entitlements in interaction.entitlements, so when
+ * the interaction's own guild isn't the verification target we fetch the target
+ * guild's active entitlements over REST. In-guild interactions keep the zero-cost
+ * interaction.entitlements path.
+ */
+async function getEntitlementsForGuild(guildId, interaction) {
+    if (interaction.guildId === guildId) return interaction.entitlements
+    try {
+        return await bot.application.entitlements.fetch({ guild: guildId, excludeEnded: true })
+    } catch (e) {
+        console.warn(`[entitlements] Could not fetch entitlements for guild ${guildId}:`, e?.message ?? e)
+        return interaction.entitlements
+    }
+}
+
+/** Resolve a guild's configured language by id (for messages shown before the guild object is available). */
+function getGuildLanguage(guildId) {
+    return new Promise(resolve => {
+        if (!guildId) return resolve(defaultLanguage)
+        database.getServerSettings(guildId, s => resolve(s.language || defaultLanguage))
+    })
+}
+
+/** Button row shown with the "code sent" prompt: enter the code, or resend it. */
+function buildCodePromptRow(language, guildId) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`openCodeModal:${guildId}`)
+            .setLabel(getLocale(language, 'enterCodeButton'))
+            .setEmoji('🔑')
+            .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+            .setCustomId(`resendCode:${guildId}`)
+            .setLabel(getLocale(language, 'resendCodeButton'))
+            .setEmoji('📨')
+            .setStyle(ButtonStyle.Secondary)
+    )
+}
+
+/**
+ * "Resend code" button: re-send the pending verification email with a fresh code.
+ * Requires an unexpired pending row (it holds the email address); enforces a flat
+ * cooldown via pending.lastSentAt and goes through the normal premium/quota check
+ * so resends can't bypass the guild's mail limits.
+ */
+async function handleResendCode(interaction, guildId) {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
+    const autoDelete = (ms) => setTimeout(() => { interaction.deleteReply().catch(() => {}) }, ms)
+
+    const pending = guildId ? await database.getPendingVerification(interaction.user.id, guildId) : null
+    if (!pending) {
+        // Nothing to resend (expired/consumed) — the stored email is gone, so the
+        // user must restart from the verify button.
+        const lang = await getGuildLanguage(guildId)
+        await interaction.editReply({ embeds: [createCodeExpiredEmbed(lang)] }).catch(() => {})
+        autoDelete(15000)
+        return
+    }
+
+    const userGuild = await resolveGuild(guildId)
+    if (!userGuild) {
+        const lang = await getGuildLanguage(guildId)
+        await interaction.editReply({ embeds: [createSessionExpiredEmbed(lang, true)] }).catch(() => {})
+        autoDelete(10000)
+        return
+    }
+
+    await database.getServerSettings(guildId, async serverSettings => {
+        const language = serverSettings.language
+
+        const sinceLast = Date.now() - (pending.lastSentAt || 0)
+        if (sinceLast < RESEND_COOLDOWN_MS) {
+            const wait = Math.ceil((RESEND_COOLDOWN_MS - sinceLast) / 1000)
+            const cooldownEmbed = new EmbedBuilder()
+                .setTitle(getLocale(language, 'mailTimeoutTitle'))
+                .setDescription(getLocale(language, 'resendCooldownDescription', String(wait)))
+                .setColor(0xFFA500)
+            await interaction.editReply({ embeds: [cooldownEmbed] }).catch(() => {})
+            autoDelete(10000)
+            return
+        }
+
+        // Resends consume quota/credits like any other send.
+        const premiumCheck = await premiumManager.canSendMail(guildId, await getEntitlementsForGuild(guildId, interaction))
+        if (premiumCheck.autoDisabled) {
+            premiumManager.notifyZeptoModeAutoDisabled(userGuild, language).catch(() => {})
+        }
+        if (!premiumCheck.allowed) {
+            await interaction.editReply({ embeds: [createMailLimitReachedEmbed(language, getWebsiteUrl())] }).catch(() => {})
+            premiumManager.notifyMailDenied(userGuild, language).catch(() => {})
+            autoDelete(15000)
+            return
+        }
+
+        const code = crypto.randomInt(100000, 1000000).toString()
+        await mailSender.sendEmail(pending.logEmail, code, userGuild.name, interaction, emailNotify, async (email) => {
+            // Replace the old code with the fresh one (resets attempts, new TTL).
+            await database.setPendingVerification(interaction.user.id, guildId, {
+                code,
+                emailHash: pending.emailHash,
+                logEmail: pending.logEmail,
+                expiresAt: Date.now() + CODE_TTL_MS
+            })
+            const codePromptEmbed = createCodeSentEmbed(language, pending.logEmail)
+            await interaction.editReply({ embeds: [codePromptEmbed], components: [buildCodePromptRow(language, guildId)] }).catch(() => {})
+            const sent = await interaction.fetchReply().catch(() => null)
+            if (sent && sent.id) {
+                codePromptMessages.set(interaction.user.id + guildId, { id: sent.id, ts: Date.now() })
+            }
+            setTimeout(() => { interaction.deleteReply().catch(() => {}) }, 300000)
+        }, premiumCheck.source, serverSettings.emailStyle, userGuild, serverSettings)
+    })
+}
 
 bot.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./src/commands').filter(file => file.endsWith('.js'));
@@ -265,6 +420,21 @@ bot.once('clientReady', async () => {
             ],
             level: 'success'
         })
+
+        // Boot-time SMTP self-test: catch broken credentials/hosts before the first
+        // member's verification silently fails.
+        mailSender.selfTest().then(result => {
+            if (result.ok) {
+                console.log('[MailSender] SMTP self-test passed')
+            } else {
+                console.error('[MailSender] SMTP self-test FAILED:', result.error)
+                OperatorWebhook.notify({
+                    title: '🚨 SMTP self-test failed',
+                    description: `The self-SMTP transport failed verification at boot — verification emails may not be deliverable.\n\`\`\`${String(result.error).slice(0, 1500)}\`\`\``,
+                    level: 'error'
+                })
+            }
+        }).catch(() => {})
     }
 });
 
@@ -272,7 +442,27 @@ setInterval(function () {
     bot.user.setActivity("/verify | Website", {
         type: "PLAYING", url: "https://emailbot.larskaesberg.de"
     })
-}, 3600000);
+}, 3600000).unref();
+
+// Periodic cleanup. The in-memory maps are per-shard, so every shard prunes its own;
+// the expired-code sweep touches the shared DB, so only the primary shard runs it.
+const CLEANUP_STALE_MS = 60 * 60 * 1000
+setInterval(() => {
+    const now = Date.now()
+    for (const [userId, t] of userTimeouts) {
+        if (t.timestamp + t.waitseconds * 1000 < now - CLEANUP_STALE_MS) userTimeouts.delete(userId)
+    }
+    for (const [key, v] of codePromptMessages) {
+        if (!v || v.ts < now - CLEANUP_STALE_MS) codePromptMessages.delete(key)
+    }
+    for (const [gid, ts] of emaillistLockedLastNotify) {
+        if (ts < now - EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS) emaillistLockedLastNotify.delete(gid)
+    }
+    const isPrimary = !bot.shard || bot.shard.ids.includes(0)
+    if (isPrimary) {
+        database.sweepExpiredPendingVerifications().catch(() => {})
+    }
+}, 30 * 60 * 1000).unref();
 
 bot.on("guildDelete", guild => {
     console.log("Removed: " + guild.name)
@@ -299,7 +489,7 @@ bot.on("guildMemberAdd", async member => {
             }
         }
         if (serverSettings.autoVerify) {
-            await sendVerifyMessage(member.guild, member.user, userGuilds)
+            await sendVerifyMessage(member.guild, member.user)
         }
     })
 })
@@ -384,6 +574,18 @@ bot.on('entitlementCreate', entitlement => {
         fields: entitlementFields(entitlement, status),
         level: 'success'
     })
+
+    // Consumables (credit packs, CSV unlock) do nothing until the buyer runs
+    // /premium redeem — a paid-but-never-redeemed pack is a refund waiting to
+    // happen. Subscriptions activate automatically, so no DM needed there.
+    const info = describeSku(entitlement.skuId)
+    if (info && info.kind !== 'subscription' && entitlement.userId && !entitlement.consumed) {
+        bot.users.fetch(entitlement.userId).then(user => user.send(
+            `🎉 Thanks for purchasing **${info.label}**!\n\n` +
+            'To activate it, run **`/premium redeem`** in the server where you want to use it — ' +
+            'the benefits apply to that server only, so pick carefully.'
+        )).catch(() => {})
+    }
 })
 
 bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
@@ -432,12 +634,6 @@ bot.on('entitlementDelete', entitlement => {
     })
 })
 
-bot.on('messageCreate', async (message) => {
-    if (message.author.bot) return
-    if (message.content === "") return
-    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Message created: "${message.content}" in ${message.guild?.name ?? 'DM'} by ${message.author.username} (${message.author.id})`)
-})
-
 bot.on('messageReactionAdd', async (reaction, user) => {
     try {
         if (user.bot) return
@@ -463,36 +659,69 @@ bot.on('messageReactionAdd', async (reaction, user) => {
 });
 
 bot.on('interactionCreate', async interaction => {
-    // Button: open email modal or open code modal
+    // Setup-wizard select menus (role / channel pickers on the ephemeral wizard message)
+    if (interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {
+        if (interaction.customId.startsWith('setup')) {
+            try {
+                await bot.commands.get('setup')?.handleComponent(interaction)
+            } catch (e) {
+                console.error('Setup component error:', e)
+            }
+        }
+        return
+    }
+
+    // Button: open email modal, open code modal, resend code, or setup-wizard buttons
     if (interaction.isButton()) {
-        if (interaction.customId === 'verifyButton' || interaction.customId === 'openEmailModal') {
-            const guild = interaction.guild || userGuilds.get(interaction.user.id)
-            await showEmailModal(interaction, guild, userGuilds)
+        if (interaction.customId.startsWith('setup')) {
+            try {
+                await bot.commands.get('setup')?.handleComponent(interaction)
+            } catch (e) {
+                console.error('Setup component error:', e)
+            }
             return
         }
-        if (interaction.customId === 'openCodeModal') {
-            // Open code modal, include instruction with email
-            const userGuild = interaction.guild || userGuilds.get(interaction.user.id)
-            if (!userGuild) {
-                await interaction.reply({ embeds: [createSessionExpiredEmbed(true)], flags: MessageFlags.Ephemeral }).catch(() => {})
+        const { action, guildId: customGuildId } = parseVerificationCustomId(interaction.customId)
+        const guildId = customGuildId || interaction.guildId
+
+        if (action === 'resendCode') {
+            await handleResendCode(interaction, guildId)
+            return
+        }
+        if (action === 'verifyButton' || action === 'openEmailModal') {
+            // showModal is the ack and can't be deferred, so never REST-fetch here.
+            // Pass the cached guild for role-name display when this shard owns it; for a
+            // cross-shard DM the guild is absent and the modal opens without role names.
+            const cachedGuild = guildId ? bot.guilds.cache.get(guildId) : null
+            await showEmailModal(interaction, guildId, cachedGuild)
+            return
+        }
+        if (action === 'openCodeModal') {
+            // Open code modal, include instruction with email. We only need the guild
+            // id (for the modal customId) and the server language here — no guild object
+            // required, which keeps this fast enough to stay within the 3s showModal window.
+            if (!guildId) {
+                await interaction.reply({ embeds: [createSessionExpiredEmbed(defaultLanguage, true)], flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
-            const key = interaction.user.id + userGuild.id
-            const userCode = userCodes.get(key)
-            await database.getServerSettings(userGuild.id, async serverSettings => {
+            // Both reads are independent — run them concurrently to halve the pre-modal
+            // latency (showModal is the ack and must land within ~3s).
+            const pendingPromise = database.getPendingVerification(interaction.user.id, guildId)
+            await database.getServerSettings(guildId, async serverSettings => {
                 const language = serverSettings.language
-                
+                const pending = await pendingPromise
+
                 // Build header text
                 let headerText = getLocale(language, 'codeModalHeader')
-                if (userCode && userCode.logEmail) {
-                    headerText += `\n\n📬 **Sent to:** ${userCode.logEmail}`
+                if (pending && pending.logEmail) {
+                    headerText += `\n\n📬 **Sent to:** ${pending.logEmail}`
                 }
                 headerText += '\n\n-# Check your spam folder if you don\'t see the email'
-                
+
                 const modal = new ModalBuilder()
-                    .setCustomId('codeModal')
+                    .setCustomId(`codeModal:${guildId}`)
                     .setTitle(getLocale(language, 'codeModalTitle'))
-                
+
                 const codeInput = new TextInputBuilder()
                     .setCustomId('codeInput')
                     .setStyle(TextInputStyle.Short)
@@ -531,13 +760,24 @@ bot.on('interactionCreate', async interaction => {
 
     // Modal submissions
     if (interaction.isModalSubmit()) {
+        if (interaction.customId === 'setupDomainsModal') {
+            try {
+                await bot.commands.get('setup')?.handleModal(interaction)
+            } catch (e) {
+                console.error('Setup modal error:', e)
+            }
+            return
+        }
+        const { action, guildId: customGuildId } = parseVerificationCustomId(interaction.customId)
+        const guildId = customGuildId || interaction.guildId
         // Email modal submit
-        if (interaction.customId === 'emailModal') {
+        if (action === 'emailModal') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
             const emailText = interaction.fields.getTextInputValue('emailInput').trim()
-            const userGuild = userGuilds.get(interaction.user.id)
+            const userGuild = await resolveGuild(guildId)
             if (!userGuild) {
-                await interaction.followUp({ embeds: [createSessionExpiredEmbed(false)], flags: MessageFlags.Ephemeral }).catch(() => {})
+                const lang = await getGuildLanguage(guildId)
+                await interaction.followUp({ embeds: [createSessionExpiredEmbed(lang, false)], flags: MessageFlags.Ephemeral }).catch(() => {})
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
@@ -565,7 +805,7 @@ bot.on('interactionCreate', async interaction => {
                 // but the guild can no longer manage it. Block all verifications until the admin
                 // either clears the list (`/emaillist clear`) or restores CSV access.
                 if ((serverSettings.allowedEmails || []).length > 0) {
-                    const csvCheck = await premiumManager.canUseCSVFeature(userGuild.id, interaction.entitlements)
+                    const csvCheck = await premiumManager.canUseCSVFeature(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction))
                     if (!csvCheck.allowed) {
                         const lockedUserEmbed = new EmbedBuilder()
                             .setTitle(getLocale(serverSettings.language, 'emaillistLockedUserTitle'))
@@ -590,11 +830,13 @@ bot.on('interactionCreate', async interaction => {
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
-                // Rate limit per user
-                let userTimeout = userTimeouts.get(interaction.user.id)
+                // Rate limit per user per guild — per-guild keying means abusive
+                // escalation in one guild neither penalizes nor is reset by the same
+                // user's legitimate activity in another guild.
+                let userTimeout = userTimeouts.get(interaction.user.id + userGuild.id)
                 if (!userTimeout) {
                     userTimeout = new UserTimeout()
-                    userTimeouts.set(interaction.user.id, userTimeout)
+                    userTimeouts.set(interaction.user.id + userGuild.id, userTimeout)
                 }
                 const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
                 if (timeoutMs > 0) {
@@ -612,198 +854,222 @@ bot.on('interactionCreate', async interaction => {
                 // The user-facing embed deliberately omits quota numbers and purchase prompts —
                 // verifying members can't (and shouldn't) pay for a server-level SKU. The
                 // server's admins get the full purchase-enabled warning via ErrorNotifier instead.
-                const premiumCheck = await premiumManager.canSendMail(userGuild.id, interaction.entitlements)
+                const premiumCheck = await premiumManager.canSendMail(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction))
                 if (premiumCheck.autoDisabled) {
                     premiumManager.notifyZeptoModeAutoDisabled(userGuild, serverSettings.language).catch(() => {})
                 }
                 if (!premiumCheck.allowed) {
                     const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, getWebsiteUrl())
                     await interaction.followUp({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                    // Record the denial and fire the escalating admin upsell (1st/5th/20th
+                    // blocked member per month) — this is lost demand admins can't see otherwise.
+                    premiumManager.notifyMailDenied(userGuild, serverSettings.language).catch(() => {})
                     return
                 }
 
-                const code = Math.floor((Math.random() + 1) * 100000).toString()
+                // 6-digit code from a CSPRNG (the old Math.random()+1 scheme only ever
+                // produced 100000–199999). Persisted to SQLite with a TTL so it survives
+                // restarts and is readable from the shard a DM code-entry lands on.
+                const code = crypto.randomInt(100000, 1000000).toString()
                 // Send email and store code on success
                 await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, async (email) => {
-                    userCodes.set(interaction.user.id + userGuild.id, {
-                        code: code,
-                        email: md5hash(email),
-                        logEmail: email
+                    await database.setPendingVerification(interaction.user.id, userGuild.id, {
+                        code,
+                        emailHash: md5hash(email),
+                        logEmail: email,
+                        expiresAt: Date.now() + CODE_TTL_MS
                     })
 
                     // Only show the code prompt if email was successfully sent
                     const codePromptEmbed = createCodeSentEmbed(serverSettings.language, emailText.toLowerCase())
-                    
-                    const row = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('openCodeModal')
-                            .setLabel(getLocale(serverSettings.language, 'enterCodeButton'))
-                            .setEmoji('🔑')
-                            .setStyle(ButtonStyle.Success)
-                    )
-                    // Delete the initial verify prompt ("Enter Email") once email has been submitted
-                    const prevVerifyPromptId = verifyPromptMessages.get(interaction.user.id)
-                    if (prevVerifyPromptId) {
-                        verifyPromptMessages.delete(interaction.user.id)
-                        // Try both deletion methods for reliability with ephemeral messages
-                        interaction.webhook.deleteMessage(prevVerifyPromptId).catch(() => {})
-                    }
+                    const row = buildCodePromptRow(serverSettings.language, userGuild.id)
 
                     await interaction.followUp({ embeds: [codePromptEmbed], components: [row], flags: MessageFlags.Ephemeral }).catch(() => null)
                     const follow = await interaction.fetchReply().catch(() => null)
                     if (follow && follow.id) {
                         // Track the code prompt so we can delete it after code submission
-                        codePromptMessages.set(interaction.user.id + userGuild.id, follow.id)
+                        codePromptMessages.set(interaction.user.id + userGuild.id, { id: follow.id, ts: Date.now() })
                         setTimeout(() => {
                             interaction.webhook.deleteMessage(follow.id).catch(() => {})
                         }, 300000)
                     }
-                }, premiumCheck.source, serverSettings.emailStyle)
+                }, premiumCheck.source, serverSettings.emailStyle, userGuild, serverSettings)
             })
             return
         }
         // Code modal submit
-        if (interaction.customId === 'codeModal') {
+        if (action === 'codeModal') {
+            // Defer immediately: this path may REST-fetch the guild and run several role
+            // operations (DM flow on shard 0), which can exceed the 3s reply window.
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
+            const autoDelete = (ms) => setTimeout(() => { interaction.deleteReply().catch(() => {}) }, ms)
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
-            const userGuild = userGuilds.get(interaction.user.id)
+
+            const cleanupCodePrompt = () => {
+                const codePrompt = codePromptMessages.get(interaction.user.id + guildId)
+                if (codePrompt) {
+                    codePromptMessages.delete(interaction.user.id + guildId)
+                    interaction.webhook.deleteMessage(codePrompt.id).catch(() => {})
+                }
+            }
+
+            // Cheapest check first: no code on file (never requested, already used, or
+            // expired/swept) means we can answer without any REST guild fetch.
+            const pending = guildId ? await database.getPendingVerification(interaction.user.id, guildId) : null
+            if (!pending) {
+                const lang = await getGuildLanguage(guildId)
+                await interaction.editReply({ embeds: [createCodeExpiredEmbed(lang)] }).catch(() => {})
+                cleanupCodePrompt()
+                autoDelete(15000)
+                return
+            }
+
+            const userGuild = await resolveGuild(guildId)
             if (!userGuild) {
-                await interaction.reply({ embeds: [createSessionExpiredEmbed(true)], flags: MessageFlags.Ephemeral }).catch(() => null)
-                const sent = await interaction.fetchReply().catch(() => null)
-                setTimeout(() => {
-                    try { interaction.deleteReply().catch(() => {}) } catch {}
-                    try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                }, 10000)
+                const lang = await getGuildLanguage(guildId)
+                await interaction.editReply({ embeds: [createSessionExpiredEmbed(lang, true)] }).catch(() => {})
+                autoDelete(10000)
                 return
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
+                const language = serverSettings.language
                 if (!serverSettings.status) {
+                    // Notify admins (without `interaction`, so it doesn't also followUp the user)
+                    // and resolve the deferred reply ourselves — otherwise it hangs on "thinking…".
                     await ErrorNotifier.notify({
                         guild: userGuild,
-                        errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
-                        errorMessage: getLocale(serverSettings.language, 'errorBotNotConfiguredMessage'),
+                        errorTitle: getLocale(language, 'errorBotNotConfiguredTitle'),
+                        errorMessage: getLocale(language, 'errorBotNotConfiguredMessage'),
                         user: interaction.user,
-                        interaction: interaction,
-                        language: serverSettings.language
+                        language: language
                     });
+                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
                     return
                 }
-                const userCode = userCodes.get(interaction.user.id + userGuild.id)
-                if (userCode && userCode.code === codeText) {
-                    // Success: assign roles and update DB
-                    // Collect all roles to assign: default roles + domain-specific roles
-                    const defaultRoles = serverSettings.defaultRoles || []
-                    const domainRoles = serverSettings.domainRoles || {}
-                    
-                    // Get all matching domain patterns for this email
-                    const matchingPatterns = getMatchingDomainPatterns(userCode.logEmail, Object.keys(domainRoles))
-                    
-                    // Collect domain-specific role IDs
-                    const domainRoleIds = []
-                    for (const pattern of matchingPatterns) {
-                        if (domainRoles[pattern]) {
-                            domainRoleIds.push(...domainRoles[pattern])
-                        }
-                    }
-                    
-                    // Combine and deduplicate all role IDs
-                    const allRoleIds = [...new Set([...defaultRoles, ...domainRoleIds])]
-                    
-                    // Get role objects and filter out invalid ones
-                    const rolesToAdd = allRoleIds
-                        .map(id => userGuild.roles.cache.get(id))
-                        .filter(role => role !== undefined)
-                    
-                    const roleUnverified = userGuild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
 
-                    // Handle previous user with same email (unverify them)
-                    database.getEmailUser(userCode.email, userGuild.id, async (currentUserEmail) => {
-                        let member = await userGuild.members.fetch(currentUserEmail.userID).catch(() => null)
-                        if (interaction.user.id === currentUserEmail.userID) {
-                            // same user, nothing to unverify
-                        } else if (member) {
-                            try {
-                                // Remove all verified roles from previous user
-                                for (const role of rolesToAdd) {
-                                    await member.roles.remove(role).catch(() => {})
-                                }
-                                if (roleUnverified) {
-                                    await member.roles.add(roleUnverified)
-                                }
-                            } catch (e) {
-                                console.log(e)
-                            }
-                            try {
-                                await member.send("You got unverified on " + userGuild.name + " because somebody else used that email!").catch(() => {})
-                            } catch {}
-                        }
-                    })
-
-                    // Store the first default role in the legacy field for backward compatibility
-                    const primaryRoleId = defaultRoles.length > 0 ? defaultRoles[0] : (allRoleIds[0] || '')
-                    database.updateEmailUser(new EmailUser(userCode.email, interaction.user.id, userGuild.id, primaryRoleId, 0))
-
-                    // Assign all roles to the verified user
-                    const assignedRoleNames = []
-                    try {
-                        const verifyMember = await userGuild.members.fetch(interaction.user.id)
-                        for (const role of rolesToAdd) {
-                            await verifyMember.roles.add(role)
-                            assignedRoleNames.push(role.name)
-                        }
-                        if (serverSettings.unverifiedRoleName !== "") {
-                            await verifyMember.roles.remove(roleUnverified).catch(() => {})
-                        }
-                    } catch (e) {
-                        // Send generic error to user and detailed error to admin
-                        await ErrorNotifier.notify({
-                            guild: userGuild,
-                            errorTitle: getLocale(serverSettings.language, 'errorRoleAssignTitle'),
-                            errorMessage: getLocale(serverSettings.language, 'errorRoleAssignMessage'),
-                            user: interaction.user,
-                            interaction: interaction,
-                            language: serverSettings.language
-                        })
-                        return
+                // Wrong code: count the attempt and invalidate the code once the cap is hit
+                // so a 6-digit code can't be brute-forced. incrementPendingAttempts is a
+                // single atomic UPDATE…RETURNING; on a DB error we fail closed (generic
+                // error, attempt not revealed) instead of treating it as "not at the cap".
+                if (pending.code !== codeText) {
+                    const attempts = await database.incrementPendingAttempts(interaction.user.id, userGuild.id)
+                    if (attempts === 'error') {
+                        await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    } else if (attempts === null) {
+                        // Row vanished between read and increment: consumed or expired.
+                        await interaction.editReply({ embeds: [createCodeExpiredEmbed(language)] }).catch(() => {})
+                        cleanupCodePrompt()
+                    } else if (attempts >= MAX_CODE_ATTEMPTS) {
+                        await database.deletePendingVerification(interaction.user.id, userGuild.id)
+                        await interaction.editReply({ embeds: [createTooManyAttemptsEmbed(language)] }).catch(() => {})
+                        cleanupCodePrompt()
+                    } else {
+                        // Attempts remain — keep the "Enter Code" prompt alive so the user
+                        // can retry without restarting the whole email flow.
+                        await interaction.editReply({ embeds: [createInvalidCodeEmbed(language)] }).catch(() => {})
                     }
-                    try {
-                        if (serverSettings.logChannel !== "") {
-                            const rolesText = assignedRoleNames.length > 0 ? ` [${assignedRoleNames.join(', ')}]` : ''
-                            userGuild.channels.cache.get(serverSettings.logChannel).send(`✅ <@${interaction.user.id}> → \`${userCode.logEmail}\`${rolesText}`).catch(() => {})
-                        }
-                    } catch {}
-                    const successEmbed = createVerificationSuccessEmbed(serverSettings.language, assignedRoleNames, userGuild.name, userGuild.iconURL({ dynamic: true }))
-                    await interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral }).catch(() => null)
-                    const sent = await interaction.fetchReply().catch(() => null)
-                    // Track successful verification (global and per-guild)
-                    serverStatsAPI.increaseVerifiedUsers()
-                    database.incrementVerifications(userGuild.id)
-                    // Delete the code prompt message after successful verification
-                    const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
-                    if (codePromptId) {
-                        codePromptMessages.delete(interaction.user.id + userGuild.id)
-                        interaction.webhook.deleteMessage(codePromptId).catch(() => {})
-                    }
-                    // Remove the success message shortly after showing it
-                    setTimeout(() => {
-                        try { interaction.deleteReply().catch(() => {}) } catch {}
-                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                    }, 20000)
-                    userCodes.delete(interaction.user.id + userGuild.id)
-                } else {
-                    await interaction.reply({ embeds: [createInvalidCodeEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => null)
-                    const sent = await interaction.fetchReply().catch(() => null)
-                    // Delete the code prompt message after any code submission (even if invalid)
-                    const codePromptId = codePromptMessages.get(interaction.user.id + userGuild.id)
-                    if (codePromptId) {
-                        codePromptMessages.delete(interaction.user.id + userGuild.id)
-                        interaction.webhook.deleteMessage(codePromptId).catch(() => {})
-                    }
-                    // Remove the error message shortly after showing it
-                    setTimeout(() => {
-                        try { interaction.deleteReply().catch(() => {}) } catch {}
-                        try { if (sent && sent.id) interaction.webhook.deleteMessage(sent.id).catch(() => {}) } catch {}
-                    }, 10000)
+                    autoDelete(10000)
+                    return
                 }
+
+                // Correct code → consume it atomically. If another submission of the same
+                // code (e.g. DM modal racing the guild-channel modal on another shard)
+                // already consumed it, this delete reports no change and we bail out
+                // instead of double-verifying.
+                const consumed = await database.deletePendingVerification(interaction.user.id, userGuild.id)
+                if (!consumed) {
+                    await interaction.editReply({ embeds: [createCodeExpiredEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
+                    return
+                }
+                // If anything below fails before roles are assigned, restore the pending row
+                // (with its remaining TTL) so the user can resubmit the same code instead of
+                // burning another email send from the guild's quota.
+                const restorePending = () => database.setPendingVerification(interaction.user.id, userGuild.id, {
+                    code: pending.code,
+                    emailHash: pending.emailHash,
+                    logEmail: pending.logEmail,
+                    expiresAt: pending.expiresAt
+                }).catch(() => {})
+
+                const { rolesToAdd, roleUnverified } = resolveVerificationRoles(userGuild, serverSettings, pending.logEmail)
+
+                // Config expects roles but none resolved (roles deleted, or a stale/failed
+                // role cache on a cross-shard fetch): don't silently verify with no roles.
+                const expectsRoles = (serverSettings.defaultRoles || []).length > 0
+                    || Object.keys(serverSettings.domainRoles || {}).length > 0
+                if (rolesToAdd.length === 0 && expectsRoles) {
+                    await restorePending()
+                    await ErrorNotifier.notify({
+                        guild: userGuild,
+                        errorTitle: getLocale(language, 'errorRoleAssignTitle'),
+                        errorMessage: getLocale(language, 'errorRoleAssignMessage'),
+                        user: interaction.user,
+                        language: language
+                    })
+                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
+                    return
+                }
+
+                // Unverify any previous holder of this email.
+                unverifyPreviousHolder(userGuild, pending.emailHash, interaction.user.id, rolesToAdd, roleUnverified, language)
+
+                // Persist the new verified user (first role kept in the legacy field for back-compat).
+                const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || (rolesToAdd[0] && rolesToAdd[0].id) || ''
+                database.updateEmailUser(new EmailUser(pending.emailHash, interaction.user.id, userGuild.id, primaryRoleId, 0))
+
+                // Assign roles to the verifying member.
+                const assignedRoleNames = []
+                try {
+                    const verifyMember = await userGuild.members.fetch(interaction.user.id)
+                    for (const role of rolesToAdd) {
+                        await verifyMember.roles.add(role)
+                        assignedRoleNames.push(role.name)
+                    }
+                    if (roleUnverified) {
+                        await verifyMember.roles.remove(roleUnverified).catch(() => {})
+                    }
+                } catch (e) {
+                    // Restore the code so the user can resubmit once the admin fixes the
+                    // bot's permissions, notify admins (no `interaction`, so no duplicate
+                    // followUp), and resolve the deferred reply so it doesn't hang.
+                    await restorePending()
+                    await ErrorNotifier.notify({
+                        guild: userGuild,
+                        errorTitle: getLocale(language, 'errorRoleAssignTitle'),
+                        errorMessage: getLocale(language, 'errorRoleAssignMessage'),
+                        user: interaction.user,
+                        language: language
+                    })
+                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
+                    return
+                }
+
+                try {
+                    if (serverSettings.logChannel !== "") {
+                        const rolesText = assignedRoleNames.length > 0 ? ` [${assignedRoleNames.join(', ')}]` : ''
+                        const logChannel = userGuild.channels.cache.get(serverSettings.logChannel)
+                            || await userGuild.channels.fetch(serverSettings.logChannel).catch(() => null)
+                        if (logChannel) {
+                            logChannel.send(`✅ <@${interaction.user.id}> → \`${pending.logEmail}\`${rolesText}`).catch(() => {})
+                        }
+                    }
+                } catch {}
+
+                const successEmbed = createVerificationSuccessEmbed(language, assignedRoleNames, userGuild.name, userGuild.iconURL({ dynamic: true }))
+                await interaction.editReply({ embeds: [successEmbed] }).catch(() => {})
+
+                // Track successful verification (global and per-guild) and clear the rate limiter
+                // so a returning user isn't stuck behind the escalating email-send backoff.
+                serverStatsAPI.increaseVerifiedUsers()
+                database.incrementVerifications(userGuild.id)
+                userTimeouts.delete(interaction.user.id + userGuild.id)
+
+                cleanupCodePrompt()
+                autoDelete(20000)
             })
             return
         }

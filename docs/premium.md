@@ -32,7 +32,8 @@ You don't sign up. You don't add a payment method. You invite the bot, run `/rol
 
 - **25 verification emails per month**, per server. Resets on the 1st.
 - **All the configuration features** — domain rules, wildcard matching, domain-specific role mapping, blacklist, language settings, log channel, custom verify messages, auto-verify on join.
-- **Smart warnings** at 80% and 95% before you hit the limit, sent to your configured error notification destination (server-owner DM by default, or a channel you pick).
+- **Smart warnings** at 80% and 95% before you hit the limit — including a **run-out forecast** based on your current pace — sent to your configured error notification destination (server-owner DM by default, or a channel you pick).
+- **Blocked-attempt tracking.** Once the limit is hit, every member who tries to verify but can't is counted; you're alerted on the 1st, 5th, and 20th blocked member, and the count shows in `/status` and `/premium status`.
 - **No degradation when you stop using the bot.** No card on file means no surprise charges.
 
 If 25/month works for you, you can stop reading here.
@@ -146,6 +147,8 @@ All purchases happen inside Discord. Open `/premium status` in your server or cl
     - **Credit packs** and the **CSV unlock** require running `/premium redeem` **in the server you want them applied to**. Once redeemed they're permanently bound to that server and cannot be moved.
 
     If you redeem to the wrong server, that's irreversible. Pick carefully.
+
+    Right after buying a credit pack or the CSV unlock, the bot **DMs you a reminder** with the redeem instructions — so the purchase can't silently sit unused.
 
 ---
 

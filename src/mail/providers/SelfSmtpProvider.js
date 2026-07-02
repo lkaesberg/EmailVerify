@@ -25,6 +25,16 @@ module.exports = class SelfSmtpProvider extends MailProvider {
 
     get name() { return 'self-smtp' }
 
+    /** Verify SMTP connectivity/credentials without sending a mail (nodemailer verify). */
+    verify() {
+        return new Promise((resolve, reject) => {
+            this.transporter.verify((error) => {
+                if (error) return reject(error)
+                resolve(true)
+            })
+        })
+    }
+
     sendMail({ fromName, to, subject, text, html, headers }) {
         const mailOptions = {
             from: `"${fromName}" <${this.username}>`,

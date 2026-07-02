@@ -9,6 +9,8 @@ These commands can be used by any user.
 | `/verify` | Start the email verification process to get access to the server |
 | `/data delete-user` | Delete your personal verification data and remove your verified status |
 
+> 💡 **Didn't get the code?** The "Code Sent" message has a **Resend code** button (60-second cooldown). Codes are valid for 15 minutes and allow up to 5 attempts.
+
 ---
 
 ## 🔧 Administrator Commands
@@ -111,7 +113,9 @@ Configure bot behavior and preferences.
 
 | Command | Description |
 |---------|-------------|
+| `/setup` | **Guided 3-step setup wizard** — pick verified roles, restrict email domains (or allow any), and post the verification message. The fastest way to get started. |
 | `/button <channel> <buttontext> [title] [message] [color]` | Create a verification button embed in a channel |
+| `/testmail <email>` | Send a test verification email through the real delivery path — reports the provider used and latency, so you can check inbox vs. spam placement. Counts against the monthly quota, max 3 per day. |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |
 | `/set_error_notify owner` | Send error notifications to the server owner (default) |
 | `/set_error_notify channel <channel>` | Send error notifications to a specific channel |
@@ -154,7 +158,16 @@ If `/premium redeem` reports "no unredeemed purchases", check that:
 Each server gets a small monthly free quota of verification emails (default 25
 per month). The bot will warn admins via the configured error-notification
 channel as the quota approaches: at 80%, at 95%, and again when the limit is
-reached. Quota resets at the start of each calendar month.
+reached. The 80%/95% warnings include a **run-out forecast** ("at the current
+pace, the free emails will run out around the 14th") so you can act before
+members are affected. Quota resets at the start of each calendar month.
+
+**After the limit is reached**, every further verification attempt is counted
+as a *blocked attempt*. Admins are notified — with purchase buttons attached —
+on the 1st, 5th, and 20th blocked member each month, and the running count is
+shown in `/status` and `/premium status` ("🚫 N verification attempts blocked
+this month"). Each blocked attempt is a member who tried to join but couldn't
+verify.
 
 #### Mail delivery modes
 
@@ -179,7 +192,7 @@ notifies the operator.
 
 | Command | Description |
 |---------|-------------|
-| `/status` | View bot configuration, verification statistics, and check for setup issues |
+| `/status` | View bot configuration, verification statistics, blocked-attempt count, quota forecast, and check for setup issues |
 | `/help` | Show setup instructions and command overview |
 
 ### ⚠️ Data Management (Danger Zone)

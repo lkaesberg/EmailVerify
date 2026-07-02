@@ -35,6 +35,82 @@ class PremiumManager {
     }
 
     /**
+     * Project when the free monthly quota will run out at the current sending pace.
+     * Returns a Date within this month, or null when there's no useful signal (no
+     * sends yet, already over the limit — the 100% warning covers that — or on pace
+     * to stay within the quota).
+     */
+    computeRunOutForecast(mailsSentMonth, freeLimit) {
+        if (!freeLimit || !mailsSentMonth || mailsSentMonth <= 0) return null
+        if (mailsSentMonth >= freeLimit) return null
+        const now = new Date()
+        const dayOfMonth = now.getDate()
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        const dailyRate = mailsSentMonth / dayOfMonth
+        if (dailyRate * daysInMonth < freeLimit) return null
+        const runOutDay = Math.min(daysInMonth, Math.max(dayOfMonth + 1, Math.ceil(freeLimit / dailyRate)))
+        return new Date(now.getFullYear(), now.getMonth(), runOutDay)
+    }
+
+    /**
+     * Localized forecast line ("at this pace you'll run out around <date>") for the
+     * given usage, or null. The date renders as a Discord timestamp so it localizes
+     * itself to each reader's locale/timezone.
+     */
+    forecastLine(language, mailsSentMonth) {
+        const runOut = this.computeRunOutForecast(mailsSentMonth, this.freeMonthlyLimit)
+        if (!runOut) return null
+        const unix = Math.floor(runOut.getTime() / 1000)
+        return getLocale(language || 'english', 'premiumForecastRunOut', `<t:${unix}:D>`)
+    }
+
+    /**
+     * Escalating "members are being turned away" notification. Records the denial and
+     * notifies admins (with purchase buttons) on the 1st, 5th and 20th denial per
+     * month — loss framing at the moment of highest purchase intent, and re-engagement
+     * for admins who missed the single 100% warning.
+     */
+    async notifyMailDenied(guild, language) {
+        if (!guild) return
+        let crossings
+        try {
+            crossings = await database.recordMailDeniedAndCheckThresholds(guild.id)
+        } catch (e) {
+            console.error('[Premium] Failed to record mail denial:', e)
+            return
+        }
+        if (!crossings.crossed1 && !crossings.crossed5 && !crossings.crossed20) return
+
+        const lang = language || 'english'
+        const ErrorNotifier = require('../utils/ErrorNotifier')
+        const { buildPlanButtons, getWebsiteUrl } = require('../utils/premiumButtons')
+
+        let components = null
+        try {
+            const premiumStatus = await this.getPremiumStatus(guild.id, null)
+            const rows = buildPlanButtons(premiumStatus, { context: 'mailLimit' })
+            if (rows.length > 0) components = rows
+        } catch (e) {
+            // Buttons are a bonus — proceed without them if SKUs aren't fetchable.
+        }
+
+        let message = getLocale(lang, 'mailDeniedWarnMessage', String(crossings.deniedMonth ?? 1))
+        message += '\n\n' + getLocale(lang, 'quotaWarnRedeemHint')
+        const websiteUrl = getWebsiteUrl()
+        if (websiteUrl) {
+            message += '\n' + getLocale(lang, 'quotaWarnFooterWebsite', websiteUrl)
+        }
+
+        await ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(lang, 'mailDeniedWarnTitle'),
+            errorMessage: message,
+            language: lang,
+            components
+        }).catch(() => {})
+    }
+
+    /**
      * Determines whether the guild is allowed to send an email.
      * If credits are consumed, the credit is decremented atomically.
      * Returns { allowed, source, autoDisabled?, reason?, mailsSentMonth?, freeLimit? }.
@@ -252,6 +328,7 @@ class PremiumManager {
             subscriptionTier: tier,
             freeLimit: this.freeMonthlyLimit,
             mailsSentMonth: stats.mailsSentMonth,
+            mailsDeniedMonth: stats.mailsDeniedMonth || 0,
             freeRemaining: Math.max(0, this.freeMonthlyLimit - stats.mailsSentMonth),
             bonusCredits: premium.bonusCredits,
             csvUnlocked: premium.csvUnlocked,

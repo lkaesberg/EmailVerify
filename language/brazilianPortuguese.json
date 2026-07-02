@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Verificação temporariamente indisponível",
   "emaillistLockedUserMessage": "A verificação está pausada neste servidor enquanto os administradores resolvem um problema de configuração. Eles foram notificados — por favor tente novamente mais tarde.",
   "emaillistLockedAdminTitle": "🛑 Lista de emails permitidos bloqueada — verificação pausada",
-  "emaillistLockedAdminMessage": "Este servidor tem uma lista de emails permitidos enviada, mas a **assinatura Pro** ou o **desbloqueio CSV** necessário para gerenciá-la não está mais ativo. A verificação está pausada para todos até que você escolha uma das opções a seguir:\n\n• **Limpar a lista:** execute `/emaillist clear`. Depois disso, qualquer email será aceito (sujeito às suas configurações de `/domain` e `/blacklist`).\n• **Restaurar acesso CSV:** abra `/premium status` e compre novamente o plano **Pro** ou o **desbloqueio CSV**. A lista existente voltará a funcionar assim que o acesso for restaurado.\n\nEsta notificação é limitada a uma vez por hora para não inundar o canal."
+  "emaillistLockedAdminMessage": "Este servidor tem uma lista de emails permitidos enviada, mas a **assinatura Pro** ou o **desbloqueio CSV** necessário para gerenciá-la não está mais ativo. A verificação está pausada para todos até que você escolha uma das opções a seguir:\n\n• **Limpar a lista:** execute `/emaillist clear`. Depois disso, qualquer email será aceito (sujeito às suas configurações de `/domain` e `/blacklist`).\n• **Restaurar acesso CSV:** abra `/premium status` e compre novamente o plano **Pro** ou o **desbloqueio CSV**. A lista existente voltará a funcionar assim que o acesso for restaurado.\n\nEsta notificação é limitada a uma vez por hora para não inundar o canal.",
+  "unverifiedByOtherDm": "Sua verificação em **%VAR%** foi removida porque outra pessoa se verificou com esse endereço de e-mail.",
+  "sessionExpiredTitle": "❌ Sessão expirada",
+  "sessionExpiredDescription": "Sua sessão de verificação expirou ou não foi iniciada corretamente.\n\n**Como resolver:**\n1. Volte ao canal de verificação do servidor\n2. Clique no botão de verificação para começar de novo\n3. Digite seu e-mail para receber um novo código",
+  "sessionExpiredDescriptionShort": "Sua sessão de verificação expirou ou não foi iniciada corretamente.\n\n**Como resolver:**\n1. Volte ao canal de verificação do servidor\n2. Clique no botão de verificação para começar de novo",
+  "codeExpiredTitle": "⌛ Código expirado",
+  "codeExpiredDescription": "Seu código de verificação expirou ou já foi usado.\n\nInicie a verificação novamente para receber um novo código.",
+  "codeTooManyAttemptsTitle": "🚫 Tentativas em excesso",
+  "codeTooManyAttemptsDescription": "Você inseriu um código incorreto vezes demais.\n\nInicie a verificação novamente para receber um novo código.",
+  "resendCodeButton": "Reenviar código",
+  "resendCooldownDescription": "Aguarde **%VAR% segundos** antes de solicitar outro código.\n\nVerifique também sua pasta de spam — o último código pode já estar lá.",
+  "mailDeniedWarnTitle": "🚫 Membros estão sendo recusados",
+  "mailDeniedWarnMessage": "**%VAR%** tentativa(s) de verificação foram bloqueadas este mês porque o limite de e-mails deste servidor foi atingido. Cada uma é um membro que tentou entrar mas não conseguiu se verificar.\n\nAssine para verificações ilimitadas ou compre um pacote de créditos abaixo para deixá-los entrar.",
+  "premiumForecastRunOut": "📈 No ritmo atual, os e-mails gratuitos do mês vão acabar por volta de %VAR%.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** tentativa(s) de verificação bloqueadas este mês pelo limite de e-mails",
+  "statusIssueNoErrorDestination": "Os avisos de cota e erros não têm destino — defina um canal com `/set_error_notify channel` ou um canal de logs, ou alertas importantes serão perdidos",
+  "quotaWarnRedeemHint": "Depois de comprar créditos, execute `/premium redeem` neste servidor para aplicá-los — os créditos nunca expiram."
 }

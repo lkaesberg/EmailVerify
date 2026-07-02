@@ -57,8 +57,8 @@ This bot verifies that a Discord user owns an email address with a specific doma
 
 ### How it works:
 1. User clicks a verification button
-2. Bot sends a DM asking for their email address
-3. A verification code is sent to the email
+2. A popup asks for their email address
+3. A 6-digit verification code is sent to the email (with a **Resend code** button if it doesn't arrive)
 4. User enters the code to receive the verified role
 
 ---
@@ -72,6 +72,10 @@ Use this link to invite the bot to your server:
 [![Invite Bot](https://img.shields.io/badge/Invite-EmailVerify%20Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands)
 
 ### Quick Setup
+
+The fastest way: run **`/setup`** — a guided 3-step wizard that configures your verified roles, email domains, and posts the verification message for you. Then run `/testmail` to confirm email delivery.
+
+Prefer manual setup?
 
 1. **Invite the bot** using the link above
 2. **Add a default role**: `/role add @Verified` (given to all verified users)
@@ -159,7 +163,9 @@ Assign different roles based on email domain:
 
 | Command | Description |
 |---------|-------------|
+| `/setup` | Guided 3-step setup wizard (roles → domains → verification channel) |
 | `/button <channel> <buttontext>` | Create a verification button embed in a channel |
+| `/testmail <email>` | Send a test verification email to check delivery & spam placement |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |
 | `/set_error_notify` | Configure where error notifications are sent |
 

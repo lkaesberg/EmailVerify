@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ 인증 일시적으로 사용 불가",
   "emaillistLockedUserMessage": "관리자가 구성 문제를 해결하는 동안 이 서버의 인증이 일시 중지되었습니다. 관리자에게 알림이 전송되었습니다 — 나중에 다시 시도해주세요.",
   "emaillistLockedAdminTitle": "🛑 허용 이메일 목록 잠김 — 인증 일시 중지",
-  "emaillistLockedAdminMessage": "이 서버에는 업로드된 허용 이메일 목록이 있지만, 이를 관리하는 데 필요한 **Pro 구독** 또는 **CSV 잠금 해제**가 더 이상 활성화되어 있지 않습니다. 다음 중 하나를 선택할 때까지 모든 사용자에 대해 인증이 일시 중지됩니다:\n\n• **목록 지우기:** `/emaillist clear`를 실행하세요. 그 후에는 모든 이메일이 허용됩니다 (`/domain` 및 `/blacklist` 설정에 따름).\n• **CSV 액세스 복원:** `/premium status`를 열고 **Pro** 플랜이나 **CSV 잠금 해제**를 다시 구매하세요. 액세스가 복원되면 기존 목록이 즉시 다시 작동합니다.\n\n이 알림은 채널을 도배하지 않도록 시간당 1회로 제한됩니다."
+  "emaillistLockedAdminMessage": "이 서버에는 업로드된 허용 이메일 목록이 있지만, 이를 관리하는 데 필요한 **Pro 구독** 또는 **CSV 잠금 해제**가 더 이상 활성화되어 있지 않습니다. 다음 중 하나를 선택할 때까지 모든 사용자에 대해 인증이 일시 중지됩니다:\n\n• **목록 지우기:** `/emaillist clear`를 실행하세요. 그 후에는 모든 이메일이 허용됩니다 (`/domain` 및 `/blacklist` 설정에 따름).\n• **CSV 액세스 복원:** `/premium status`를 열고 **Pro** 플랜이나 **CSV 잠금 해제**를 다시 구매하세요. 액세스가 복원되면 기존 목록이 즉시 다시 작동합니다.\n\n이 알림은 채널을 도배하지 않도록 시간당 1회로 제한됩니다.",
+  "unverifiedByOtherDm": "다른 사람이 이 이메일 주소로 인증했기 때문에 **%VAR%**에서의 인증이 해제되었습니다.",
+  "sessionExpiredTitle": "❌ 세션 만료됨",
+  "sessionExpiredDescription": "인증 세션이 만료되었거나 제대로 시작되지 않았습니다.\n\n**해결 방법:**\n1. 서버의 인증 채널로 돌아가세요\n2. 인증 버튼을 클릭하여 다시 시작하세요\n3. 새 코드를 받으려면 이메일을 입력하세요",
+  "sessionExpiredDescriptionShort": "인증 세션이 만료되었거나 제대로 시작되지 않았습니다.\n\n**해결 방법:**\n1. 서버의 인증 채널로 돌아가세요\n2. 인증 버튼을 클릭하여 다시 시작하세요",
+  "codeExpiredTitle": "⌛ 코드 만료됨",
+  "codeExpiredDescription": "인증 코드가 만료되었거나 이미 사용되었습니다.\n\n새 코드를 받으려면 인증을 다시 시작하세요.",
+  "codeTooManyAttemptsTitle": "🚫 시도 횟수 초과",
+  "codeTooManyAttemptsDescription": "잘못된 코드를 너무 많이 입력했습니다.\n\n새 코드를 받으려면 인증을 다시 시작하세요.",
+  "resendCodeButton": "코드 다시 보내기",
+  "resendCooldownDescription": "다른 코드를 요청하기 전에 **%VAR%초** 기다려 주세요.\n\n스팸 폴더도 확인해 보세요 — 마지막 코드가 이미 도착해 있을 수 있습니다.",
+  "mailDeniedWarnTitle": "🚫 멤버들이 거부되고 있습니다",
+  "mailDeniedWarnMessage": "이 서버의 이메일 한도에 도달하여 이번 달 **%VAR%**건의 인증 시도가 차단되었습니다. 각각은 참여하려 했지만 인증하지 못한 멤버입니다.\n\n무제한 인증을 위해 구독하거나 아래에서 크레딧 팩을 구매해 그들을 들여보내세요.",
+  "premiumForecastRunOut": "📈 현재 속도라면 무료 월간 이메일이 %VAR% 즈음 소진됩니다.",
+  "premiumBlockedThisMonth": "🚫 이번 달 메일 한도로 **%VAR%**건의 인증 시도가 차단됨",
+  "statusIssueNoErrorDestination": "할당량 및 오류 경고를 받을 곳이 없습니다 — `/set_error_notify channel`로 채널이나 로그 채널을 설정하세요. 그렇지 않으면 중요한 알림을 놓칩니다",
+  "quotaWarnRedeemHint": "크레딧 구매 후 이 서버에서 `/premium redeem`을 실행해 적용하세요 — 크레딧은 만료되지 않습니다."
 }

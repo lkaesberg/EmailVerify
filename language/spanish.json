@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Verificación temporalmente no disponible",
   "emaillistLockedUserMessage": "La verificación está pausada en este servidor mientras los administradores resuelven un problema de configuración. Han sido notificados — por favor inténtalo más tarde.",
   "emaillistLockedAdminTitle": "🛑 Lista de emails permitidos bloqueada — verificación pausada",
-  "emaillistLockedAdminMessage": "Este servidor tiene una lista de emails permitidos cargada, pero la **suscripción Pro** o el **desbloqueo CSV** necesarios para gestionarla ya no están activos. La verificación está pausada para todos hasta que elijas una de las siguientes opciones:\n\n• **Limpiar la lista:** ejecuta `/emaillist clear`. Después de eso, se aceptará cualquier email (sujeto a tus configuraciones de `/domain` y `/blacklist`).\n• **Restaurar acceso CSV:** abre `/premium status` y vuelve a comprar el plan **Pro** o el **desbloqueo CSV**. La lista existente seguirá funcionando en cuanto se restaure el acceso.\n\nEsta notificación está limitada a una vez por hora para no inundar el canal."
+  "emaillistLockedAdminMessage": "Este servidor tiene una lista de emails permitidos cargada, pero la **suscripción Pro** o el **desbloqueo CSV** necesarios para gestionarla ya no están activos. La verificación está pausada para todos hasta que elijas una de las siguientes opciones:\n\n• **Limpiar la lista:** ejecuta `/emaillist clear`. Después de eso, se aceptará cualquier email (sujeto a tus configuraciones de `/domain` y `/blacklist`).\n• **Restaurar acceso CSV:** abre `/premium status` y vuelve a comprar el plan **Pro** o el **desbloqueo CSV**. La lista existente seguirá funcionando en cuanto se restaure el acceso.\n\nEsta notificación está limitada a una vez por hora para no inundar el canal.",
+  "unverifiedByOtherDm": "Se canceló tu verificación en **%VAR%** porque otra persona se verificó con esa dirección de correo electrónico.",
+  "sessionExpiredTitle": "❌ Sesión expirada",
+  "sessionExpiredDescription": "Tu sesión de verificación expiró o no se inició correctamente.\n\n**Cómo solucionarlo:**\n1. Vuelve al canal de verificación del servidor\n2. Haz clic en el botón de verificación para empezar de nuevo\n3. Introduce tu correo electrónico para recibir un nuevo código",
+  "sessionExpiredDescriptionShort": "Tu sesión de verificación expiró o no se inició correctamente.\n\n**Cómo solucionarlo:**\n1. Vuelve al canal de verificación del servidor\n2. Haz clic en el botón de verificación para empezar de nuevo",
+  "codeExpiredTitle": "⌛ Código expirado",
+  "codeExpiredDescription": "Tu código de verificación expiró o ya fue utilizado.\n\nInicia la verificación de nuevo para recibir un nuevo código.",
+  "codeTooManyAttemptsTitle": "🚫 Demasiados intentos",
+  "codeTooManyAttemptsDescription": "Has introducido un código incorrecto demasiadas veces.\n\nInicia la verificación de nuevo para recibir un nuevo código.",
+  "resendCodeButton": "Reenviar código",
+  "resendCooldownDescription": "Espera **%VAR% segundos** antes de solicitar otro código.\n\nRevisa también tu carpeta de spam — el último código podría estar allí.",
+  "mailDeniedWarnTitle": "🚫 Se está rechazando a miembros",
+  "mailDeniedWarnMessage": "**%VAR%** intento(s) de verificación fueron bloqueados este mes porque se alcanzó el límite de correos de este servidor. Cada uno es un miembro que intentó unirse pero no pudo verificarse.\n\nSuscríbete para verificaciones ilimitadas o compra un paquete de créditos abajo para dejarlos entrar.",
+  "premiumForecastRunOut": "📈 Al ritmo actual, los correos gratuitos del mes se agotarán alrededor del %VAR%.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** intento(s) de verificación bloqueados este mes por el límite de correo",
+  "statusIssueNoErrorDestination": "Las alertas de cuota y errores no tienen destino — configura un canal con `/set_error_notify channel` o un canal de registro, o se perderán avisos importantes",
+  "quotaWarnRedeemHint": "Después de comprar créditos, ejecuta `/premium redeem` en este servidor para aplicarlos — los créditos nunca caducan."
 }

@@ -74,7 +74,7 @@ Built for university servers, employee groups, and any closed community where yo
 
     ---
 
-    Like a phone plan: warnings at 80%, 95%, and 100% of your monthly send limit. Sent to whoever you want — owner DM, channel, or specific admin.
+    Like a phone plan: warnings at 80%, 95%, and 100% of your monthly send limit — with a run-out forecast and a count of members turned away once it's hit. Sent to whoever you want — owner DM, channel, or specific admin.
 
 - :material-shield-lock:{ .lg .middle } __Privacy-first storage__
 

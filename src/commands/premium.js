@@ -42,11 +42,20 @@ module.exports = {
                     ? getLocale(language, status.subscriptionTier === 'tier2' ? 'premiumPlanPro' : 'premiumPlanStandard')
                     : getLocale(language, 'premiumPlanFree')
 
-                const mailsValue = status.hasUnlimitedMails
+                let mailsValue = status.hasUnlimitedMails
                     ? getLocale(language, 'premiumMailsUnlimited', status.mailsSentMonth.toString())
                     : (status.mailMode === 'zeptomail' && !status.subscriptionTier
                         ? getLocale(language, 'premiumMailsZeptoMode', status.bonusCredits.toString())
                         : getLocale(language, 'premiumMailsLimited', status.mailsSentMonth.toString(), status.freeLimit.toString(), status.freeRemaining.toString()))
+
+                // Lost demand + run-out forecast — the strongest upgrade signals.
+                if (status.mailsDeniedMonth > 0) {
+                    mailsValue += '\n' + getLocale(language, 'premiumBlockedThisMonth', status.mailsDeniedMonth.toString())
+                }
+                if (!status.subscriptionTier && status.mailMode !== 'zeptomail') {
+                    const forecast = premiumManager.forecastLine(language, status.mailsSentMonth)
+                    if (forecast) mailsValue += '\n' + forecast
+                }
 
                 const modeValue = status.subscriptionTier
                     ? getLocale(language, 'premiumMailModeSubscription')

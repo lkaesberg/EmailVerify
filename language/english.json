@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Verification temporarily unavailable",
   "emaillistLockedUserMessage": "Verification is paused on this server while the admins resolve a configuration issue. They've been notified — please try again later.",
   "emaillistLockedAdminTitle": "🛑 Allowed-emails list is locked — verification paused",
-  "emaillistLockedAdminMessage": "This server has an uploaded allowed-emails list, but the **Pro subscription** or **CSV unlock** required to manage it is no longer active. Verification is paused for everyone until you choose one of the following:\n\n• **Clear the list:** run `/emaillist clear`. After that, any email is accepted (subject to your `/domain` and `/blacklist` settings).\n• **Restore CSV access:** open `/premium status` and re-buy the **Pro** plan or the **CSV unlock**. The existing list will continue to work as soon as access is restored.\n\nThis notification is throttled to once per hour so we don't flood the channel."
+  "emaillistLockedAdminMessage": "This server has an uploaded allowed-emails list, but the **Pro subscription** or **CSV unlock** required to manage it is no longer active. Verification is paused for everyone until you choose one of the following:\n\n• **Clear the list:** run `/emaillist clear`. After that, any email is accepted (subject to your `/domain` and `/blacklist` settings).\n• **Restore CSV access:** open `/premium status` and re-buy the **Pro** plan or the **CSV unlock**. The existing list will continue to work as soon as access is restored.\n\nThis notification is throttled to once per hour so we don't flood the channel.",
+  "unverifiedByOtherDm": "You were unverified on **%VAR%** because someone else verified with that email address.",
+  "sessionExpiredTitle": "❌ Session Expired",
+  "sessionExpiredDescription": "Your verification session has expired or wasn't started properly.\n\n**How to fix:**\n1. Go back to the server's verification channel\n2. Click the verification button to start fresh\n3. Enter your email to receive a new code",
+  "sessionExpiredDescriptionShort": "Your verification session has expired or wasn't started properly.\n\n**How to fix:**\n1. Go back to the server's verification channel\n2. Click the verification button to start fresh",
+  "codeExpiredTitle": "⌛ Code Expired",
+  "codeExpiredDescription": "Your verification code has expired or was already used.\n\nPlease start the verification again to receive a new code.",
+  "codeTooManyAttemptsTitle": "🚫 Too Many Attempts",
+  "codeTooManyAttemptsDescription": "You've entered an incorrect code too many times.\n\nPlease start the verification again to receive a new code.",
+  "resendCodeButton": "Resend code",
+  "resendCooldownDescription": "Please wait **%VAR% seconds** before requesting another code.\n\nDon't forget to check your spam folder — the last code may already be there.",
+  "mailDeniedWarnTitle": "🚫 Members are being turned away",
+  "mailDeniedWarnMessage": "**%VAR%** verification attempt(s) were blocked this month because this server's email limit was reached. Every one of them is a member who tried to join but couldn't verify.\n\nSubscribe for unlimited verifications or buy a credit pack below to let them in.",
+  "premiumForecastRunOut": "📈 At the current pace, the free monthly emails will run out around %VAR%.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** verification attempt(s) blocked by the mail limit this month",
+  "statusIssueNoErrorDestination": "Quota & error warnings have no destination — set a channel with `/set_error_notify channel` or a log channel, or important alerts will be missed",
+  "quotaWarnRedeemHint": "After buying credits, run `/premium redeem` in this server to apply them — credits never expire."
 }

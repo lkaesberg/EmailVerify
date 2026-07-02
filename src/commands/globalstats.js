@@ -15,7 +15,8 @@ module.exports = {
                 .addChoices(
                     { name: 'Overview (averages, medians, counts)', value: 'overview' },
                     { name: 'Top 100 by Mails Sent', value: 'top_mails' },
-                    { name: 'Top 100 by Verifications', value: 'top_verifications' }
+                    { name: 'Top 100 by Verifications', value: 'top_verifications' },
+                    { name: 'Top 100 by Blocked Attempts (this month)', value: 'top_denied' }
                 )
         )
         .addStringOption(option =>
@@ -79,6 +80,8 @@ module.exports = {
                 await this.showTopMails(interaction, allStats, isMonthly, pages);
             } else if (type === 'top_verifications') {
                 await this.showTopVerifications(interaction, allStats, isMonthly, pages);
+            } else if (type === 'top_denied') {
+                await this.showTopDenied(interaction, allStats, pages);
             }
         } catch (error) {
             console.error('Error fetching owner stats:', error);
@@ -113,6 +116,16 @@ module.exports = {
         return stat.verificationsTotal || 0;
     },
 
+    // Blocked verification attempts only have a monthly counter (no all-time column),
+    // so this is always current-month regardless of the selected period.
+    getDeniedValue(stat) {
+        const currentMonth = this.getCurrentMonth();
+        if (stat.statsMonth === currentMonth) {
+            return stat.mailsDeniedMonth || 0;
+        }
+        return 0;
+    },
+
     async showOverview(interaction, allStats, isMonthly) {
         const mailsArray = allStats.map(s => this.getMailsValue(s, isMonthly)).sort((a, b) => a - b);
         const verificationsArray = allStats.map(s => this.getVerificationsValue(s, isMonthly)).sort((a, b) => a - b);
@@ -132,6 +145,10 @@ module.exports = {
         // Count servers with at least one verification
         const serversWithVerifications = allStats.filter(s => this.getVerificationsValue(s, isMonthly) >= 1).length;
         const serversWithMails = allStats.filter(s => this.getMailsValue(s, isMonthly) >= 1).length;
+
+        // Blocked attempts = lost demand at quota-limited servers (monthly counter only)
+        const totalDenied = allStats.reduce((sum, s) => sum + this.getDeniedValue(s), 0);
+        const serversWithDenied = allStats.filter(s => this.getDeniedValue(s) >= 1).length;
 
         // Get period label for display
         const periodLabel = isMonthly ? 'This Month' : 'All Time';
@@ -168,10 +185,18 @@ module.exports = {
                 },
                 {
                     name: '✅ Verifications Statistics',
-                    value: 
+                    value:
                         `**Total:** ${totalVerifications.toLocaleString()}\n` +
                         `**Average:** ${avgVerifications.toFixed(2)}\n` +
                         `**Median:** ${medianVerifications}`,
+                    inline: true
+                },
+                {
+                    name: '🚫 Blocked Attempts (this month)',
+                    value:
+                        `**Total:** ${totalDenied.toLocaleString()}\n` +
+                        `**Servers affected:** ${serversWithDenied.toLocaleString()}\n` +
+                        `*Quota-blocked verifications — your upgrade leads*`,
                     inline: true
                 }
             )
@@ -221,6 +246,37 @@ module.exports = {
             (stat) => this.getVerificationsValue(stat, isMonthly),
             'verifications',
             periodLabel,
+            pages
+        );
+
+        await interaction.editReply({ embeds, flags: MessageFlags.Ephemeral });
+    },
+
+    async showTopDenied(interaction, allStats, pages) {
+        const itemsPerPage = 10;
+        const maxItems = pages * itemsPerPage;
+
+        // Only servers actually losing members are interesting here.
+        const sorted = allStats
+            .filter(s => this.getDeniedValue(s) >= 1)
+            .sort((a, b) => this.getDeniedValue(b) - this.getDeniedValue(a))
+            .slice(0, maxItems);
+
+        if (sorted.length === 0) {
+            await interaction.editReply({
+                content: "🚫 No blocked verification attempts recorded this month — no server has hit its mail limit yet.",
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        const embeds = await this.createTopEmbeds(
+            interaction,
+            sorted,
+            `🚫 Top Servers by Blocked Attempts (This Month)`,
+            (stat) => this.getDeniedValue(stat),
+            'blocked attempts',
+            'This Month',
             pages
         );
 

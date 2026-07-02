@@ -18,8 +18,14 @@ module.exports = {
             .setColor(0x5865F2)
             .addFields(
                 {
-                    name: '🚀 Quick Setup (4 Steps)',
-                    value: 
+                    name: '✨ New here?',
+                    value:
+                        'Run **`/setup`** — a guided 3-step wizard that configures roles, email domains, ' +
+                        'and posts the verification message for you. Then `/testmail` to confirm delivery.'
+                },
+                {
+                    name: '🚀 Manual Setup (4 Steps)',
+                    value:
                         '**1.** `/role add <role>` - Add a default role for verified users\n' +
                         '**2.** `/domain add <domains>` - Add allowed email domains\n' +
                         '**3.** `/button <channel>` - Create verification embed\n' +
@@ -73,6 +79,7 @@ module.exports = {
                     name: '🛡️ Moderation',
                     value:
                         '`/manualverify` - Manually verify a user without email\n' +
+                        '`/testmail` - Send a test email to check delivery & spam placement\n' +
                         '`/set_error_notify` - Configure error notifications'
                 },
                 {

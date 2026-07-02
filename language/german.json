@@ -230,5 +230,21 @@
   "emaillistLockedUserTitle": "❌ Verifizierung vorübergehend nicht verfügbar",
   "emaillistLockedUserMessage": "Die Verifizierung auf diesem Server pausiert, während die Admins ein Konfigurationsproblem beheben. Sie wurden benachrichtigt — bitte versuche es später erneut.",
   "emaillistLockedAdminTitle": "🛑 Erlaubte-E-Mail-Liste gesperrt — Verifizierung pausiert",
-  "emaillistLockedAdminMessage": "Dieser Server hat eine hochgeladene erlaubte E-Mail-Liste, aber das zur Verwaltung benötigte **Pro-Abo** oder die **CSV-Freischaltung** ist nicht mehr aktiv. Die Verifizierung ist für alle pausiert, bis du eines der folgenden Dinge tust:\n\n• **Liste löschen:** Führe `/emaillist clear` aus. Danach wird jede E-Mail akzeptiert (vorbehaltlich deiner `/domain`- und `/blacklist`-Einstellungen).\n• **CSV-Zugriff wiederherstellen:** Öffne `/premium status` und kaufe den **Pro**-Plan oder die **CSV-Freischaltung** erneut. Die bestehende Liste funktioniert sofort wieder, sobald der Zugriff wiederhergestellt ist.\n\nDiese Benachrichtigung ist auf einmal pro Stunde gedrosselt, damit der Kanal nicht zugespammt wird."
+  "emaillistLockedAdminMessage": "Dieser Server hat eine hochgeladene erlaubte E-Mail-Liste, aber das zur Verwaltung benötigte **Pro-Abo** oder die **CSV-Freischaltung** ist nicht mehr aktiv. Die Verifizierung ist für alle pausiert, bis du eines der folgenden Dinge tust:\n\n• **Liste löschen:** Führe `/emaillist clear` aus. Danach wird jede E-Mail akzeptiert (vorbehaltlich deiner `/domain`- und `/blacklist`-Einstellungen).\n• **CSV-Zugriff wiederherstellen:** Öffne `/premium status` und kaufe den **Pro**-Plan oder die **CSV-Freischaltung** erneut. Die bestehende Liste funktioniert sofort wieder, sobald der Zugriff wiederhergestellt ist.\n\nDiese Benachrichtigung ist auf einmal pro Stunde gedrosselt, damit der Kanal nicht zugespammt wird.",
+  "unverifiedByOtherDm": "Du wurdest auf **%VAR%** entverifiziert, weil sich jemand anderes mit dieser E-Mail-Adresse verifiziert hat.",
+  "sessionExpiredTitle": "❌ Sitzung abgelaufen",
+  "sessionExpiredDescription": "Deine Verifizierungssitzung ist abgelaufen oder wurde nicht richtig gestartet.\n\n**So behebst du es:**\n1. Gehe zurück zum Verifizierungskanal des Servers\n2. Klicke auf den Verifizierungsbutton, um neu zu starten\n3. Gib deine E-Mail-Adresse ein, um einen neuen Code zu erhalten",
+  "sessionExpiredDescriptionShort": "Deine Verifizierungssitzung ist abgelaufen oder wurde nicht richtig gestartet.\n\n**So behebst du es:**\n1. Gehe zurück zum Verifizierungskanal des Servers\n2. Klicke auf den Verifizierungsbutton, um neu zu starten",
+  "codeExpiredTitle": "⌛ Code abgelaufen",
+  "codeExpiredDescription": "Dein Verifizierungscode ist abgelaufen oder wurde bereits verwendet.\n\nBitte starte die Verifizierung erneut, um einen neuen Code zu erhalten.",
+  "codeTooManyAttemptsTitle": "🚫 Zu viele Versuche",
+  "codeTooManyAttemptsDescription": "Du hast zu oft einen falschen Code eingegeben.\n\nBitte starte die Verifizierung erneut, um einen neuen Code zu erhalten.",
+  "resendCodeButton": "Code erneut senden",
+  "resendCooldownDescription": "Bitte warte **%VAR% Sekunden**, bevor du einen neuen Code anforderst.\n\nSieh auch im Spam-Ordner nach — der letzte Code könnte bereits dort sein.",
+  "mailDeniedWarnTitle": "🚫 Mitglieder werden abgewiesen",
+  "mailDeniedWarnMessage": "**%VAR%** Verifizierungsversuch(e) wurden diesen Monat blockiert, weil das E-Mail-Limit dieses Servers erreicht ist. Jeder davon ist ein Mitglied, das beitreten wollte, sich aber nicht verifizieren konnte.\n\nAbonniere für unbegrenzte Verifizierungen oder kaufe unten ein Credit-Paket, um sie hereinzulassen.",
+  "premiumForecastRunOut": "📈 Beim aktuellen Tempo sind die kostenlosen monatlichen E-Mails etwa am %VAR% aufgebraucht.",
+  "premiumBlockedThisMonth": "🚫 **%VAR%** Verifizierungsversuch(e) diesen Monat durch das Mail-Limit blockiert",
+  "statusIssueNoErrorDestination": "Kontingent- & Fehlerwarnungen haben kein Ziel — lege mit `/set_error_notify channel` einen Kanal oder einen Log-Kanal fest, sonst gehen wichtige Hinweise verloren",
+  "quotaWarnRedeemHint": "Nach dem Kauf von Credits führe `/premium redeem` auf diesem Server aus, um sie anzuwenden — Credits verfallen nie."
 }
