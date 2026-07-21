@@ -24,7 +24,7 @@ const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
 const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { getWebsiteUrl, describeSku } = require('./utils/premiumButtons');
+const { getWebsiteUrl, describeSku, getCurrency } = require('./utils/premiumButtons');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 const analytics = require('./utils/Analytics');
 
@@ -371,6 +371,32 @@ async function registerAllGuilds(bot) {
 }
 
 
+/**
+ * Snapshot the cumulative all-time counters to PostHog as a `stats_snapshot` event.
+ * Primary-shard only: serverStatsAPI.serverStats holds the cross-shard authoritative
+ * totals (sibling shards forward their increments to shard 0) and getServerCount()
+ * sums guild counts across all shards. This lets PostHog chart true all-time totals —
+ * servers / mails / verifications accumulated before instrumentation existed.
+ */
+async function sendStatsSnapshot() {
+    try {
+        const stats = serverStatsAPI.serverStats
+        const servers = await serverStatsAPI.getServerCount()
+        analytics.capture({
+            event: 'stats_snapshot',
+            properties: {
+                servers_total: servers,
+                mails_sent_all_time: stats.mailsSendAll,
+                verifications_all_time: stats.usersVerifiedAll,
+                mails_sent_today: stats.mailsSendToday,
+                verifications_today: stats.usersVerifiedToday
+            }
+        })
+    } catch (e) {
+        console.error('[Analytics] stats snapshot failed:', e?.message || e)
+    }
+}
+
 bot.once('clientReady', async () => {
     // Determine primary shard at runtime per discord.js docs
     const isPrimary = !bot.shard || bot.shard.ids.includes(0)
@@ -446,6 +472,11 @@ bot.once('clientReady', async () => {
                 guild_count: bot.guilds.cache.size
             }
         })
+
+        // All-time totals → PostHog. Delay the first snapshot so sibling shards have
+        // spawned and the cross-shard getServerCount() can reach them; refresh daily after.
+        setTimeout(sendStatsSnapshot, 120000).unref()
+        setInterval(sendStatsSnapshot, 24 * 60 * 60 * 1000).unref()
 
         // Boot-time SMTP self-test: catch broken credentials/hosts before the first
         // member's verification silently fails.
@@ -577,6 +608,17 @@ function formatDiscordTime(date) {
     return `<t:${unix}:f> (<t:${unix}:R>)`
 }
 
+// Configured list price for the operator webhook's Price field. Prices are stored
+// as major-currency floats (e.g. 4.99 EUR — see config.monetization.prices), so we
+// render two decimals with the currency symbol (falling back to the ISO code).
+const CURRENCY_SYMBOLS = { EUR: '€', USD: '$', GBP: '£' }
+function formatPrice(amount) {
+    if (typeof amount !== 'number' || amount <= 0) return null
+    const currency = getCurrency()
+    const symbol = CURRENCY_SYMBOLS[currency]
+    return symbol ? `${symbol}${amount.toFixed(2)}` : `${amount.toFixed(2)} ${currency}`
+}
+
 function entitlementFields(entitlement, statusValue) {
     const info = describeSku(entitlement.skuId)
     const fields = [
@@ -593,6 +635,10 @@ function entitlementFields(entitlement, statusValue) {
         { name: 'User', value: entitlement.userId ? `<@${entitlement.userId}>` : 'n/a', inline: true },
         { name: 'Active', value: entitlement.isActive() ? '✅ Yes' : '❌ No', inline: true }
     ]
+
+    // Configured list price, shown right after the product (omitted when unpriced).
+    const priceLabel = formatPrice(info?.price)
+    if (priceLabel) fields.splice(1, 0, { name: 'Price', value: priceLabel, inline: true })
 
     const starts = formatDiscordTime(entitlement.startsAt)
     if (starts) fields.push({ name: 'Started', value: starts, inline: true })
@@ -621,6 +667,7 @@ bot.on('entitlementCreate', entitlement => {
     // /premium redeem — a paid-but-never-redeemed pack is a refund waiting to
     // happen. Subscriptions activate automatically, so no DM needed there.
     const info = describeSku(entitlement.skuId)
+    const isTestPurchase = entitlement.isTest?.() ?? false
     analytics.capture({
         event: 'premium_purchased',
         userId: entitlement.userId || null,
@@ -630,7 +677,11 @@ bot.on('entitlementCreate', entitlement => {
             product_label: info?.label ?? null,
             product_kind: info?.kind ?? 'unknown',
             entitlement_type: entitlement.type,
-            is_test: entitlement.isTest?.() ?? false
+            is_test: isTestPurchase,
+            // Revenue for PostHog's revenue analytics. Prices come from config
+            // (monetization.prices); test purchases and unpriced SKUs contribute nothing.
+            revenue: (!isTestPurchase && typeof info?.price === 'number' && info.price > 0) ? info.price : null,
+            currency: getCurrency()
         }
     })
     if (info && info.kind !== 'subscription' && entitlement.userId && !entitlement.consumed) {

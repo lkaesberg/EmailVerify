@@ -14,6 +14,7 @@
     "monetization": {
         "enabled": false,
         "freeMonthlyLimit": 25,
+        "currency": "EUR",
         "skus": {
             "subscriptionTier1": "",
             "subscriptionTier2": "",
@@ -21,6 +22,14 @@
             "credits500": "",
             "credits2000": "",
             "csvUnlock": ""
+        },
+        "prices": {
+            "subscriptionTier1": 0,
+            "subscriptionTier2": 0,
+            "credits100": 0,
+            "credits500": 0,
+            "credits2000": 0,
+            "csvUnlock": 0
         }
     },
     "zeptomail": {

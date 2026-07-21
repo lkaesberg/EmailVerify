@@ -3,6 +3,8 @@ const config = require('../../config/config.json')
 const { getLocale } = require('../Language')
 
 const skus = config.monetization?.skus || {}
+const prices = config.monetization?.prices || {}
+const currency = config.monetization?.currency || 'EUR'
 const appId = config.clientId
 const websiteUrl = (config.websiteUrl || '').trim()
 
@@ -14,12 +16,12 @@ const SKU_CATALOG = {}
 function registerSku(skuId, meta) {
     if (typeof skuId === 'string' && skuId.trim().length > 0) SKU_CATALOG[skuId] = meta
 }
-registerSku(skus.subscriptionTier1, { label: '⭐ Standard subscription', kind: 'subscription' })
-registerSku(skus.subscriptionTier2, { label: '💎 Pro subscription', kind: 'subscription' })
-registerSku(skus.credits100, { label: '🎟️ 100 Credit Pack', kind: 'credits', credits: 100 })
-registerSku(skus.credits500, { label: '🎟️ 500 Credit Pack', kind: 'credits', credits: 500 })
-registerSku(skus.credits2000, { label: '🎟️ 2,000 Credit Pack', kind: 'credits', credits: 2000 })
-registerSku(skus.csvUnlock, { label: '📁 CSV unlock', kind: 'csv' })
+registerSku(skus.subscriptionTier1, { label: '⭐ Standard subscription', kind: 'subscription', price: prices.subscriptionTier1 })
+registerSku(skus.subscriptionTier2, { label: '💎 Pro subscription', kind: 'subscription', price: prices.subscriptionTier2 })
+registerSku(skus.credits100, { label: '🎟️ 100 Credit Pack', kind: 'credits', credits: 100, price: prices.credits100 })
+registerSku(skus.credits500, { label: '🎟️ 500 Credit Pack', kind: 'credits', credits: 500, price: prices.credits500 })
+registerSku(skus.credits2000, { label: '🎟️ 2,000 Credit Pack', kind: 'credits', credits: 2000, price: prices.credits2000 })
+registerSku(skus.csvUnlock, { label: '📁 CSV unlock', kind: 'csv', price: prices.csvUnlock })
 
 /**
  * Resolve a SKU id to its operator-facing product info.
@@ -32,6 +34,11 @@ function describeSku(skuId) {
 
 function getWebsiteUrl() {
     return websiteUrl || null
+}
+
+/** Configured billing currency (ISO code, e.g. 'EUR'). Used to label revenue analytics. */
+function getCurrency() {
+    return currency
 }
 
 /**
@@ -122,5 +129,6 @@ module.exports = {
     appStoreUrl,
     mobileHintLine,
     getWebsiteUrl,
+    getCurrency,
     describeSku
 }
