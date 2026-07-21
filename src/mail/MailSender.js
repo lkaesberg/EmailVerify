@@ -9,6 +9,7 @@ const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
 const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
 const { createMailLimitReachedEmbed } = require('../utils/embeds')
+const analytics = require('../utils/Analytics')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
 // operator-webhook notification to one ping per 24h globally. The console.warn
@@ -137,6 +138,13 @@ module.exports = class MailSender {
             const failed = !info || (info.rejected && info.rejected.length > 0)
 
             if (failed) {
+                analytics.capture({
+                    event: 'mail_failed',
+                    userId: interaction.user?.id || null,
+                    guildId: serverId,
+                    guild: ctxGuild,
+                    properties: { provider_attempted: usedProvider || 'unknown', source: premiumSource }
+                })
                 if (emailNotify) {
                     console.log('EMAIL ERROR for:', toEmail)
                     console.log('Error details:', lastError)
@@ -169,6 +177,13 @@ module.exports = class MailSender {
             }
 
             this.serverStatsAPI.increaseMailSend()
+            analytics.capture({
+                event: 'mail_sent',
+                userId: interaction.user?.id || null,
+                guildId: serverId,
+                guild: ctxGuild,
+                properties: { provider: usedProvider, source: premiumSource, email_style: emailStyle }
+            })
 
             try {
                 const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
@@ -276,6 +291,11 @@ module.exports = class MailSender {
 
         this.serverStatsAPI.increaseMailSend()
         database.incrementMailsSent(guildId)
+        analytics.capture({
+            event: 'mail_sent',
+            guildId,
+            properties: { provider: usedProvider, source: premiumSource, email_style: emailStyle, test: true }
+        })
         return { ok: true, provider: usedProvider, messageId: info.messageId || null, latencyMs: Date.now() - start }
     }
 
@@ -299,6 +319,13 @@ module.exports = class MailSender {
         const anyCrossed = crossings.crossed80 || crossings.crossed95 || crossings.crossed100
             || crossings.crossedCreditsLow || crossings.crossedCreditsZero
         if (!anyCrossed) return
+
+        const quotaUserId = interaction?.user?.id || null
+        if (crossings.crossed80) analytics.capture({ event: 'mail_quota_threshold_crossed', userId: quotaUserId, guild, properties: { threshold: '80' } })
+        if (crossings.crossed95) analytics.capture({ event: 'mail_quota_threshold_crossed', userId: quotaUserId, guild, properties: { threshold: '95' } })
+        if (crossings.crossed100) analytics.capture({ event: 'mail_quota_threshold_crossed', userId: quotaUserId, guild, properties: { threshold: '100' } })
+        if (crossings.crossedCreditsLow) analytics.capture({ event: 'mail_quota_threshold_crossed', userId: quotaUserId, guild, properties: { threshold: 'credits_low' } })
+        if (crossings.crossedCreditsZero) analytics.capture({ event: 'mail_quota_threshold_crossed', userId: quotaUserId, guild, properties: { threshold: 'credits_zero' } })
 
         // Build Premium buttons + website footer once so each crossing reuses them.
         let components = null

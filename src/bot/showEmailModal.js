@@ -2,6 +2,7 @@ const {ModalBuilder, TextInputBuilder, TextInputStyle, LabelBuilder, TextDisplay
 const database = require("../database/Database");
 const {getLocale, defaultLanguage} = require("../Language");
 const {createSessionExpiredEmbed} = require("../utils/embeds");
+const analytics = require("../utils/Analytics");
 
 /**
  * Checks if a domain is a full wildcard (accepts all emails)
@@ -94,6 +95,8 @@ async function showEmailModal(interaction, guildId, guild = null) {
         await interaction.reply({ embeds: [createSessionExpiredEmbed(defaultLanguage, false)], flags: MessageFlags.Ephemeral }).catch(() => {})
         return false
     }
+
+    analytics.capture({ event: 'verification_started', userId: interaction.user.id, guildId, guild })
 
     await database.getServerSettings(guildId, async serverSettings => {
         const language = serverSettings.language

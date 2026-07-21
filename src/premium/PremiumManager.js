@@ -2,6 +2,7 @@ const database = require('../database/Database')
 const config = require('../../config/config.json')
 const { getLocale } = require('../Language')
 const OperatorWebhook = require('../utils/OperatorWebhook')
+const analytics = require('../utils/Analytics')
 
 const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
@@ -177,6 +178,7 @@ class PremiumManager {
      */
     async notifyZeptoModeAutoDisabled(guild, language) {
         if (!guild) return
+        analytics.capture({ event: 'zepto_mode_auto_disabled', guild })
         const lang = language || 'english'
         const ErrorNotifier = require('../utils/ErrorNotifier')
         const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
@@ -270,6 +272,7 @@ class PremiumManager {
                     await entitlement.consume()
                     await database.addGuildCredits(guildID, amount)
                     results.creditsAdded += amount
+                    analytics.capture({ event: 'premium_redeemed', userId: interaction.user.id, guildId: guildID, properties: { type: 'credits', amount, sku: entitlement.skuId } })
                     results.details.push(getLocale(lang, 'premiumRedeemCredits', amount.toString()))
                     console.log(`[Premium] Credits redeemed: +${amount} guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
                     OperatorWebhook.notify({
@@ -295,6 +298,7 @@ class PremiumManager {
                     await entitlement.consume()
                     await database.unlockGuildCSV(guildID)
                     results.csvUnlocked = true
+                    analytics.capture({ event: 'premium_redeemed', userId: interaction.user.id, guildId: guildID, properties: { type: 'csv', sku: entitlement.skuId } })
                     results.details.push(getLocale(lang, 'premiumRedeemCsv'))
                     console.log(`[Premium] CSV unlocked: guild=${guildID} user=${interaction.user.id} sku=${entitlement.skuId} entitlement=${entitlement.id}`)
                     OperatorWebhook.notify({

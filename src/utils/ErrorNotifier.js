@@ -2,6 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { getLocale } = require('../Language');
 const { createGenericErrorEmbed } = require('./embeds');
 const database = require('../database/Database');
+const analytics = require('./Analytics');
 
 /**
  * Centralized error notification system for the bot.
@@ -33,6 +34,13 @@ class ErrorNotifier {
             console.error('[ErrorNotifier] No guild provided for error notification');
             return false;
         }
+
+        analytics.capture({
+            event: 'error_notified',
+            userId: user?.id || null,
+            guild,
+            properties: { error_title: errorTitle }
+        });
 
         if (interaction) {
             await this.sendGenericUserError(interaction, language);

@@ -29,5 +29,11 @@
         "endpoint": "https://api.zeptomail.eu/v1.1/email",
         "fromAddress": "verify@yourdomain.example",
         "fromName": "EmailVerify"
+    },
+    "posthog": {
+        "enabled": false,
+        "apiKey": "phc_YOUR_PROJECT_API_KEY",
+        "host": "https://eu.i.posthog.com",
+        "salt": ""
     }
 }

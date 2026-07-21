@@ -594,19 +594,6 @@ class Database {
         })
     }
 
-    getAllGuildStats() {
-        return new Promise((resolve, reject) => {
-            this.db.all("SELECT * FROM guild_stats", [], (err, rows) => {
-                if (err) {
-                    console.error('Error getting all guild stats:', err)
-                    reject(err)
-                    return
-                }
-                resolve(rows || [])
-            })
-        })
-    }
-
     getGuildPremium(guildID) {
         return new Promise((resolve, reject) => {
             this.db.get("SELECT * FROM guild_premium WHERE guildID = ?", [guildID], (err, result) => {

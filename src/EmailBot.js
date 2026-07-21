@@ -26,6 +26,7 @@ const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/re
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { getWebsiteUrl, describeSku } = require('./utils/premiumButtons');
 const OperatorWebhook = require('./utils/OperatorWebhook');
+const analytics = require('./utils/Analytics');
 
 // Verification code lifetime and the number of wrong guesses tolerated before the
 // code is invalidated. The old in-memory codes had neither, leaving a 100k-keyspace
@@ -209,6 +210,17 @@ async function handleResendCode(interaction, guildId) {
             premiumManager.notifyZeptoModeAutoDisabled(userGuild, language).catch(() => {})
         }
         if (!premiumCheck.allowed) {
+            analytics.capture({
+                event: 'mail_denied',
+                userId: interaction.user.id,
+                guild: userGuild,
+                properties: {
+                    reason: premiumCheck.reason || 'limit_reached',
+                    mails_sent_month: premiumCheck.mailsSentMonth ?? null,
+                    free_limit: premiumCheck.freeLimit ?? null,
+                    resend: true
+                }
+            })
             await interaction.editReply({ embeds: [createMailLimitReachedEmbed(language, getWebsiteUrl())] }).catch(() => {})
             premiumManager.notifyMailDenied(userGuild, language).catch(() => {})
             autoDelete(15000)
@@ -224,6 +236,7 @@ async function handleResendCode(interaction, guildId) {
                 logEmail: pending.logEmail,
                 expiresAt: Date.now() + CODE_TTL_MS
             })
+            analytics.capture({ event: 'verification_code_resent', userId: interaction.user.id, guild: userGuild })
             const codePromptEmbed = createCodeSentEmbed(language, pending.logEmail)
             await interaction.editReply({ embeds: [codePromptEmbed], components: [buildCodePromptRow(language, guildId)] }).catch(() => {})
             const sent = await interaction.fetchReply().catch(() => null)
@@ -402,6 +415,10 @@ bot.once('clientReady', async () => {
 
     await registerAllGuilds(bot);
 
+    // Seed guild group properties (name / member count) for this shard's guilds so
+    // PostHog group analytics have labels from the first boot onward.
+    for (const g of bot.guilds.cache.values()) analytics.identifyGuild(g)
+
     bot.user.setActivity("/verify | Website", {
         type: "PLAYING",
         url: "https://emailbot.larskaesberg.de"
@@ -421,6 +438,15 @@ bot.once('clientReady', async () => {
             level: 'success'
         })
 
+        analytics.capture({
+            event: 'bot_online',
+            properties: {
+                shard: shardLabel,
+                total_shards: totalShards,
+                guild_count: bot.guilds.cache.size
+            }
+        })
+
         // Boot-time SMTP self-test: catch broken credentials/hosts before the first
         // member's verification silently fails.
         mailSender.selfTest().then(result => {
@@ -428,6 +454,10 @@ bot.once('clientReady', async () => {
                 console.log('[MailSender] SMTP self-test passed')
             } else {
                 console.error('[MailSender] SMTP self-test FAILED:', result.error)
+                analytics.capture({
+                    event: 'smtp_selftest_failed',
+                    properties: { error: String(result.error).slice(0, 500) }
+                })
                 OperatorWebhook.notify({
                     title: '🚨 SMTP self-test failed',
                     description: `The self-SMTP transport failed verification at boot — verification emails may not be deliverable.\n\`\`\`${String(result.error).slice(0, 1500)}\`\`\``,
@@ -467,10 +497,20 @@ setInterval(() => {
 bot.on("guildDelete", guild => {
     console.log("Removed: " + guild.name)
     database.deleteServerData(guild.id)
+    analytics.capture({ event: 'guild_left', guild, properties: { member_count: guild.memberCount } })
 })
 
 bot.on("guildMemberAdd", async member => {
     await database.getServerSettings(member.guild.id, async serverSettings => {
+        analytics.capture({
+            event: 'member_joined',
+            userId: member.user.id,
+            guild: member.guild,
+            properties: {
+                auto_verify: !!serverSettings.autoVerify,
+                auto_add_unverified: !!serverSettings.autoAddUnverified
+            }
+        })
         if (serverSettings.autoAddUnverified) {
             const roleUnverified = member.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
             if (roleUnverified !== undefined) {
@@ -497,6 +537,8 @@ bot.on("guildMemberAdd", async member => {
 bot.on('guildCreate', guild => {
     console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] New guild: ${guild.name}`)
     registerCommands(guild)
+    analytics.identifyGuild(guild)
+    analytics.capture({ event: 'guild_joined', guild, properties: { member_count: guild.memberCount } })
 })
 
 // Premium purchase lifecycle — turn every Discord entitlement event into a
@@ -579,6 +621,18 @@ bot.on('entitlementCreate', entitlement => {
     // /premium redeem — a paid-but-never-redeemed pack is a refund waiting to
     // happen. Subscriptions activate automatically, so no DM needed there.
     const info = describeSku(entitlement.skuId)
+    analytics.capture({
+        event: 'premium_purchased',
+        userId: entitlement.userId || null,
+        guildId: entitlement.guildId || null,
+        properties: {
+            sku: entitlement.skuId,
+            product_label: info?.label ?? null,
+            product_kind: info?.kind ?? 'unknown',
+            entitlement_type: entitlement.type,
+            is_test: entitlement.isTest?.() ?? false
+        }
+    })
     if (info && info.kind !== 'subscription' && entitlement.userId && !entitlement.consumed) {
         bot.users.fetch(entitlement.userId).then(user => user.send(
             `🎉 Thanks for purchasing **${info.label}**!\n\n` +
@@ -617,6 +671,21 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
         fields.push({ name: 'Previous end', value: formatDiscordTime(oldEntitlement.endsAt) ?? 'None', inline: true })
     }
 
+    const updateInfo = describeSku(newEntitlement.skuId)
+    analytics.capture({
+        event: 'premium_updated',
+        userId: newEntitlement.userId || null,
+        guildId: newEntitlement.guildId || null,
+        properties: {
+            sku: newEntitlement.skuId,
+            product_label: updateInfo?.label ?? null,
+            product_kind: updateInfo?.kind ?? 'unknown',
+            status,
+            consumed: !!newEntitlement.consumed,
+            deleted: !!newEntitlement.deleted
+        }
+    })
+
     OperatorWebhook.notify({
         title: `🔁 Subscription updated — ${entitlementProductName(newEntitlement)}`,
         fields,
@@ -626,6 +695,18 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
 
 bot.on('entitlementDelete', entitlement => {
     console.log(`[Premium] Entitlement deleted: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type}`)
+    const deleteInfo = describeSku(entitlement.skuId)
+    analytics.capture({
+        event: 'premium_removed',
+        userId: entitlement.userId || null,
+        guildId: entitlement.guildId || null,
+        properties: {
+            sku: entitlement.skuId,
+            product_label: deleteInfo?.label ?? null,
+            product_kind: deleteInfo?.kind ?? 'unknown',
+            entitlement_type: entitlement.type
+        }
+    })
     OperatorWebhook.notify({
         title: `❌ Entitlement removed — ${entitlementProductName(entitlement)}`,
         description: 'Subscription ended, was cancelled, refunded, or revoked.',
@@ -774,6 +855,7 @@ bot.on('interactionCreate', async interaction => {
         if (action === 'emailModal') {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
             const emailText = interaction.fields.getTextInputValue('emailInput').trim()
+            analytics.capture({ event: 'verification_email_submitted', userId: interaction.user.id, guildId })
             const userGuild = await resolveGuild(guildId)
             if (!userGuild) {
                 const lang = await getGuildLanguage(guildId)
@@ -782,6 +864,7 @@ bot.on('interactionCreate', async interaction => {
             }
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 if (!serverSettings.status) {
+                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'not_configured' } })
                     await ErrorNotifier.notify({
                         guild: userGuild,
                         errorTitle: getLocale(serverSettings.language, 'errorBotNotConfiguredTitle'),
@@ -794,6 +877,7 @@ bot.on('interactionCreate', async interaction => {
                 }
                 // Blacklist check (supports wildcards, e.g., *@tempmail.*, spam*)
                 if (emailIsBlacklisted(emailText, serverSettings.blacklist)) {
+                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'blacklisted' } })
                     const blacklistEmbed = new EmbedBuilder()
                         .setTitle(getLocale(serverSettings.language, "mailBlacklistedTitle"))
                         .setDescription(getLocale(serverSettings.language, "mailBlacklistedDescription"))
@@ -807,6 +891,7 @@ bot.on('interactionCreate', async interaction => {
                 if ((serverSettings.allowedEmails || []).length > 0) {
                     const csvCheck = await premiumManager.canUseCSVFeature(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction))
                     if (!csvCheck.allowed) {
+                        analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'emaillist_locked' } })
                         const lockedUserEmbed = new EmbedBuilder()
                             .setTitle(getLocale(serverSettings.language, 'emaillistLockedUserTitle'))
                             .setDescription(getLocale(serverSettings.language, 'emaillistLockedUserMessage'))
@@ -827,6 +912,7 @@ bot.on('interactionCreate', async interaction => {
                 const isInAllowedList = allowedEmails.includes(md5hash(emailText.toLowerCase()))
 
                 if (!hasValidFormat || (!noRestrictionsConfigured && !matchesDomain && !isInAllowedList)) {
+                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: hasValidFormat ? 'domain_not_allowed' : 'invalid_format' } })
                     await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
@@ -840,6 +926,7 @@ bot.on('interactionCreate', async interaction => {
                 }
                 const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
                 if (timeoutMs > 0) {
+                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'rate_limited' } })
                     const timeoutEmbed = new EmbedBuilder()
                         .setTitle(getLocale(serverSettings.language, "mailTimeoutTitle"))
                         .setDescription(getLocale(serverSettings.language, "mailTimeoutDescription", (timeoutMs / 1000).toFixed(0)))
@@ -859,6 +946,16 @@ bot.on('interactionCreate', async interaction => {
                     premiumManager.notifyZeptoModeAutoDisabled(userGuild, serverSettings.language).catch(() => {})
                 }
                 if (!premiumCheck.allowed) {
+                    analytics.capture({
+                        event: 'mail_denied',
+                        userId: interaction.user.id,
+                        guild: userGuild,
+                        properties: {
+                            reason: premiumCheck.reason || 'limit_reached',
+                            mails_sent_month: premiumCheck.mailsSentMonth ?? null,
+                            free_limit: premiumCheck.freeLimit ?? null
+                        }
+                    })
                     const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, getWebsiteUrl())
                     await interaction.followUp({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     // Record the denial and fire the escalating admin upsell (1st/5th/20th
@@ -904,6 +1001,7 @@ bot.on('interactionCreate', async interaction => {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {})
             const autoDelete = (ms) => setTimeout(() => { interaction.deleteReply().catch(() => {}) }, ms)
             const codeText = interaction.fields.getTextInputValue('codeInput').trim()
+            analytics.capture({ event: 'verification_code_submitted', userId: interaction.user.id, guildId })
 
             const cleanupCodePrompt = () => {
                 const codePrompt = codePromptMessages.get(interaction.user.id + guildId)
@@ -917,6 +1015,7 @@ bot.on('interactionCreate', async interaction => {
             // expired/swept) means we can answer without any REST guild fetch.
             const pending = guildId ? await database.getPendingVerification(interaction.user.id, guildId) : null
             if (!pending) {
+                analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guildId, properties: { reason: 'expired' } })
                 const lang = await getGuildLanguage(guildId)
                 await interaction.editReply({ embeds: [createCodeExpiredEmbed(lang)] }).catch(() => {})
                 cleanupCodePrompt()
@@ -934,6 +1033,7 @@ bot.on('interactionCreate', async interaction => {
             await database.getServerSettings(userGuild.id, async serverSettings => {
                 const language = serverSettings.language
                 if (!serverSettings.status) {
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'not_configured' } })
                     // Notify admins (without `interaction`, so it doesn't also followUp the user)
                     // and resolve the deferred reply ourselves — otherwise it hangs on "thinking…".
                     await ErrorNotifier.notify({
@@ -954,13 +1054,17 @@ bot.on('interactionCreate', async interaction => {
                 // error, attempt not revealed) instead of treating it as "not at the cap".
                 if (pending.code !== codeText) {
                     const attempts = await database.incrementPendingAttempts(interaction.user.id, userGuild.id)
+                    let failReason = 'wrong_code'
                     if (attempts === 'error') {
+                        failReason = 'db_error'
                         await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
                     } else if (attempts === null) {
                         // Row vanished between read and increment: consumed or expired.
+                        failReason = 'expired'
                         await interaction.editReply({ embeds: [createCodeExpiredEmbed(language)] }).catch(() => {})
                         cleanupCodePrompt()
                     } else if (attempts >= MAX_CODE_ATTEMPTS) {
+                        failReason = 'too_many_attempts'
                         await database.deletePendingVerification(interaction.user.id, userGuild.id)
                         await interaction.editReply({ embeds: [createTooManyAttemptsEmbed(language)] }).catch(() => {})
                         cleanupCodePrompt()
@@ -969,6 +1073,7 @@ bot.on('interactionCreate', async interaction => {
                         // can retry without restarting the whole email flow.
                         await interaction.editReply({ embeds: [createInvalidCodeEmbed(language)] }).catch(() => {})
                     }
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: failReason } })
                     autoDelete(10000)
                     return
                 }
@@ -979,6 +1084,7 @@ bot.on('interactionCreate', async interaction => {
                 // instead of double-verifying.
                 const consumed = await database.deletePendingVerification(interaction.user.id, userGuild.id)
                 if (!consumed) {
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'expired' } })
                     await interaction.editReply({ embeds: [createCodeExpiredEmbed(language)] }).catch(() => {})
                     autoDelete(15000)
                     return
@@ -1000,6 +1106,7 @@ bot.on('interactionCreate', async interaction => {
                 const expectsRoles = (serverSettings.defaultRoles || []).length > 0
                     || Object.keys(serverSettings.domainRoles || {}).length > 0
                 if (rolesToAdd.length === 0 && expectsRoles) {
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'role_assignment_failed', detail: 'no_roles_resolved' } })
                     await restorePending()
                     await ErrorNotifier.notify({
                         guild: userGuild,
@@ -1035,6 +1142,7 @@ bot.on('interactionCreate', async interaction => {
                     // Restore the code so the user can resubmit once the admin fixes the
                     // bot's permissions, notify admins (no `interaction`, so no duplicate
                     // followUp), and resolve the deferred reply so it doesn't hang.
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'role_assignment_failed', detail: 'role_add_error' } })
                     await restorePending()
                     await ErrorNotifier.notify({
                         guild: userGuild,
@@ -1066,6 +1174,7 @@ bot.on('interactionCreate', async interaction => {
                 // so a returning user isn't stuck behind the escalating email-send backoff.
                 serverStatsAPI.increaseVerifiedUsers()
                 database.incrementVerifications(userGuild.id)
+                analytics.capture({ event: 'verification_completed', userId: interaction.user.id, guild: userGuild, properties: { roles_assigned: assignedRoleNames.length } })
                 userTimeouts.delete(interaction.user.id + userGuild.id)
 
                 cleanupCodePrompt()
@@ -1102,10 +1211,20 @@ bot.on('interactionCreate', async interaction => {
         } catch {
             language = defaultLanguage
         }
+        // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
+        // and /premium (buy/redeem). Everything else is admin-gated.
+        const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)
+        const allowed = isAdmin || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "premium"
+        let subcommand = null
+        try { subcommand = interaction.options.getSubcommand(false) } catch { subcommand = null }
+        analytics.capture({
+            event: 'command_used',
+            userId: interaction.user.id,
+            guild: interaction.guild,
+            properties: { command: interaction.commandName, subcommand, is_admin: isAdmin, allowed }
+        })
         try {
-            // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
-            // Allow /globalstats for owner check to happen inside the command
-            if (interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "globalstats" || interaction.commandName === "premium") {
+            if (allowed) {
                 await command.execute(interaction);
             } else {
                 await interaction.reply({
@@ -1115,6 +1234,12 @@ bot.on('interactionCreate', async interaction => {
             }
         } catch (error) {
             console.error(error);
+            analytics.capture({
+                event: 'command_failed',
+                userId: interaction.user.id,
+                guild: interaction.guild,
+                properties: { command: interaction.commandName, error: String(error?.message || error).slice(0, 500) }
+            })
             // Send detailed error to admin and generic message to user
             await ErrorNotifier.notify({
                 guild: interaction.guild,
@@ -1155,6 +1280,10 @@ async function __handleShutdownSignal(signal) {
             description: `Shard \`${shardLabel}\` received \`${signal}\`.`,
             level: 'warn'
         })
+    } catch {}
+    try {
+        analytics.capture({ event: 'bot_shutdown', properties: { signal, shard: shardLabel } })
+        await analytics.shutdown()
     } catch {}
     try { bot.destroy() } catch {}
     process.exit(0)
