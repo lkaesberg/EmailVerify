@@ -376,6 +376,11 @@ async function registerAllGuilds(bot) {
  * Renewal gateway events (ENTITLEMENT_UPDATE) only arrive while the bot is online, so
  * reconciling the live set periodically is the only way to know true recurring revenue
  * after any downtime. Capped at 20 pages (2,000 entitlements) as a runaway guard.
+ *
+ * Results are cached deliberately: discord.js resolves `oldEntitlement` on an update
+ * from `application.entitlements.cache`, so priming it is what lets a renewal be
+ * recognised as a renewal (end date moved forward) instead of an opaque update.
+ * Entitlements are few and app-level, so unlike guilds this cache is cheap to hold.
  */
 async function fetchActiveEntitlements() {
     const out = []
@@ -386,7 +391,7 @@ async function fetchActiveEntitlements() {
             after,
             excludeEnded: true,
             excludeDeleted: true,
-            cache: false
+            cache: true
         })
         if (!batch || batch.size === 0) break
         for (const [, e] of batch) out.push(e)
@@ -501,6 +506,13 @@ bot.once('clientReady', async () => {
     // Seed guild group properties (name / member count) for this shard's guilds so
     // PostHog group analytics have labels from the first boot onward.
     for (const g of bot.guilds.cache.values()) analytics.identifyGuild(g)
+
+    // Prime the entitlement cache on EVERY shard (not just the primary): entitlement
+    // gateway events are delivered to the shard owning the entitlement's guild, and
+    // without a cached prior state a renewal can't be told apart from any other update.
+    fetchActiveEntitlements()
+        .then(list => console.log(`[Premium] Cached ${list.length} active entitlements for renewal diffing`))
+        .catch(e => console.warn('[Premium] Could not prime entitlement cache:', e?.message || e))
 
     bot.user.setActivity("/verify | Website", {
         type: "PLAYING",
@@ -757,11 +769,24 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     // approximate, so we read the most reliable signals: a later end date is a
     // renewal, an earlier/new one is a scheduled cancellation, the consumed flag
     // flipping is a redemption, and the deleted flag flipping is a removal.
-    const oldEnds = oldEntitlement.endsTimestamp ?? null
+    //
+    // `oldEntitlement` is NULL whenever the entitlement isn't in this shard's cache —
+    // discord.js's EntitlementUpdate action does `cache.get(id)?._clone() ?? null`, and
+    // the cache only holds entitlements seen since the process started. A subscription
+    // bought before the last restart therefore arrives with no prior state, which used
+    // to throw a TypeError on the first property access and silently kill the operator
+    // notification and the analytics event for EVERY renewal. Never dereference it
+    // unguarded; the boot-time cache warm-up below is what makes real diffs possible.
+    const oldEnds = oldEntitlement?.endsTimestamp ?? null
     const newEnds = newEntitlement.endsTimestamp ?? null
     let status
     let isRenewal = false
-    if (!oldEntitlement.deleted && newEntitlement.deleted) {
+    if (!oldEntitlement) {
+        // No prior state to compare against. Report it honestly rather than guessing a
+        // renewal — misreading this would inflate revenue. The daily subscription
+        // reconciliation in sendStatsSnapshot() covers recurring revenue in this case.
+        status = '🔁 Updated (no cached prior state)'
+    } else if (!oldEntitlement.deleted && newEntitlement.deleted) {
         status = '🔴 Deleted'
     } else if (!oldEntitlement.consumed && newEntitlement.consumed) {
         status = '✅ Consumed'
@@ -777,7 +802,7 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     }
 
     const fields = entitlementFields(newEntitlement, status)
-    if (oldEnds !== newEnds) {
+    if (oldEntitlement && oldEnds !== newEnds) {
         fields.push({ name: 'Previous end', value: formatDiscordTime(oldEntitlement.endsAt) ?? 'None', inline: true })
     }
 
