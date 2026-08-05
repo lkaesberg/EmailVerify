@@ -372,6 +372,50 @@ async function registerAllGuilds(bot) {
 
 
 /**
+ * Fetch every currently-active entitlement for the application, following pagination.
+ * Renewal gateway events (ENTITLEMENT_UPDATE) only arrive while the bot is online, so
+ * reconciling the live set periodically is the only way to know true recurring revenue
+ * after any downtime. Capped at 20 pages (2,000 entitlements) as a runaway guard.
+ */
+async function fetchActiveEntitlements() {
+    const out = []
+    let after
+    for (let page = 0; page < 20; page++) {
+        const batch = await bot.application.entitlements.fetch({
+            limit: 100,
+            after,
+            excludeEnded: true,
+            excludeDeleted: true,
+            cache: false
+        })
+        if (!batch || batch.size === 0) break
+        for (const [, e] of batch) out.push(e)
+        if (batch.size < 100) break
+        after = batch.lastKey()
+    }
+    return out
+}
+
+/**
+ * Current recurring revenue from live subscription entitlements. Test entitlements and
+ * unpriced SKUs are excluded from the money figure. Subscription prices in config are
+ * treated as per-month, so this is MRR.
+ */
+function computeRecurringRevenue(entitlements) {
+    let mrr = 0
+    let activeSubscriptions = 0
+    for (const e of entitlements) {
+        if (e.isTest?.()) continue
+        const info = describeSku(e.skuId)
+        if (!info || info.kind !== 'subscription') continue
+        if (!e.isActive?.()) continue
+        activeSubscriptions++
+        if (typeof info.price === 'number' && info.price > 0) mrr += info.price
+    }
+    return { activeSubscriptions, mrr: Math.round(mrr * 100) / 100 }
+}
+
+/**
  * Snapshot the cumulative all-time counters to PostHog as a `stats_snapshot` event.
  * Primary-shard only: serverStatsAPI.serverStats holds the cross-shard authoritative
  * totals (sibling shards forward their increments to shard 0) and getServerCount()
@@ -382,6 +426,16 @@ async function sendStatsSnapshot() {
     try {
         const stats = serverStatsAPI.serverStats
         const servers = await serverStatsAPI.getServerCount()
+
+        // Recurring revenue is a level, not an event stream — reconcile it here so it
+        // stays correct across restarts and missed renewal events.
+        let recurring = { activeSubscriptions: null, mrr: null }
+        try {
+            recurring = computeRecurringRevenue(await fetchActiveEntitlements())
+        } catch (e) {
+            console.warn('[Analytics] could not reconcile subscriptions for snapshot:', e?.message || e)
+        }
+
         analytics.capture({
             event: 'stats_snapshot',
             properties: {
@@ -389,7 +443,10 @@ async function sendStatsSnapshot() {
                 mails_sent_all_time: stats.mailsSendAll,
                 verifications_all_time: stats.usersVerifiedAll,
                 mails_sent_today: stats.mailsSendToday,
-                verifications_today: stats.usersVerifiedToday
+                verifications_today: stats.usersVerifiedToday,
+                active_subscriptions: recurring.activeSubscriptions,
+                mrr: recurring.mrr,
+                currency: getCurrency()
             }
         })
     } catch (e) {
@@ -703,12 +760,14 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     const oldEnds = oldEntitlement.endsTimestamp ?? null
     const newEnds = newEntitlement.endsTimestamp ?? null
     let status
+    let isRenewal = false
     if (!oldEntitlement.deleted && newEntitlement.deleted) {
         status = '🔴 Deleted'
     } else if (!oldEntitlement.consumed && newEntitlement.consumed) {
         status = '✅ Consumed'
     } else if (oldEnds !== null && newEnds !== null && newEnds > oldEnds) {
         status = '🔄 Renewed'
+        isRenewal = true
     } else if (oldEnds !== null && newEnds !== null && newEnds < oldEnds) {
         status = '🚫 Cancelled (active until end date)'
     } else if (oldEnds === null && newEnds !== null) {
@@ -736,6 +795,26 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
             deleted: !!newEntitlement.deleted
         }
     })
+
+    // A renewal is a real recurring payment. Without its own revenue-bearing event a
+    // subscription would only ever count once (at signup), so monthly income never
+    // showed up again — this is what makes recurring revenue visible month over month.
+    if (isRenewal) {
+        const isTestRenewal = newEntitlement.isTest?.() ?? false
+        analytics.capture({
+            event: 'premium_renewed',
+            userId: newEntitlement.userId || null,
+            guildId: newEntitlement.guildId || null,
+            properties: {
+                sku: newEntitlement.skuId,
+                product_label: updateInfo?.label ?? null,
+                product_kind: updateInfo?.kind ?? 'unknown',
+                is_test: isTestRenewal,
+                revenue: (!isTestRenewal && typeof updateInfo?.price === 'number' && updateInfo.price > 0) ? updateInfo.price : null,
+                currency: getCurrency()
+            }
+        })
+    }
 
     OperatorWebhook.notify({
         title: `🔁 Subscription updated — ${entitlementProductName(newEntitlement)}`,
