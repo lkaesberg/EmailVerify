@@ -402,15 +402,13 @@ async function fetchActiveEntitlements() {
 }
 
 /**
- * Current recurring revenue from live subscription entitlements. Test entitlements and
- * unpriced SKUs are excluded from the money figure. Subscription prices in config are
- * treated as per-month, so this is MRR.
+ * Current recurring revenue from live subscription entitlements. Subscription prices in
+ * config are treated as per-month, so this is MRR.
  */
 function computeRecurringRevenue(entitlements) {
     let mrr = 0
     let activeSubscriptions = 0
     for (const e of entitlements) {
-        if (e.isTest?.()) continue
         const info = describeSku(e.skuId)
         if (!info || info.kind !== 'subscription') continue
         if (!e.isActive?.()) continue
@@ -725,7 +723,7 @@ function entitlementFields(entitlement, statusValue) {
 
 bot.on('entitlementCreate', entitlement => {
     console.log(`[Premium] Entitlement created: sku=${entitlement.skuId} user=${entitlement.userId ?? 'n/a'} guild=${entitlement.guildId ?? 'n/a'} type=${entitlement.type} consumed=${entitlement.consumed} startsAt=${entitlement.startsAt?.toISOString?.() ?? 'n/a'} endsAt=${entitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
-    const status = entitlement.isTest() ? '🧪 Test purchase' : '🟢 Started'
+    const status = '🟢 Started'
     OperatorWebhook.notify({
         title: `💎 New purchase — ${entitlementProductName(entitlement)}`,
         fields: entitlementFields(entitlement, status),
@@ -736,7 +734,6 @@ bot.on('entitlementCreate', entitlement => {
     // /premium redeem — a paid-but-never-redeemed pack is a refund waiting to
     // happen. Subscriptions activate automatically, so no DM needed there.
     const info = describeSku(entitlement.skuId)
-    const isTestPurchase = entitlement.isTest?.() ?? false
     analytics.capture({
         event: 'premium_purchased',
         userId: entitlement.userId || null,
@@ -746,10 +743,8 @@ bot.on('entitlementCreate', entitlement => {
             product_label: info?.label ?? null,
             product_kind: info?.kind ?? 'unknown',
             entitlement_type: entitlement.type,
-            is_test: isTestPurchase,
-            // Revenue for PostHog's revenue analytics. Prices come from config
-            // (monetization.prices); test purchases and unpriced SKUs contribute nothing.
-            revenue: (!isTestPurchase && typeof info?.price === 'number' && info.price > 0) ? info.price : null,
+            // List price from config (monetization.prices); null for an unpriced SKU.
+            revenue: (typeof info?.price === 'number' && info.price > 0) ? info.price : null,
             currency: getCurrency()
         }
     })
@@ -825,7 +820,6 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     // subscription would only ever count once (at signup), so monthly income never
     // showed up again — this is what makes recurring revenue visible month over month.
     if (isRenewal) {
-        const isTestRenewal = newEntitlement.isTest?.() ?? false
         analytics.capture({
             event: 'premium_renewed',
             userId: newEntitlement.userId || null,
@@ -834,8 +828,7 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
                 sku: newEntitlement.skuId,
                 product_label: updateInfo?.label ?? null,
                 product_kind: updateInfo?.kind ?? 'unknown',
-                is_test: isTestRenewal,
-                revenue: (!isTestRenewal && typeof updateInfo?.price === 'number' && updateInfo.price > 0) ? updateInfo.price : null,
+                revenue: (typeof updateInfo?.price === 'number' && updateInfo.price > 0) ? updateInfo.price : null,
                 currency: getCurrency()
             }
         })
