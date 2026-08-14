@@ -2,9 +2,15 @@ const nodemailer = require('nodemailer')
 const MailProvider = require('./MailProvider')
 
 module.exports = class SelfSmtpProvider extends MailProvider {
-    constructor({ smtpHost, username, password, smtpPort, isSecure, isGoogle }) {
+    constructor({ smtpHost, username, password, smtpPort, isSecure, isGoogle, fromAddress }) {
         super()
         this.username = username
+        // The SMTP username is not always a mailbox. Relays such as Resend, SendGrid
+        // and SES authenticate with a fixed token ("resend", "apikey", an access key
+        // id), so using it as the sender makes the MAIL FROM invalid and the relay
+        // answers "501 Bad sender address syntax". Fall back to the username only for
+        // the classic setup where the login is the address it sends from.
+        this.fromAddress = fromAddress || username
 
         if (isGoogle) {
             this.transporter = nodemailer.createTransport({
@@ -37,7 +43,7 @@ module.exports = class SelfSmtpProvider extends MailProvider {
 
     sendMail({ fromName, to, subject, text, html, headers }) {
         const mailOptions = {
-            from: `"${fromName}" <${this.username}>`,
+            from: `"${fromName}" <${this.fromAddress}>`,
             to,
             subject,
             text,
