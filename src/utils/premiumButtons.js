@@ -16,8 +16,8 @@ const SKU_CATALOG = {}
 function registerSku(skuId, meta) {
     if (typeof skuId === 'string' && skuId.trim().length > 0) SKU_CATALOG[skuId] = meta
 }
-registerSku(skus.subscriptionTier1, { label: '⭐ Standard subscription', kind: 'subscription', price: prices.subscriptionTier1 })
-registerSku(skus.subscriptionTier2, { label: '💎 Pro subscription', kind: 'subscription', price: prices.subscriptionTier2 })
+registerSku(skus.subscriptionTier1, { label: '⭐ Standard subscription', kind: 'subscription', tier: 'tier1', price: prices.subscriptionTier1 })
+registerSku(skus.subscriptionTier2, { label: '💎 Pro subscription', kind: 'subscription', tier: 'tier2', price: prices.subscriptionTier2 })
 registerSku(skus.credits100, { label: '🎟️ 100 Credit Pack', kind: 'credits', credits: 100, price: prices.credits100 })
 registerSku(skus.credits500, { label: '🎟️ 500 Credit Pack', kind: 'credits', credits: 500, price: prices.credits500 })
 registerSku(skus.credits2000, { label: '🎟️ 2,000 Credit Pack', kind: 'credits', credits: 2000, price: prices.credits2000 })
@@ -26,7 +26,7 @@ registerSku(skus.csvUnlock, { label: '📁 CSV unlock', kind: 'csv', price: pric
 /**
  * Resolve a SKU id to its operator-facing product info.
  * @param {string} skuId
- * @returns {{label:string, kind:'subscription'|'credits'|'csv', credits?:number}|null}
+ * @returns {{label:string, kind:'subscription'|'credits'|'csv', tier?:'tier1'|'tier2', credits?:number}|null}
  */
 function describeSku(skuId) {
     return SKU_CATALOG[skuId] || null

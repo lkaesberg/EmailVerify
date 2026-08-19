@@ -409,14 +409,25 @@ async function fetchActiveEntitlements() {
 function computeRecurringRevenue(entitlements) {
     let mrr = 0
     let activeSubscriptions = 0
+    // Split by tier as well as totalled: the mix matters (a churned Pro is worth two
+    // Standards), and it can't be reconstructed after the fact from purchase events —
+    // those only cover signups since instrumentation started, not the live population.
+    // Keyed off the catalog's `tier`, not the label, so a rename can't break the metric.
+    const byTier = { tier1: 0, tier2: 0 }
     for (const e of entitlements) {
         const info = describeSku(e.skuId)
         if (!info || info.kind !== 'subscription') continue
         if (!e.isActive?.()) continue
         activeSubscriptions++
+        if (info.tier in byTier) byTier[info.tier]++
         if (typeof info.price === 'number' && info.price > 0) mrr += info.price
     }
-    return { activeSubscriptions, mrr: Math.round(mrr * 100) / 100 }
+    return {
+        activeSubscriptions,
+        activeStandard: byTier.tier1,
+        activePro: byTier.tier2,
+        mrr: Math.round(mrr * 100) / 100
+    }
 }
 
 /**
@@ -433,7 +444,7 @@ async function sendStatsSnapshot() {
 
         // Recurring revenue is a level, not an event stream — reconcile it here so it
         // stays correct across restarts and missed renewal events.
-        let recurring = { activeSubscriptions: null, mrr: null }
+        let recurring = { activeSubscriptions: null, activeStandard: null, activePro: null, mrr: null }
         try {
             recurring = computeRecurringRevenue(await fetchActiveEntitlements())
         } catch (e) {
@@ -449,6 +460,8 @@ async function sendStatsSnapshot() {
                 mails_sent_today: stats.mailsSendToday,
                 verifications_today: stats.usersVerifiedToday,
                 active_subscriptions: recurring.activeSubscriptions,
+                active_subscriptions_standard: recurring.activeStandard,
+                active_subscriptions_pro: recurring.activePro,
                 mrr: recurring.mrr,
                 currency: getCurrency()
             }
