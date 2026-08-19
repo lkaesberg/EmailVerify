@@ -373,14 +373,15 @@ async function registerAllGuilds(bot) {
 
 /**
  * Fetch every currently-active entitlement for the application, following pagination.
- * Renewal gateway events (ENTITLEMENT_UPDATE) only arrive while the bot is online, so
- * reconciling the live set periodically is the only way to know true recurring revenue
- * after any downtime. Capped at 20 pages (2,000 entitlements) as a runaway guard.
+ * Entitlement gateway events only arrive while the bot is online, so reconciling the
+ * live set periodically is the only way to know true recurring revenue after any
+ * downtime. Capped at 20 pages (2,000 entitlements) as a runaway guard.
  *
- * Results are cached deliberately: discord.js resolves `oldEntitlement` on an update
- * from `application.entitlements.cache`, so priming it is what lets a renewal be
- * recognised as a renewal (end date moved forward) instead of an opaque update.
- * Entitlements are few and app-level, so unlike guilds this cache is cheap to hold.
+ * Results are cached deliberately, for two reasons: discord.js resolves `oldEntitlement`
+ * on an update from `application.entitlements.cache`, so priming it is what lets a
+ * consumption or removal be told apart from an opaque update; and it's how a renewing
+ * subscription is mapped back to a guild (see subscriptionGuildId). Entitlements are few
+ * and app-level, so unlike guilds this cache is cheap to hold.
  */
 async function fetchActiveEntitlements() {
     const out = []
@@ -505,11 +506,13 @@ bot.once('clientReady', async () => {
     // PostHog group analytics have labels from the first boot onward.
     for (const g of bot.guilds.cache.values()) analytics.identifyGuild(g)
 
-    // Prime the entitlement cache on EVERY shard (not just the primary): entitlement
-    // gateway events are delivered to the shard owning the entitlement's guild, and
-    // without a cached prior state a renewal can't be told apart from any other update.
+    // Prime the entitlement cache so updates arrive with a prior state to diff against
+    // (a consumption or removal is otherwise indistinguishable from an opaque update),
+    // and so a renewing subscription can be mapped back to its guild. Discord sends
+    // entitlement and subscription events to shard 0 only — they carry no guild_id — so
+    // shard 0 is the one that matters; priming elsewhere is harmless redundancy.
     fetchActiveEntitlements()
-        .then(list => console.log(`[Premium] Cached ${list.length} active entitlements for renewal diffing`))
+        .then(list => console.log(`[Premium] Cached ${list.length} active entitlements for premium event diffing`))
         .catch(e => console.warn('[Premium] Could not prime entitlement cache:', e?.message || e))
 
     bot.user.setActivity("/verify | Website", {
@@ -761,33 +764,34 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
     console.log(`[Premium] Entitlement updated: sku=${newEntitlement.skuId} user=${newEntitlement.userId ?? 'n/a'} guild=${newEntitlement.guildId ?? 'n/a'} type=${newEntitlement.type} consumed=${newEntitlement.consumed} endsAt=${newEntitlement.endsAt?.toISOString?.() ?? 'n/a'}`)
 
     // Characterise the change by diffing old→new. Discord's update semantics are
-    // approximate, so we read the most reliable signals: a later end date is a
-    // renewal, an earlier/new one is a scheduled cancellation, the consumed flag
-    // flipping is a redemption, and the deleted flag flipping is a removal.
+    // approximate, so we read the most reliable signals: an earlier/new end date is a
+    // scheduled cancellation, the consumed flag flipping is a redemption, and the
+    // deleted flag flipping is a removal. Renewals are NOT visible here — see the
+    // subscriptionUpdate handler below for why.
     //
     // `oldEntitlement` is NULL whenever the entitlement isn't in this shard's cache —
     // discord.js's EntitlementUpdate action does `cache.get(id)?._clone() ?? null`, and
-    // the cache only holds entitlements seen since the process started. A subscription
-    // bought before the last restart therefore arrives with no prior state, which used
+    // the cache only holds entitlements seen since the process started. An entitlement
+    // created before the last restart therefore arrives with no prior state, which used
     // to throw a TypeError on the first property access and silently kill the operator
-    // notification and the analytics event for EVERY renewal. Never dereference it
-    // unguarded; the boot-time cache warm-up below is what makes real diffs possible.
+    // notification and the analytics event. Never dereference it unguarded; the
+    // boot-time cache warm-up above is what makes real diffs possible.
     const oldEnds = oldEntitlement?.endsTimestamp ?? null
     const newEnds = newEntitlement.endsTimestamp ?? null
     let status
-    let isRenewal = false
     if (!oldEntitlement) {
-        // No prior state to compare against. Report it honestly rather than guessing a
-        // renewal — misreading this would inflate revenue. The daily subscription
-        // reconciliation in sendStatsSnapshot() covers recurring revenue in this case.
+        // No prior state to compare against. Report it honestly rather than guessing.
         status = '🔁 Updated (no cached prior state)'
     } else if (!oldEntitlement.deleted && newEntitlement.deleted) {
         status = '🔴 Deleted'
     } else if (!oldEntitlement.consumed && newEntitlement.consumed) {
         status = '✅ Consumed'
     } else if (oldEnds !== null && newEnds !== null && newEnds > oldEnds) {
-        status = '🔄 Renewed'
-        isRenewal = true
+        // Deliberately NOT labelled a renewal, and deliberately not revenue-bearing:
+        // a live subscription's endsAt stays null for its whole life, so this can only
+        // be an already-ending entitlement being pushed back. Real recurring payments
+        // are counted in the subscriptionUpdate handler below.
+        status = '🔄 End date extended'
     } else if (oldEnds !== null && newEnds !== null && newEnds < oldEnds) {
         status = '🚫 Cancelled (active until end date)'
     } else if (oldEnds === null && newEnds !== null) {
@@ -816,24 +820,6 @@ bot.on('entitlementUpdate', (oldEntitlement, newEntitlement) => {
         }
     })
 
-    // A renewal is a real recurring payment. Without its own revenue-bearing event a
-    // subscription would only ever count once (at signup), so monthly income never
-    // showed up again — this is what makes recurring revenue visible month over month.
-    if (isRenewal) {
-        analytics.capture({
-            event: 'premium_renewed',
-            userId: newEntitlement.userId || null,
-            guildId: newEntitlement.guildId || null,
-            properties: {
-                sku: newEntitlement.skuId,
-                product_label: updateInfo?.label ?? null,
-                product_kind: updateInfo?.kind ?? 'unknown',
-                revenue: (typeof updateInfo?.price === 'number' && updateInfo.price > 0) ? updateInfo.price : null,
-                currency: getCurrency()
-            }
-        })
-    }
-
     OperatorWebhook.notify({
         title: `🔁 Subscription updated — ${entitlementProductName(newEntitlement)}`,
         fields,
@@ -860,6 +846,97 @@ bot.on('entitlementDelete', entitlement => {
         description: 'Subscription ended, was cancelled, refunded, or revoked.',
         fields: entitlementFields(entitlement, '🔴 Removed'),
         level: 'warn'
+    })
+})
+
+// Recurring revenue. Renewals are invisible on the entitlement events above: Discord
+// stopped sending ENTITLEMENT_UPDATE on successful renewal in October 2024, and a live
+// subscription's entitlement carries `endsAt: null` for its whole life (it's only set
+// once the subscription ends), so there is no end date to watch move forward.
+//
+// SUBSCRIPTION_UPDATE is the replacement signal: when a subscription renews, the billing
+// period rolls forward — `currentPeriodStart` jumps to now — while the status stays
+// Active. Cancellations, lapses and reactivations also land here, but they change the
+// status and leave the billing period alone, so the period start is what identifies a
+// payment. Only Active is counted: Ending/Inactive mean no money changed hands.
+const RENEWAL_FRESHNESS_MS = 10 * 60 * 1000
+
+/** First configured SKU on a subscription, with its catalog entry. */
+function subscriptionSkuInfo(subscription) {
+    for (const skuId of subscription.skuIds ?? []) {
+        const info = describeSku(skuId)
+        if (info) return { skuId, info }
+    }
+    return { skuId: subscription.skuIds?.[0] ?? null, info: null }
+}
+
+// Subscription objects are user-scoped and carry no guild id, but the entitlements they
+// granted do — and those are already cached app-wide by fetchActiveEntitlements(), which
+// is the other reason the boot-time warm-up earns its keep.
+function subscriptionGuildId(subscription) {
+    for (const entitlementId of subscription.entitlementIds ?? []) {
+        const guildId = bot.application.entitlements.cache.get(entitlementId)?.guildId
+        if (guildId) return guildId
+    }
+    return null
+}
+
+bot.on('subscriptionUpdate', (oldSubscription, newSubscription) => {
+    const periodStart = newSubscription.currentPeriodStartTimestamp
+    console.log(`[Premium] Subscription updated: id=${newSubscription.id} user=${newSubscription.userId ?? 'n/a'} status=${newSubscription.status} skus=${(newSubscription.skuIds ?? []).join(',') || 'n/a'} periodStart=${newSubscription.currentPeriodStartAt?.toISOString?.() ?? 'n/a'} periodEnd=${newSubscription.currentPeriodEndAt?.toISOString?.() ?? 'n/a'}`)
+
+    if (newSubscription.status !== Discord.SubscriptionStatus.Active) return
+
+    // `oldSubscription` is null until this process has seen the subscription once —
+    // discord.js does the same `cache.get(id)?._clone() ?? null` as for entitlements.
+    // Unlike entitlements this cache can't be primed at boot: GET /skus/{sku}/subscriptions
+    // requires a user id per query on a bot token, so there's no way to enumerate
+    // subscribers. Diff exactly when prior state exists; otherwise fall back to "the
+    // period started just now", which only ever runs for the first update of a given
+    // subscription after a restart.
+    //
+    // The fallback additionally requires the period to have started well after the
+    // subscription itself was created (its id is a snowflake). Without that, the very
+    // first billing period would look like a renewal and double-count the signup that
+    // entitlementCreate already recorded as premium_purchased.
+    const isRenewal = oldSubscription
+        ? periodStart > oldSubscription.currentPeriodStartTimestamp
+        : Date.now() - periodStart < RENEWAL_FRESHNESS_MS &&
+          periodStart - Discord.SnowflakeUtil.timestampFrom(newSubscription.id) > RENEWAL_FRESHNESS_MS
+    if (!isRenewal) return
+
+    const { skuId, info } = subscriptionSkuInfo(newSubscription)
+    const guildId = subscriptionGuildId(newSubscription)
+
+    analytics.capture({
+        event: 'premium_renewed',
+        userId: newSubscription.userId || null,
+        guildId,
+        properties: {
+            sku: skuId,
+            product_label: info?.label ?? null,
+            product_kind: info?.kind ?? 'unknown',
+            // List price from config (monetization.prices); null for an unpriced SKU.
+            revenue: (typeof info?.price === 'number' && info.price > 0) ? info.price : null,
+            currency: getCurrency()
+        }
+    })
+
+    const priceLabel = formatPrice(info?.price)
+    const fields = [
+        { name: 'Product', value: info?.label ?? `Unknown product (\`${skuId}\`)`, inline: true },
+        { name: 'User', value: newSubscription.userId ? `<@${newSubscription.userId}>` : 'n/a', inline: true },
+        { name: 'Server', value: guildId ? `\`${guildId}\`` : '— (user-level)', inline: true },
+        { name: 'Period started', value: formatDiscordTime(newSubscription.currentPeriodStartAt) ?? 'n/a', inline: true },
+        { name: 'Renews', value: formatDiscordTime(newSubscription.currentPeriodEndAt) ?? 'n/a', inline: true },
+        { name: 'Subscription ID', value: `\`${newSubscription.id}\``, inline: false }
+    ]
+    if (priceLabel) fields.splice(1, 0, { name: 'Price', value: priceLabel, inline: true })
+
+    OperatorWebhook.notify({
+        title: `🔄 Subscription renewed — ${info?.label ?? 'Unknown product'}`,
+        fields,
+        level: 'success'
     })
 })
 
