@@ -24,6 +24,10 @@ module.exports = class MailSender {
 
         const username = typeof config.username === 'undefined' ? config.email : config.username
         this.username = username
+        // Address the mail is sent *from*, which is not always the SMTP login — see
+        // SelfSmtpProvider. Used for the From header and List-Unsubscribe mailto, both
+        // of which have to be a real mailbox.
+        this.fromAddress = config.email || username
 
         this.selfProvider = new SelfSmtpProvider({
             smtpHost: config.smtpHost,
@@ -31,7 +35,8 @@ module.exports = class MailSender {
             password: config.password,
             smtpPort: config.smtpPort,
             isSecure: config.isSecure,
-            isGoogle: config.isGoogle
+            isGoogle: config.isGoogle,
+            fromAddress: this.fromAddress
         })
 
         const zeptoCfg = config.zeptomail || {}
@@ -85,14 +90,14 @@ module.exports = class MailSender {
 
             const sendOpts = {
                 fromName: emailSenderName,
-                from: this.username,
+                from: this.fromAddress,
                 to: toEmail,
                 subject: emailSubject,
                 text: plainText,
                 html,
                 headers: {
                     'X-Mailer': 'EmailVerify',
-                    'List-Unsubscribe': `<mailto:${this.username}?subject=unsubscribe>`,
+                    'List-Unsubscribe': `<mailto:${this.fromAddress}?subject=unsubscribe>`,
                     'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
                 }
             }
@@ -243,14 +248,14 @@ module.exports = class MailSender {
 
         const sendOpts = {
             fromName: getLocale(lang, 'emailSenderName'),
-            from: this.username,
+            from: this.fromAddress,
             to: toEmail,
             subject: getLocale(lang, 'emailSubject'),
             text: getLocale(lang, 'emailText', guildName, code),
             html,
             headers: {
                 'X-Mailer': 'EmailVerify',
-                'List-Unsubscribe': `<mailto:${this.username}?subject=unsubscribe>`,
+                'List-Unsubscribe': `<mailto:${this.fromAddress}?subject=unsubscribe>`,
                 'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
             }
         }
