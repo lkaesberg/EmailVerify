@@ -246,5 +246,10 @@
   "premiumForecastRunOut": "📈 Beim aktuellen Tempo sind die kostenlosen monatlichen E-Mails etwa am %VAR% aufgebraucht.",
   "premiumBlockedThisMonth": "🚫 **%VAR%** Verifizierungsversuch(e) diesen Monat durch das Mail-Limit blockiert",
   "statusIssueNoErrorDestination": "Kontingent- & Fehlerwarnungen haben kein Ziel — lege mit `/set_error_notify channel` einen Kanal oder einen Log-Kanal fest, sonst gehen wichtige Hinweise verloren",
-  "quotaWarnRedeemHint": "Nach dem Kauf von Credits führe `/premium redeem` auf diesem Server aus, um sie anzuwenden — Credits verfallen nie."
+  "quotaWarnRedeemHint": "Nach dem Kauf von Credits führe `/premium redeem` auf diesem Server aus, um sie anzuwenden — Credits verfallen nie.",
+  "onboardingTitle": "👋 EmailVerify ist bereit — etwa eine Minute Einrichtung",
+  "onboardingWhat": "Mit EmailVerify weisen Mitglieder nach, dass ihnen eine E-Mail-Adresse gehört — etwa von einer Universität, Schule oder Firma —, bevor sie hier eine Rolle bekommen. Praktisch, um einen Server auf verifizierte Studierende, Mitarbeitende oder Kunden zu beschränken.",
+  "onboardingSteps": "**Der Bot bleibt inaktiv, bis er eingerichtet ist:**\n\n**1.** Führe `/setup` aus und wähle die Rolle, die verifizierte Mitglieder erhalten sollen\n**2.** Lege fest, welche E-Mail-Domains gültig sind (zum Beispiel `uni-goettingen.de`)\n**3.** Wähle den Textkanal, in dem der Verifizierungs-Button erscheinen soll\n\nFühre danach `/button` in diesem Kanal aus. Mitglieder klicken darauf, erhalten einen Code per E-Mail und werden automatisch verifiziert.",
+  "onboardingHelp": "Fragen? `/help` listet alle Befehle auf und `/status` zeigt, was noch fehlt. Vollständige Anleitung: %VAR%",
+  "onboardingDmIntro": "Du hast **EmailVerify** gerade zu **%VAR%** hinzugefügt. Hier ist alles, was für die Einrichtung nötig ist."
 }

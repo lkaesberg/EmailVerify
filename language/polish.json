@@ -246,5 +246,10 @@
   "premiumForecastRunOut": "📈 W obecnym tempie darmowe miesięczne e-maile wyczerpią się około %VAR%.",
   "premiumBlockedThisMonth": "🚫 **%VAR%** prób(y) weryfikacji zablokowane w tym miesiącu przez limit e-maili",
   "statusIssueNoErrorDestination": "Ostrzeżenia o limitach i błędach nie mają celu — ustaw kanał poleceniem `/set_error_notify channel` lub kanał logów, inaczej ważne alerty przepadną",
-  "quotaWarnRedeemHint": "Po zakupie kredytów uruchom `/premium redeem` na tym serwerze, aby je zastosować — kredyty nigdy nie wygasają."
+  "quotaWarnRedeemHint": "Po zakupie kredytów uruchom `/premium redeem` na tym serwerze, aby je zastosować — kredyty nigdy nie wygasają.",
+  "onboardingTitle": "👋 EmailVerify jest gotowy — konfiguracja zajmie około minuty",
+  "onboardingWhat": "EmailVerify pozwala członkom potwierdzić, że dany adres e-mail należy do nich — uczelniany, szkolny lub firmowy — zanim otrzymają tutaj rolę. Przydatne, gdy serwer ma być tylko dla zweryfikowanych studentów, pracowników lub klientów.",
+  "onboardingSteps": "**Bot pozostaje nieaktywny, dopóki go nie skonfigurujesz:**\n\n**1.** Użyj `/setup` i wybierz rolę, którą mają otrzymywać zweryfikowani członkowie\n**2.** Określ, które domeny e-mail są prawidłowe (na przykład `uni-goettingen.de`)\n**3.** Wybierz kanał, na którym pojawi się przycisk weryfikacji\n\nNastępnie użyj `/button` na tym kanale. Członkowie klikają przycisk, otrzymują kod e-mailem i są weryfikowani automatycznie.",
+  "onboardingHelp": "Masz pytania? `/help` wypisuje wszystkie komendy, a `/status` pokazuje, czego jeszcze brakuje. Pełny przewodnik: %VAR%",
+  "onboardingDmIntro": "Właśnie dodano **EmailVerify** do serwera **%VAR%**. Oto wszystko, czego potrzeba, aby go uruchomić."
 }

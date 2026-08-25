@@ -25,6 +25,7 @@ const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttempts
 const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { getWebsiteUrl, describeSku, getCurrency } = require('./utils/premiumButtons');
+const onboarding = require('./utils/onboarding');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 const analytics = require('./utils/Analytics');
 
@@ -671,6 +672,20 @@ bot.on('guildCreate', guild => {
     registerCommands(guild)
     analytics.identifyGuild(guild)
     analytics.capture({ event: 'guild_joined', guild, properties: { member_count: guild.memberCount } })
+
+    // Greet the server and DM whoever added the bot. Only genuine joins reach this
+    // handler — discord.js suppresses guildCreate for the startup guild load unless the
+    // socket is already Ready (see GUILD_CREATE.js) — so a restart cannot spam anyone.
+    //
+    // Fire-and-forget: onboarding must never delay or break command registration. The
+    // delivery flags are captured so the effect on first-hour churn is measurable.
+    onboarding.sendOnboarding(guild)
+        .then(result => analytics.capture({
+            event: 'onboarding_sent',
+            guild,
+            properties: { ...result, member_count: guild.memberCount }
+        }))
+        .catch(e => console.warn(`[Onboarding] failed for ${guild.id}:`, e?.message || e))
 })
 
 // Premium purchase lifecycle — turn every Discord entitlement event into a

@@ -246,5 +246,10 @@
   "premiumForecastRunOut": "📈 At the current pace, the free monthly emails will run out around %VAR%.",
   "premiumBlockedThisMonth": "🚫 **%VAR%** verification attempt(s) blocked by the mail limit this month",
   "statusIssueNoErrorDestination": "Quota & error warnings have no destination — set a channel with `/set_error_notify channel` or a log channel, or important alerts will be missed",
-  "quotaWarnRedeemHint": "After buying credits, run `/premium redeem` in this server to apply them — credits never expire."
+  "quotaWarnRedeemHint": "After buying credits, run `/premium redeem` in this server to apply them — credits never expire.",
+  "onboardingTitle": "👋 EmailVerify is ready — about a minute to set up",
+  "onboardingWhat": "EmailVerify lets members prove they own an email address — a university, school, or company address — before they get a role here. Useful for keeping a server to verified students, staff, or customers.",
+  "onboardingSteps": "**The bot stays inactive until it is set up:**\n\n**1.** Run `/setup` and pick the role verified members should receive\n**2.** Choose which email domains count as valid (for example `uni-goettingen.de`)\n**3.** Pick the channel where the verification button goes\n\nThen run `/button` in that channel. Members click it, get a code by email, and are verified automatically.",
+  "onboardingHelp": "Stuck? `/help` lists every command and `/status` shows what is still missing. Full guide: %VAR%",
+  "onboardingDmIntro": "You just added **EmailVerify** to **%VAR%**. Here is everything needed to get it working."
 }

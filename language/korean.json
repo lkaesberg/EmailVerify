@@ -246,5 +246,10 @@
   "premiumForecastRunOut": "📈 현재 속도라면 무료 월간 이메일이 %VAR% 즈음 소진됩니다.",
   "premiumBlockedThisMonth": "🚫 이번 달 메일 한도로 **%VAR%**건의 인증 시도가 차단됨",
   "statusIssueNoErrorDestination": "할당량 및 오류 경고를 받을 곳이 없습니다 — `/set_error_notify channel`로 채널이나 로그 채널을 설정하세요. 그렇지 않으면 중요한 알림을 놓칩니다",
-  "quotaWarnRedeemHint": "크레딧 구매 후 이 서버에서 `/premium redeem`을 실행해 적용하세요 — 크레딧은 만료되지 않습니다."
+  "quotaWarnRedeemHint": "크레딧 구매 후 이 서버에서 `/premium redeem`을 실행해 적용하세요 — 크레딧은 만료되지 않습니다.",
+  "onboardingTitle": "👋 EmailVerify 준비 완료 — 설정은 1분 정도면 끝납니다",
+  "onboardingWhat": "EmailVerify는 멤버가 이 서버에서 역할을 받기 전에 대학교, 학교, 회사 등의 이메일 주소를 본인이 소유하고 있음을 인증하도록 합니다. 인증된 학생, 임직원, 고객만 참여하는 서버를 운영할 때 유용합니다.",
+  "onboardingSteps": "**설정을 마치기 전까지 봇은 동작하지 않습니다:**\n\n**1.** `/setup` 을 실행하고 인증된 멤버에게 지급할 역할을 선택하세요\n**2.** 어떤 이메일 도메인을 허용할지 지정하세요 (예: `uni-goettingen.de`)\n**3.** 인증 버튼을 올릴 채널을 선택하세요\n\n그런 다음 해당 채널에서 `/button` 을 실행하세요. 멤버가 버튼을 누르면 이메일로 코드를 받고 자동으로 인증됩니다.",
+  "onboardingHelp": "도움이 필요하신가요? `/help` 는 모든 명령어를 보여 주고, `/status` 는 아직 설정되지 않은 항목을 알려 줍니다. 전체 가이드: %VAR%",
+  "onboardingDmIntro": "방금 **%VAR%** 서버에 **EmailVerify** 를 추가하셨습니다. 봇을 사용하는 데 필요한 내용은 다음과 같습니다."
 }

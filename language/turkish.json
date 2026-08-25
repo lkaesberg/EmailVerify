@@ -246,5 +246,10 @@
   "premiumForecastRunOut": "📈 Mevcut hızla, ücretsiz aylık e-postalar yaklaşık %VAR% civarında tükenecek.",
   "premiumBlockedThisMonth": "🚫 Bu ay posta sınırı nedeniyle **%VAR%** doğrulama girişimi engellendi",
   "statusIssueNoErrorDestination": "Kota ve hata uyarılarının gideceği bir yer yok — `/set_error_notify channel` ile bir kanal veya log kanalı ayarlayın, yoksa önemli uyarılar kaçırılır",
-  "quotaWarnRedeemHint": "Kredi satın aldıktan sonra uygulamak için bu sunucuda `/premium redeem` çalıştırın — kredilerin süresi asla dolmaz."
+  "quotaWarnRedeemHint": "Kredi satın aldıktan sonra uygulamak için bu sunucuda `/premium redeem` çalıştırın — kredilerin süresi asla dolmaz.",
+  "onboardingTitle": "👋 EmailVerify hazır — kurulum yaklaşık bir dakika sürer",
+  "onboardingWhat": "EmailVerify, üyelerin burada bir rol almadan önce bir e-posta adresinin kendilerine ait olduğunu kanıtlamasını sağlar — üniversite, okul veya şirket adresi. Bir sunucuyu yalnızca doğrulanmış öğrencilere, çalışanlara veya müşterilere açık tutmak için kullanışlıdır.",
+  "onboardingSteps": "**Bot, kurulumu tamamlanana kadar etkin değildir:**\n\n**1.** `/setup` komutunu çalıştırın ve doğrulanmış üyelerin alacağı rolü seçin\n**2.** Hangi e-posta alan adlarının geçerli olduğunu belirleyin (örneğin `uni-goettingen.de`)\n**3.** Doğrulama düğmesinin yayınlanacağı kanalı seçin\n\nArdından o kanalda `/button` komutunu çalıştırın. Üyeler düğmeye tıklar, e-posta ile bir kod alır ve otomatik olarak doğrulanır.",
+  "onboardingHelp": "Takıldınız mı? `/help` tüm komutları listeler, `/status` ise hâlâ eksik olanları gösterir. Tam kılavuz: %VAR%",
+  "onboardingDmIntro": "**EmailVerify** botunu az önce **%VAR%** sunucusuna eklediniz. İşte çalışır hâle getirmek için gereken her şey."
 }
