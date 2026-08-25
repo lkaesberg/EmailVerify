@@ -451,6 +451,16 @@ async function sendStatsSnapshot() {
             console.warn('[Analytics] could not reconcile subscriptions for snapshot:', e?.message || e)
         }
 
+        // Credit-balance histogram: how many paying servers are close to running dry.
+        // Nulls (not zeros) on failure so a broken read reads as "no data" on the
+        // dashboard instead of a fake "every server is out of credits".
+        let credits = { b0: null, b1_10: null, b11_50: null, b51_100: null, b101_500: null, b501_plus: null }
+        try {
+            credits = await database.getCreditBuckets()
+        } catch (e) {
+            console.warn('[Analytics] could not read credit buckets for snapshot:', e?.message || e)
+        }
+
         analytics.capture({
             event: 'stats_snapshot',
             properties: {
@@ -463,6 +473,14 @@ async function sendStatsSnapshot() {
                 active_subscriptions_standard: recurring.activeStandard,
                 active_subscriptions_pro: recurring.activePro,
                 mrr: recurring.mrr,
+                // Servers by remaining credits. Counts only guilds that have ever held
+                // credits — see Database#getCreditBuckets.
+                credit_servers_0: credits.b0,
+                credit_servers_1_10: credits.b1_10,
+                credit_servers_11_50: credits.b11_50,
+                credit_servers_51_100: credits.b51_100,
+                credit_servers_101_500: credits.b101_500,
+                credit_servers_501_plus: credits.b501_plus,
                 currency: getCurrency()
             }
         })

@@ -648,6 +648,49 @@ class Database {
         })
     }
 
+    /**
+     * Histogram of remaining credits across guilds that have ever held credits.
+     *
+     * Only guilds present in `guild_premium` are counted: a server that never bought a
+     * pack has no balance to run down, so including all ~2.4k installs would bury the
+     * signal under a huge zero bucket. A guild sitting at 0 here HAS bought before and
+     * is the strongest repurchase candidate, which is the point of the breakdown.
+     *
+     * The 1-10 boundary matches the `warnedCreditsLow` threshold used in getMailMode(),
+     * so "critical" here means the same thing it does in the admin warnings.
+     */
+    getCreditBuckets() {
+        const empty = { b0: 0, b1_10: 0, b11_50: 0, b51_100: 0, b101_500: 0, b501_plus: 0 }
+        return new Promise(resolve => {
+            this.db.get(
+                `SELECT
+                    SUM(CASE WHEN bonusCredits <= 0 THEN 1 ELSE 0 END) AS b0,
+                    SUM(CASE WHEN bonusCredits BETWEEN 1 AND 10 THEN 1 ELSE 0 END) AS b1_10,
+                    SUM(CASE WHEN bonusCredits BETWEEN 11 AND 50 THEN 1 ELSE 0 END) AS b11_50,
+                    SUM(CASE WHEN bonusCredits BETWEEN 51 AND 100 THEN 1 ELSE 0 END) AS b51_100,
+                    SUM(CASE WHEN bonusCredits BETWEEN 101 AND 500 THEN 1 ELSE 0 END) AS b101_500,
+                    SUM(CASE WHEN bonusCredits > 500 THEN 1 ELSE 0 END) AS b501_plus
+                 FROM guild_premium`,
+                (err, row) => {
+                    if (err) {
+                        console.error('Error getting credit buckets:', err)
+                        resolve(empty)
+                        return
+                    }
+                    // SUM() over zero rows yields NULL, not 0.
+                    resolve({
+                        b0: row?.b0 ?? 0,
+                        b1_10: row?.b1_10 ?? 0,
+                        b11_50: row?.b11_50 ?? 0,
+                        b51_100: row?.b51_100 ?? 0,
+                        b101_500: row?.b101_500 ?? 0,
+                        b501_plus: row?.b501_plus ?? 0
+                    })
+                }
+            )
+        })
+    }
+
     addGuildCredits(guildID, amount) {
         return new Promise((resolve, reject) => {
             this.db.run(
