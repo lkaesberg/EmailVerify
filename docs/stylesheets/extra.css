@@ -1,0 +1,72 @@
+/* Hero: page title with the laurel badge beside it (markup in docs/index.md) */
+
+.md-typeset .hero-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+}
+
+.md-typeset .hero-head h1 {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+/* App-Store-style laurel badge */
+
+.md-typeset .laurel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .1rem;
+  margin: 0;
+  flex: 0 0 auto;
+  color: #000;
+  line-height: 1.2;
+}
+
+/* Material sets `.md-typeset svg { height: auto }`, so match its specificity. */
+.md-typeset .laurel-badge .laurel-side {
+  flex: 0 0 auto;
+  height: 3.4rem;
+  width: auto;
+}
+
+.laurel-side--right {
+  transform: scaleX(-1);
+}
+
+.laurel-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .25rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.laurel-title {
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.laurel-sub {
+  font-size: .5rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  opacity: .7;
+}
+
+@media screen and (max-width: 30em) {
+  .md-typeset .laurel-badge .laurel-side { height: 3rem; }
+  .laurel-title { font-size: .62rem; }
+  .laurel-sub { font-size: .46rem; }
+}
+
+[data-md-color-scheme="slate"] .md-typeset .laurel-badge {
+  color: #fff;
+}
+
+.md-typeset .hero-lead {
+  text-align: justify;
+  hyphens: auto;
+}
