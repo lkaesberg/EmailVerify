@@ -8,6 +8,7 @@ These commands can be used by any user.
 |---------|-------------|
 | `/verify` | Start the email verification process to get access to the server |
 | `/data delete-user` | Delete your personal verification data and remove your verified status |
+| `/help` | Show your commands, how verification works, and the bot's source code & license (AGPL-3.0) |
 
 > 💡 **Didn't get the code?** The "Code Sent" message has a **Resend code** button (60-second cooldown). Codes are valid for 15 minutes and allow up to 5 attempts.
 
@@ -193,7 +194,7 @@ notifies the operator.
 | Command | Description |
 |---------|-------------|
 | `/status` | View bot configuration, verification statistics, blocked-attempt count, quota forecast, and check for setup issues |
-| `/help` | Show setup instructions and command overview |
+| `/help` | Show setup instructions and command overview (admins see the full setup guide; everyone else sees the user commands and the source/license notice) |
 
 ### ⚠️ Data Management (Danger Zone)
 

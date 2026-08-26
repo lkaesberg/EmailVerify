@@ -41,6 +41,7 @@
       </ul>
     </li>
     <li><a href="#-contributors">Contributors</a></li>
+    <li><a href="#-license">License</a></li>
     <li><a href="#-support-the-project">Support the Project</a></li>
   </ol>
 </details>
@@ -334,6 +335,22 @@ Type `email` in the console to see debugging messages for email errors.
 
 ### Want to add a new language?
 Create an issue with your translation file using the [English template](language/english.json) as a reference.
+
+---
+
+## 📜 License
+
+EmailVerify is free software licensed under the
+[GNU Affero General Public License v3.0 or later](LICENSE) (AGPL-3.0-or-later).
+
+You may use, study, modify, and redistribute it. If you distribute it — or run a
+modified version as a network service that other people interact with (for
+example, hosting your own instance of this bot) — you must make the complete
+corresponding source code of your version available to those users under the same
+license (AGPL §13).
+
+The upstream source is always available at
+<https://github.com/lkaesberg/EmailVerify>.
 
 ---
 

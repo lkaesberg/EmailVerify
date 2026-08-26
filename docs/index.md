@@ -105,7 +105,7 @@ If you do hit the limit, you'll get warnings at 80% and 95% before sending pause
 
 ## Built for transparency
 
-This is a single-developer project that has been running on personal infrastructure for the past five years. The source code stays open under GPL-3.0 — fork it, audit it, self-host it. Premium routes through Zoho ZeptoMail (EU servers, GDPR-friendly) for paying servers; free-tier mail keeps using the operator's own SMTP.
+This is a single-developer project that has been running on personal infrastructure for the past five years. The source code stays open under AGPL-3.0 — fork it, audit it, self-host it. Premium routes through Zoho ZeptoMail (EU servers, GDPR-friendly) for paying servers; free-tier mail keeps using the operator's own SMTP.
 
 <div class="grid" markdown>
 

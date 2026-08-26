@@ -187,7 +187,7 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
     Plaintext only at the moment of sending the verification code. The bot stores email addresses as MD5 base64 hashes — same scheme for verified users and for the allowedEmails list. Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).
 
 ??? question "Can I self-host with monetization disabled?"
-    Yes. The source is on [GitHub](https://github.com/lkaesberg/EmailVerify) under GPL-3.0. Set `monetization.enabled` to `false` in `config/config.json`, supply your own SMTP credentials, and run it. Self-hosters bypass the quota system entirely.
+    Yes. The source is on [GitHub](https://github.com/lkaesberg/EmailVerify) under AGPL-3.0. Set `monetization.enabled` to `false` in `config/config.json`, supply your own SMTP credentials, and run it. Self-hosters bypass the quota system entirely.
 
 ??? question "Where do I find prices?"
     Inside Discord, where the bot is. Run `/premium status` and click any of the buy buttons — Discord renders the actual price for your locale. Listing fixed prices on this page would get out of sync with regional pricing in Discord.
