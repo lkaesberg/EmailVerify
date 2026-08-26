@@ -86,26 +86,25 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: Deploy (restart server)
+    name: Deploy (trigger Coolify)
     needs: docker-release
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Pull new image & restart docker-compose over SSH
+      # The bot runs as a Coolify application that builds this repo from source,
+      # so a deploy is just a webhook call -- no SSH key and no compose stack on
+      # the server any more. Coolify builds the configured branch (main), so tag
+      # a commit that is on main's HEAD.
+      - name: Trigger Coolify deployment
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
-          SSH_USER: ${{ secrets.DEPLOY_USER }}
-          SSH_PORT: ${{ secrets.DEPLOY_PORT }}
+          COOLIFY_URL: https://coolify.checkmythesis.com
+          COOLIFY_APP_UUID: fsyzdu0vfspz8py52fgkucib
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          PORT="${SSH_PORT:-22}"
-          ssh-keyscan -p "$PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key -p "$PORT" -o IdentitiesOnly=yes "$SSH_USER@$SSH_HOST" \
-            'set -e; cd ~/emailbot; docker compose pull; docker compose up -d; docker image prune -f'
+          curl --fail-with-body -sS \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_APP_UUID" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN"
 
   pages-build:
     name: Build Pages
