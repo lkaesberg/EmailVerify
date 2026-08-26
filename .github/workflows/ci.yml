@@ -102,9 +102,13 @@ jobs:
           COOLIFY_APP_UUID: fsyzdu0vfspz8py52fgkucib
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
-          curl --fail-with-body -sS \
-            "$COOLIFY_URL/api/v1/deploy?uuid=$COOLIFY_APP_UUID" \
-            -H "Authorization: Bearer $COOLIFY_TOKEN"
+          # Coolify's deploy endpoint is POST with a JSON body; the older
+          # GET ?uuid=... form now returns 405.
+          curl --fail-with-body -sS -X POST \
+            "$COOLIFY_URL/api/v1/deploy" \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"uuid\": \"$COOLIFY_APP_UUID\"}"
 
   pages-build:
     name: Build Pages
