@@ -1,3 +1,8 @@
+---
+title: Allgemeine Geschäftsbedingungen
+description: Allgemeine Geschäftsbedingungen für die Nutzung des EmailVerify Discord-Bots und seiner kostenpflichtigen Zusatzleistungen.
+---
+
 # Allgemeine Geschäftsbedingungen (AGB)
 
 **Stand:** April 2026

@@ -1,3 +1,8 @@
+---
+title: Datenschutzerklärung
+description: Wie EmailVerify personenbezogene Daten verarbeitet — gehashte E-Mail-Adressen, Speicherdauer, Auftragsverarbeiter und Betroffenenrechte nach DSGVO.
+---
+
 # Datenschutzerklärung
 
 **Stand:** April 2026
@@ -74,6 +79,32 @@ notwendigen Verarbeitungen durch Dienstleister:
 Discord ist kein klassischer Auftragsverarbeiter im Sinne der DSGVO, sondern
 eine Plattform, ohne die der Bot nicht funktionieren kann; die Datenverarbeitung
 durch Discord folgt der [Discord-Datenschutzerklärung](https://discord.com/privacy).
+
+### 4.1 Diese Website
+
+Diese Website (`emailbot.larskaesberg.de`) wird über **GitHub Pages**
+(GitHub, Inc., USA) ausgeliefert. Beim Abruf verarbeitet GitHub technisch
+notwendige Verbindungsdaten einschließlich Ihrer IP-Adresse; Einzelheiten in der
+[GitHub-Datenschutzerklärung](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
+Die Website setzt **keine Cookies** und bindet **kein Tracking** ein.
+
+Die auf der Startseite und den Statistikseiten angezeigten Zahlen werden von
+`emailbotstats.larskaesberg.de` (eigener Server, Deutschland) geladen. Es werden
+dabei nur aggregierte Zählwerte übertragen, keine personenbezogenen Daten.
+
+**Video-Einbindung (YouTube).** Auf der Startseite und der Quick-Start-Seite ist
+ein Erklärvideo eingebunden. Das Vorschaubild liegt **auf diesem Server**, und es
+wird **erst dann** eine Verbindung zu YouTube aufgebaut, wenn Sie aktiv auf den
+Play-Button klicken (sogenannte Zwei-Klick-Lösung). Vor dem Klick werden **keine
+Daten an Google übertragen und keine Cookies gesetzt**.
+
+Klicken Sie auf Play, wird der Player über `youtube-nocookie.com` (erweiterter
+Datenschutzmodus) von der **Google Ireland Limited** geladen. Dabei werden Ihre
+IP-Adresse und Informationen zum abgerufenen Video an Google übertragen, ggf.
+mit Übermittlung in die USA. Rechtsgrundlage ist Ihre durch den Klick erteilte
+Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Sie jederzeit durch Verlassen der
+Seite widerrufen können. Einzelheiten in der
+[Google-Datenschutzerklärung](https://policies.google.com/privacy).
 
 ## 5. Speicherdauer
 
@@ -152,6 +183,15 @@ verification email entered by the user — revocable any time via `/data delete`
   tier and bonus credits.
 - Zoho ZeptoMail EU endpoint `api.zeptomail.eu` (EU) — email delivery for
   subscription customers (if enabled).
+- GitHub, Inc. (US) — hosting of this website via GitHub Pages. No cookies, no
+  tracking.
+
+**Embedded video:** the explainer video on the home and quick-start pages uses a
+click-to-load placeholder. The poster image is served from this site, and **no
+request reaches Google and no cookie is set until you click play**. Clicking
+loads the player from `youtube-nocookie.com` (Google Ireland Limited) and
+transmits your IP address and the video requested; the legal basis is the
+consent you give by clicking (GDPR Art. 6(1)(a)).
 
 **Retention:** until you or the server admin delete the data, or until the bot
 leaves the server.

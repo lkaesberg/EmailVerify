@@ -1,217 +1,9 @@
-<meta name="description" content="EmailVerify Discord Bot Statistics - Track verified users, emails sent, and server growth over time.">
-<meta name="keywords" content="EmailVerify Discord Bot Statistics Analytics">
+---
+title: EmailVerify Statistics — Live Discord Bot Usage
+description: Live usage statistics for the EmailVerify Discord bot — servers running it, members verified, and verification emails delivered, with history charts.
+---
 
 # Statistics
-
-<style>
-/* Palette aligned with the EmailBot logo (blue circle + green verified
-   checkmark). Neutral cool card surfaces let the brand colors do the work. */
-:root {
-    --accent-blue: #5865f2;   /* logo circle (Discord-blurple-adjacent) */
-    --accent-green: #22c55e;  /* logo checkmark */
-    --accent-teal: #0d9488;   /* supporting color for "emails" stat */
-    --bg-card: #f6f8fa;
-    --bg-hover: #eef2f7;
-    --text-primary: #1f2937;
-    --text-muted: #6b7280;
-    --border-color: #d0d7de;
-    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.10), 0 2px 4px rgba(15, 23, 42, 0.06);
-}
-
-.stats-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
-}
-
-.stats-hero {
-    display: flex;
-}
-
-.stats-hero .stat-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 32px;
-}
-
-.stats-hero .stat-value {
-    font-size: 3.5rem;
-}
-
-.stats-hero .stat-label {
-    font-size: 0.85rem;
-}
-
-.stats-column {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.stat-group {
-    background: var(--bg-card);
-    border-radius: 12px;
-    padding: 16px 20px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex: 1;
-}
-
-.stat-group-icon {
-    font-size: 1.5rem;
-    opacity: 0.7;
-}
-
-.stat-group-content {
-    display: flex;
-    gap: 24px;
-    flex: 1;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-card {
-    background: var(--bg-card);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card:hover, .stat-group:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-}
-
-.stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--accent-green);
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    margin-bottom: 2px;
-}
-
-.stat-value.teal { color: var(--accent-teal); }
-.stat-value.blue { color: var(--accent-blue); }
-
-.stat-label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-}
-
-@media (max-width: 600px) {
-    .stats-wrapper {
-        grid-template-columns: 1fr;
-    }
-    .stats-hero .stat-value {
-        font-size: 2.5rem;
-    }
-    .stat-group-content {
-        gap: 16px;
-    }
-}
-
-.chart-section {
-    background: var(--bg-card);
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
-}
-
-.chart-title {
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.chart-wrapper {
-    position: relative;
-    height: 280px;
-}
-
-.controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-
-.control-btn {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: var(--text-muted);
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.15s ease;
-}
-
-.control-btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent-green);
-    color: var(--text-primary);
-}
-
-.control-btn.active {
-    background: var(--accent-green);
-    color: white;
-    border-color: var(--accent-green);
-}
-
-.legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.legend-dot.green { background: var(--accent-green); }
-.legend-dot.teal { background: var(--accent-teal); }
-.legend-dot.blue { background: var(--accent-blue); }
-
-.last-updated {
-    text-align: right;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    margin-top: 12px;
-}
-</style>
 
 <div class="stats-wrapper">
     <div class="stats-hero">
@@ -568,6 +360,21 @@ function initStatsPage() {
             updateCharts(currentDays);
         });
     });
+
+    // Repaint when the palette toggle flips. Chart.js bakes tick and gridline
+    // colours in at construction time, so the options have to be rebuilt and
+    // the charts redrawn; `ev:scheme-change` comes from javascripts/extra.js.
+    // Registered once per full page load — initStatsPage re-runs on every
+    // instant navigation and must not stack duplicate listeners.
+    if (!window.__statsSchemeListener) {
+        window.__statsSchemeListener = true;
+        document.addEventListener('ev:scheme-change', function () {
+            if (!document.getElementById('dailyChart')) return;
+            baseOptions = buildBaseOptions();
+            autoScaleOptions = buildAutoScaleOptions();
+            updateCharts(currentDays);
+        });
+    }
 
     // Rebuild theme-dependent options now that the page's CSS is applied.
     baseOptions = buildBaseOptions();

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+<!--
+  Adds the social-preview and structured-data tags that Material only emits via
+  the (heavyweight) social plugin. Everything here is derived from page front
+  matter, so a new page picks it up by declaring `description:` and nothing else.
+-->
+<!--
+  Material appends " - {site_name}" to any front-matter title. Our titles
+  already carry the brand, so take the block over and emit them verbatim —
+  otherwise every <title> reads "… - EmailVerify for Discord" and overruns the
+  ~60 characters Google will show.
+-->
+{% block htmltitle %}
+  {%- if page and page.meta and page.meta.title -%}
+    <title>{{ page.meta.title }}</title>
+  {%- elif page and page.title and not page.is_homepage -%}
+    <title>{{ page.title | striptags }} · {{ config.site_name }}</title>
+  {%- else -%}
+    <title>{{ config.site_name }}</title>
+  {%- endif -%}
+{% endblock %}
+
+{% block extrahead %}
+  {%- set page_title = config.site_name -%}
+  {%- if page and page.meta and page.meta.title -%}
+    {%- set page_title = page.meta.title -%}
+  {%- elif page and page.title and not page.is_homepage -%}
+    {%- set page_title = (page.title | striptags) ~ " · " ~ config.site_name -%}
+  {%- endif -%}
+
+  {%- set page_description = config.site_description -%}
+  {%- if page and page.meta and page.meta.description -%}
+    {%- set page_description = page.meta.description -%}
+  {%- endif -%}
+
+  {%- set page_image = config.extra.image -%}
+  {%- if page and page.meta and page.meta.image -%}
+    {%- set page_image = page.meta.image -%}
+  {%- endif -%}
+
+  {%- set page_url = config.site_url -%}
+  {%- if page and page.canonical_url -%}
+    {%- set page_url = page.canonical_url -%}
+  {%- endif -%}
+
+  <meta property="og:type" content="{% if page and page.is_homepage %}website{% else %}article{% endif %}">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:image" content="{{ page_image }}">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_description }}">
+  <meta name="twitter:image" content="{{ page_image }}">
+
+  {%- if page and page.is_homepage %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "EmailVerify",
+    "alternateName": "EmailVerify for Discord",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Discord",
+    "url": "{{ config.site_url }}",
+    "description": {{ config.site_description | tojson }},
+    "image": "{{ config.extra.image }}",
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+    "isAccessibleForFree": true,
+    "author": {
+      "@type": "Person",
+      "name": "Lars Kaesberg",
+      "url": "https://github.com/lkaesberg"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR",
+      "description": "Free tier: 25 verification emails per month, per server. Paid plans available through Discord."
+    }
+  }
+  </script>
+  {%- endif %}
+
+  {%- if page and page.meta and page.meta.video_id %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": {{ page.meta.video_title | tojson }},
+    "description": {{ page_description | tojson }},
+    "thumbnailUrl": "https://i.ytimg.com/vi/{{ page.meta.video_id }}/maxresdefault.jpg",
+    "uploadDate": "{{ page.meta.video_date }}",
+    "embedUrl": "https://www.youtube-nocookie.com/embed/{{ page.meta.video_id }}",
+    "contentUrl": "https://www.youtube.com/watch?v={{ page.meta.video_id }}"
+  }
+  </script>
+  {%- endif %}
+
+  {%- if page and page.meta and page.meta.faq %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {%- for item in page.meta.faq %}
+      {
+        "@type": "Question",
+        "name": {{ item.q | tojson }},
+        "acceptedAnswer": { "@type": "Answer", "text": {{ item.a | tojson }} }
+      }{% if not loop.last %},{% endif %}
+      {%- endfor %}
+    ]
+  }
+  </script>
+  {%- endif %}
+{% endblock %}

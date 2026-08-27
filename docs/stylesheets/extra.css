@@ -1,15 +1,170 @@
-/* Hero: page title with the laurel badge beside it (markup in docs/index.md) */
+/* ==========================================================================
+   EmailVerify — site styles
+
+   Everything here is theme-aware: light values live on :root, dark values are
+   redefined under [data-md-color-scheme="slate"]. Never hard-code a colour in
+   page markup — use a token below so both schemes stay correct.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Brand — taken from the logo: blue circle, green verified checkmark. */
+  --ev-blue: #5865f2;
+  --ev-green: #16a34a;
+  --ev-teal: #0d9488;
+
+  /* Surfaces */
+  --ev-surface: #f6f8fa;
+  --ev-surface-raised: #ffffff;
+  --ev-surface-hover: #eef2f7;
+  --ev-border: #d8dee6;
+  --ev-border-strong: #c2cad4;
+
+  /* Text */
+  --ev-text: #1f2937;
+  --ev-muted: #5b6472;
+
+  /* Depth */
+  --ev-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 2px 8px rgba(15, 23, 42, .06);
+  --ev-shadow-hover: 0 2px 4px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .10);
+
+  /* Geometry */
+  --ev-radius: 14px;
+  --ev-radius-sm: 9px;
+
+  /* Hero wash */
+  --ev-hero-from: rgba(88, 101, 242, .10);
+  --ev-hero-to: rgba(22, 163, 74, .08);
+}
+
+[data-md-color-scheme="slate"] {
+  --ev-green: #34d399;
+
+  --ev-surface: hsla(232, 15%, 23%, 1);
+  --ev-surface-raised: hsla(232, 15%, 26%, 1);
+  --ev-surface-hover: hsla(232, 15%, 29%, 1);
+  --ev-border: hsla(232, 12%, 36%, 1);
+  --ev-border-strong: hsla(232, 12%, 46%, 1);
+
+  --ev-text: hsla(0, 0%, 100%, .92);
+  --ev-muted: hsla(0, 0%, 100%, .62);
+
+  --ev-shadow: 0 1px 2px rgba(0, 0, 0, .30), 0 2px 8px rgba(0, 0, 0, .26);
+  --ev-shadow-hover: 0 2px 4px rgba(0, 0, 0, .34), 0 8px 24px rgba(0, 0, 0, .40);
+
+  --ev-hero-from: rgba(88, 101, 242, .22);
+  --ev-hero-to: rgba(52, 211, 153, .12);
+}
+
+/* --------------------------------------------------------------------------
+   2. Base polish
+   -------------------------------------------------------------------------- */
+
+.md-grid {
+  /* Material's 61rem default leaves a lot of dead space on wide monitors and
+     makes the marketing pages feel cramped in the middle of the screen. */
+  max-width: 68rem;
+}
+
+.md-typeset {
+  font-size: .78rem;
+  line-height: 1.68;
+}
+
+.md-typeset h1,
+.md-typeset h2 {
+  font-weight: 700;
+  letter-spacing: -.015em;
+}
+
+.md-typeset h2 {
+  margin-top: 2.2em;
+  padding-top: .4em;
+}
+
+.md-typeset h3 {
+  font-weight: 650;
+}
+
+/* Material renders `---` as a full-bleed rule; soften it into a section break. */
+.md-typeset hr {
+  border-bottom: 1px solid var(--ev-border);
+  margin: 2.4em 0;
+}
+
+/* Wide tables (the command reference especially) must scroll in place rather
+   than force the whole page sideways on a phone. */
+.md-typeset__table {
+  width: 100%;
+}
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius-sm);
+  box-shadow: none;
+  font-size: .72rem;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--ev-surface);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background: var(--ev-surface-hover);
+}
+
+/* --------------------------------------------------------------------------
+   3. Hero
+   -------------------------------------------------------------------------- */
 
 .md-typeset .hero-head {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: .5rem 1rem;
+  gap: .5rem 1.5rem;
+}
+
+/* `<div markdown>` wraps loose inline content in a <p>, which would otherwise
+   become the flex item instead of the badge itself — breaking both the ordering
+   below and the alignment. `display: contents` lifts the children up a level. */
+.md-typeset .hero-head > p {
+  display: contents;
 }
 
 .md-typeset .hero-head h1 {
   margin: 0;
-  flex: 1 1 auto;
+  flex: 1 1 16rem;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+  color: var(--ev-text);
+}
+
+.md-typeset .hero-lead {
+  font-size: .92rem;
+  line-height: 1.6;
+  color: var(--ev-muted);
+  max-width: 44rem;
+  /* Deliberately NOT justified — justification opens rivers of whitespace at
+     phone widths, which is exactly where this paragraph is read most. */
+  text-align: left;
+}
+
+.md-typeset .hero-lead strong {
+  color: var(--ev-text);
+}
+
+/* Optional wash behind the top of a landing page. */
+.ev-hero {
+  margin: -1rem -1rem 0;
+  padding: 1.6rem 1rem .2rem;
+  border-radius: 0 0 var(--ev-radius) var(--ev-radius);
+  background: linear-gradient(150deg, var(--ev-hero-from), var(--ev-hero-to));
 }
 
 /* App-Store-style laurel badge */
@@ -20,7 +175,7 @@
   gap: .1rem;
   margin: 0;
   flex: 0 0 auto;
-  color: #000;
+  color: var(--ev-text);
   line-height: 1.2;
 }
 
@@ -56,17 +211,787 @@
   opacity: .7;
 }
 
+/* --------------------------------------------------------------------------
+   4. Buttons
+   -------------------------------------------------------------------------- */
+
+.md-typeset .md-button {
+  border-radius: var(--ev-radius-sm);
+  border-width: 1px;
+  font-weight: 600;
+  padding: .5em 1.1em;
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+.md-typeset .md-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ev-shadow-hover);
+}
+
+.md-typeset .md-button--primary {
+  box-shadow: var(--ev-shadow);
+}
+
+/* A row of buttons should wrap tidily instead of running off a phone screen. */
+.ev-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin: 1.2rem 0;
+}
+
+/* Same <p> unwrapping as .hero-head — see the note there. */
+.md-typeset .ev-cta > p {
+  display: contents;
+}
+
+.md-typeset .ev-cta .md-button {
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   5. Cards & grids
+   -------------------------------------------------------------------------- */
+
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  background: var(--ev-surface);
+  box-shadow: var(--ev-shadow);
+  padding: 1rem 1.1rem;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ev-border-strong);
+  box-shadow: var(--ev-shadow-hover);
+}
+
+.md-typeset .grid.cards > ul > li > hr {
+  margin: .6em 0 .8em;
+  border-bottom-color: var(--ev-border);
+}
+
+.md-typeset .grid.cards .twemoji.lg,
+.md-typeset .grid.cards .lg.middle {
+  color: var(--ev-blue);
+}
+
+/* Material's default card min-width (16rem) only fits two columns in the
+   content well, which strands a lone third card. Narrow the floor so a set of
+   three sits on one row on desktop and still stacks cleanly on a phone. */
+.md-typeset .grid.cards.ev-grid-3 > ul,
+.md-typeset .grid.ev-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+/* --------------------------------------------------------------------------
+   6. Live-number tiles
+   -------------------------------------------------------------------------- */
+
+.ev-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: .8rem;
+  margin: 1.4rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ev-figure {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  box-shadow: var(--ev-shadow);
+  padding: 1rem 1.1rem;
+  text-align: center;
+}
+
+.ev-figure-value {
+  display: block;
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--ev-green);
+  font-variant-numeric: tabular-nums;
+}
+
+.ev-figure-label {
+  display: block;
+  margin-top: .25rem;
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ev-muted);
+}
+
+.ev-figure-sub {
+  display: block;
+  margin-top: .1rem;
+  font-size: .66rem;
+  color: var(--ev-muted);
+}
+
+/* --------------------------------------------------------------------------
+   7. Video — click-to-load facade
+
+   The iframe is only injected on click, so nothing is requested from Google
+   (and no cookie is set) unless the visitor actually asks for the video. The
+   poster frame is served from this site, not from i.ytimg.com, for the same
+   reason. See docs/legal/datenschutz.md.
+   -------------------------------------------------------------------------- */
+
+.ev-video {
+  position: relative;
+  margin: 1.4rem 0;
+  border-radius: var(--ev-radius);
+  overflow: hidden;
+  border: 1px solid var(--ev-border);
+  box-shadow: var(--ev-shadow);
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.ev-video img,
+.ev-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.ev-video img {
+  object-fit: cover;
+}
+
+.ev-video-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  font: inherit;
+  background: rgba(0, 0, 0, .04);
+  transition: background-color .15s ease;
+}
+
+.ev-video-btn:hover,
+.ev-video-btn:focus-visible {
+  background: rgba(0, 0, 0, .22);
+}
+
+.ev-video-play {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  width: 4.2rem;
+  height: 3rem;
+  border-radius: .7rem;
+  background: #f00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
+  transition: transform .15s ease;
+}
+
+.ev-video-btn:hover .ev-video-play,
+.ev-video-btn:focus-visible .ev-video-play {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.ev-video-play::after {
+  content: "";
+  border-style: solid;
+  border-width: .5rem 0 .5rem .85rem;
+  border-color: transparent transparent transparent #fff;
+}
+
+/* The scrim lives on the caption block, not on the button, so it always grows
+   with the text — a caption that wraps to two lines on a phone stays readable
+   instead of sitting on bare artwork. */
+.ev-video-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: 2.4rem 1.1rem .9rem;
+  text-align: left;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .85);
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, .74) 38%,
+    rgba(0, 0, 0, .94) 100%);
+}
+
+.ev-video-caption {
+  font-size: .76rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.ev-video-note {
+  font-size: .62rem;
+  font-weight: 400;
+  opacity: .8;
+}
+
+/* --------------------------------------------------------------------------
+   8. Use-case & comparison page components
+   -------------------------------------------------------------------------- */
+
+/* "Who this is for" checklist */
+.md-typeset .ev-checks {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.md-typeset .ev-checks li {
+  position: relative;
+  padding-left: 1.6rem;
+  margin-bottom: .5rem;
+}
+
+.md-typeset .ev-checks li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--ev-green);
+  font-weight: 700;
+}
+
+/* Numbered walkthrough */
+.ev-steps {
+  counter-reset: ev-step;
+  display: grid;
+  gap: .7rem;
+  margin: 1.3rem 0;
+}
+
+.ev-step {
+  counter-increment: ev-step;
+  position: relative;
+  padding: .9rem 1rem .9rem 3.1rem;
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+}
+
+.ev-step::before {
+  content: counter(ev-step);
+  position: absolute;
+  left: 1rem;
+  top: .9rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--ev-blue);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ev-step strong {
+  display: block;
+  margin-bottom: .15rem;
+}
+
+.ev-step code {
+  white-space: nowrap;
+}
+
+/* Comparison table: keep the verdict column readable and mark the yes/no cells */
+.md-typeset .ev-compare table:not([class]) td:first-child,
+.md-typeset .ev-compare th:first-child {
+  text-align: left;
+}
+
+.ev-yes {
+  color: var(--ev-green);
+  font-weight: 700;
+}
+
+.ev-no {
+  color: var(--ev-muted);
+}
+
+/* Pull-quote used on the segment pages */
+.ev-quote {
+  margin: 1.4rem 0;
+  padding: 1rem 1.2rem;
+  border-left: 3px solid var(--ev-blue);
+  border-radius: 0 var(--ev-radius-sm) var(--ev-radius-sm) 0;
+  background: var(--ev-surface);
+  color: var(--ev-text);
+  font-size: .82rem;
+}
+
+.ev-quote cite {
+  display: block;
+  margin-top: .5rem;
+  font-size: .7rem;
+  font-style: normal;
+  color: var(--ev-muted);
+}
+
+/* --------------------------------------------------------------------------
+   9. Statistics page  (markup in docs/statistics.md)
+   -------------------------------------------------------------------------- */
+
+.stats-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stats-hero {
+  display: flex;
+}
+
+.stats-hero .stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.stats-hero .stat-value {
+  font-size: 3.2rem;
+}
+
+.stats-hero .stat-label {
+  font-size: .68rem;
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.stat-group {
+  background: var(--ev-surface);
+  border-radius: var(--ev-radius);
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--ev-border);
+  box-shadow: var(--ev-shadow);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.stat-group-icon {
+  font-size: 1.5rem;
+  opacity: .7;
+}
+
+.stat-group-content {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-card {
+  background: var(--ev-surface);
+  border-radius: var(--ev-radius);
+  padding: 1.25rem;
+  text-align: center;
+  border: 1px solid var(--ev-border);
+  box-shadow: var(--ev-shadow);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.stat-card:hover,
+.stat-group:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ev-shadow-hover);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ev-green);
+  font-family: var(--md-code-font-family, ui-monospace, "JetBrains Mono", "Fira Code", monospace);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+
+.stat-value.teal { color: var(--ev-teal); }
+.stat-value.blue { color: var(--ev-blue); }
+
+[data-md-color-scheme="slate"] .stat-value.teal { color: #2dd4bf; }
+[data-md-color-scheme="slate"] .stat-value.blue { color: #a5b4fc; }
+
+.stat-label {
+  font-size: .62rem;
+  color: var(--ev-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 600;
+}
+
+.chart-section {
+  background: var(--ev-surface);
+  border-radius: var(--ev-radius);
+  padding: 1.4rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--ev-border);
+  box-shadow: var(--ev-shadow);
+}
+
+.chart-title {
+  color: var(--ev-text);
+  font-size: 1rem;
+  font-weight: 650;
+  margin-bottom: 1rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--ev-border);
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 280px;
+}
+
+.controls {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.control-btn {
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  color: var(--ev-muted);
+  padding: .5rem 1rem;
+  border-radius: var(--ev-radius-sm);
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 600;
+  transition: all .15s ease;
+}
+
+.control-btn:hover {
+  background: var(--ev-surface-hover);
+  border-color: var(--ev-green);
+  color: var(--ev-text);
+}
+
+.control-btn.active {
+  background: var(--ev-green);
+  color: #fff;
+  border-color: var(--ev-green);
+}
+
+[data-md-color-scheme="slate"] .control-btn.active {
+  color: #05240f;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: .75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .7rem;
+  color: var(--ev-muted);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.green { background: var(--ev-green); }
+.legend-dot.teal { background: var(--ev-teal); }
+.legend-dot.blue { background: var(--ev-blue); }
+
+.last-updated {
+  text-align: right;
+  color: var(--ev-muted);
+  font-size: .68rem;
+  margin-top: .75rem;
+}
+
+/* --------------------------------------------------------------------------
+   10. Status page  (markup in docs/status.md)
+   -------------------------------------------------------------------------- */
+
+.status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.status-card {
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  padding: 1.25rem;
+  background: var(--ev-surface);
+  box-shadow: var(--ev-shadow);
+}
+
+.md-typeset .status-card h3 {
+  margin: 0 0 .5rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+  animation: ev-pulse 2s infinite;
+}
+
+.status-indicator.online {
+  background-color: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
+}
+
+.status-indicator.offline {
+  background-color: #f44336;
+  box-shadow: 0 0 8px #f44336;
+  animation: none;
+}
+
+.status-indicator.checking {
+  background-color: #ff9800;
+  box-shadow: 0 0 8px #ff9800;
+}
+
+@keyframes ev-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-indicator { animation: none; }
+  .md-typeset .md-button:hover,
+  .stat-card:hover,
+  .stat-group:hover,
+  .md-typeset .grid.cards > ul > li:hover { transform: none; }
+}
+
+.status-text {
+  font-size: .78rem;
+  color: var(--ev-muted);
+  margin: .25rem 0 0 1.5rem;
+}
+
+.status-url {
+  font-size: .7rem;
+  color: var(--ev-muted);
+  margin: .5rem 0 0 1.5rem;
+  font-family: var(--md-code-font-family, monospace);
+  word-break: break-all;
+}
+
+.last-checked {
+  font-size: .7rem;
+  color: var(--ev-muted);
+  margin-top: 1rem;
+  text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   11. "Built with" logo strip
+   -------------------------------------------------------------------------- */
+
+.ev-builtwith {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem 2rem;
+  margin: 1.5rem 0;
+  padding: 1.4rem 1rem;
+  background: var(--ev-surface);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+}
+
+.md-typeset .ev-builtwith img {
+  height: 3rem;
+  width: auto;
+  opacity: .85;
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.md-typeset .ev-builtwith img:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.md-typeset .ev-builtwith img.is-small {
+  height: 2.4rem;
+}
+
+/* Several of the logos are dark-on-transparent PNGs that vanish on slate. */
+[data-md-color-scheme="slate"] .ev-builtwith {
+  background: hsla(0, 0%, 100%, .92);
+  border-color: hsla(0, 0%, 100%, .12);
+}
+
+/* --------------------------------------------------------------------------
+   12. Responsive
+   -------------------------------------------------------------------------- */
+
+@media screen and (max-width: 76.1875em) {
+  /* Tabs collapse into the drawer below this width — reclaim the space. */
+  .md-grid { max-width: 100%; }
+}
+
+@media screen and (max-width: 44.9375em) {
+  /* Section breaks that read as generous on a monitor read as dead space on a
+     phone, where they cost a third of the viewport. */
+  .md-typeset hr {
+    margin: 1.7em 0;
+  }
+
+  .md-typeset h2 {
+    margin-top: 1.5em;
+    font-size: 1.35rem;
+  }
+
+  .md-typeset .hero-head {
+    gap: .8rem;
+  }
+
+  /* Headline first, badge underneath it and centred. */
+  .md-typeset .hero-head h1 {
+    font-size: 1.6rem;
+    flex-basis: 100%;
+    order: -1;
+  }
+
+  .md-typeset .hero-head .laurel-badge {
+    margin: 0 auto;
+  }
+
+  .md-typeset .hero-lead {
+    font-size: .84rem;
+  }
+
+  .ev-hero {
+    margin: -.8rem -.8rem 0;
+    padding: 1.2rem .8rem .2rem;
+  }
+
+  .ev-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ev-cta .md-button {
+    text-align: center;
+  }
+
+  .stats-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-hero .stat-value {
+    font-size: 2.4rem;
+  }
+
+  .stats-hero .stat-card {
+    padding: 1.4rem;
+  }
+
+  .stat-group {
+    flex-wrap: wrap;
+  }
+
+  .stat-group-content {
+    gap: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 220px;
+  }
+
+  .chart-section {
+    padding: 1rem;
+  }
+
+  .ev-figure-value {
+    font-size: 1.6rem;
+  }
+
+  .ev-builtwith {
+    gap: 1.2rem 1.5rem;
+    padding: 1.1rem .8rem;
+  }
+
+  .md-typeset .ev-builtwith img {
+    height: 2.2rem;
+  }
+
+  .md-typeset .ev-builtwith img.is-small {
+    height: 1.8rem;
+  }
+
+  .ev-step {
+    padding: .8rem .9rem .8rem 2.8rem;
+  }
+
+  .ev-video-play {
+    width: 3.4rem;
+    height: 2.4rem;
+    top: 38%;
+  }
+
+  .ev-video-text {
+    padding: 2rem .8rem .7rem;
+  }
+
+  .ev-video-caption {
+    font-size: .68rem;
+  }
+}
+
 @media screen and (max-width: 30em) {
   .md-typeset .laurel-badge .laurel-side { height: 3rem; }
   .laurel-title { font-size: .62rem; }
   .laurel-sub { font-size: .46rem; }
-}
-
-[data-md-color-scheme="slate"] .md-typeset .laurel-badge {
-  color: #fff;
-}
-
-.md-typeset .hero-lead {
-  text-align: justify;
-  hyphens: auto;
 }

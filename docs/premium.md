@@ -1,5 +1,7 @@
-<meta name="description" content="EmailVerify pricing — free 25 emails/month plus optional subscriptions and one-time credit packs through Discord's native subscription system.">
-<meta name="keywords" content="EmailVerify Discord Bot Premium Pricing Subscription Standard Pro CSV Credits ZeptoMail">
+---
+title: Pricing — EmailVerify Premium Plans
+description: EmailVerify pricing. Free tier of 25 verification emails per month, plus optional subscriptions, one-time credit packs that never expire, and a CSV unlock — all billed through Discord.
+---
 
 # Premium plans
 
@@ -21,8 +23,18 @@ All purchases run through Discord's native subscription system. Discord handles 
 | **Privacy-first storage (hashed emails)** | ✓ | ✓ | ✓ |
 | **Best for** | Most servers | Busy servers | Closed groups + audit needs |
 | **Billed by** | — | Discord (monthly) | Discord (monthly) |
+| **Price** | **€0** | **€4.99 / month** | **€9.99 / month** |
 
-[See prices and buy →](#how-to-buy){ .md-button .md-button--primary }
+!!! info "About the prices on this page"
+    Figures are the euro list prices. Discord applies **regional pricing** and charges in your
+    local currency, so the amount at checkout can differ — in the US store, for example, the two
+    subscriptions show as **US$4.99** and **US$9.99**. The
+    [Discord store page](https://discord.com/application-directory/895056197789564969/store) is
+    always the authoritative price for your region.
+
+    In Discord's store the Standard subscription is listed under the name **EmailVerify Premium**.
+
+[How to buy →](#how-to-buy){ .md-button .md-button--primary }
 
 ---
 
@@ -40,9 +52,9 @@ If 25/month works for you, you can stop reading here.
 
 ---
 
-## Standard subscription
+## Standard subscription — €4.99 / month
 
-A monthly subscription. Adds two things:
+A monthly subscription (listed in Discord's store as **EmailVerify Premium**). Adds two things:
 
 - :material-infinity: **Unlimited verification emails** every month — no quota worries.
 - :material-email-fast: **Premium delivery via Zoho ZeptoMail.** Verification mails go through Zoho's transactional infrastructure with EU data residency. Better inbox placement than self-hosted SMTP because ZeptoMail is transactional-only — no marketing senders share its IP reputation.
@@ -51,7 +63,7 @@ Best for: large communities, university servers with seasonal verification spike
 
 ---
 
-## Pro subscription
+## Pro subscription — €9.99 / month
 
 Everything in Standard, plus the CSV features:
 
@@ -69,27 +81,37 @@ Best for: closed groups where the membership list is known up front, organisatio
 
 For servers that don't want a recurring subscription. One-time purchase, no expiry.
 
-<div class="grid cards" markdown>
+<div class="grid cards ev-grid-3" markdown>
 
-- :material-ticket: __100 credits__
+- :material-ticket: __100 credits — €2.99__
 
     ---
 
     Light usage — a small event, a one-off rush.
 
-- :material-ticket-confirmation: __500 credits__
+    **€0.0299** per verification
+
+- :material-ticket-confirmation: __500 credits — €9.99__
 
     ---
 
     Medium usage — a semester start at a university club.
 
-- :material-ticket-percent: __2,000 credits__
+    **€0.0200** per verification
+
+- :material-ticket-percent: __2,000 credits — €24.99__
 
     ---
 
     Heavy usage — large server bursts, multiple events per year.
 
+    **€0.0125** per verification — best value
+
 </div>
+
+The bigger the pack, the cheaper each verification — the 2,000-pack costs about **40% as much
+per verification** as the 100-pack. Since credits never expire, buying ahead of a spike you can
+see coming is usually the cheaper move.
 
 Credits **never expire**, **roll over from month to month**, and **only get consumed once your free 25 are gone**. So a 100-pack might last you a year if your usage is light.
 
@@ -130,7 +152,9 @@ Useful for:
 
 ## CSV unlock (one-time)
 
-If you want only the CSV import/export features and no subscription, there's a one-time **CSV unlock** that grants the Pro plan's CSV features for that server, forever. No recurring billing, no extra emails.
+If you want only the CSV import/export features and no subscription, there's a one-time **CSV unlock** — listed in Discord's store as the **CSV Data Suite**, **€39.99** — that grants the Pro plan's CSV features for that server, forever. No recurring billing, no extra emails.
+
+Purely on CSV access, it pays for itself against the €9.99/month Pro subscription after **four months** — so it's the cheaper route both for a server that will keep using CSV indefinitely and for one that needs it for a single intake and nothing else. Pro is the better buy if you also want the unlimited verifications that come with it.
 
 (Does not include unlimited verifications — those still come from your free quota or credits.)
 
@@ -190,7 +214,9 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
     Yes. The source is on [GitHub](https://github.com/lkaesberg/EmailVerify) under AGPL-3.0. Set `monetization.enabled` to `false` in `config/config.json`, supply your own SMTP credentials, and run it. Self-hosters bypass the quota system entirely.
 
 ??? question "Where do I find prices?"
-    Inside Discord, where the bot is. Run `/premium status` and click any of the buy buttons — Discord renders the actual price for your locale. Listing fixed prices on this page would get out of sync with regional pricing in Discord.
+    They're on this page: **€4.99/month** Standard, **€9.99/month** Pro, credit packs at **€2.99 / €9.99 / €24.99**, and the CSV unlock at **€39.99**.
+
+    Those are the euro list prices. Discord applies regional pricing and bills in your local currency, so treat the [store page](https://discord.com/application-directory/895056197789564969/store) — or the price shown on the buy button after `/premium status` — as authoritative for your region.
 
 ??? question "Is there a refund / cancellation right?"
     Yes — see the [Widerrufsbelehrung](legal/widerruf.md) for the formal 14-day cancellation right under German consumer law (BGB §312g). Note the standard exception for digital content already consumed (the Discord checkout flow asks for explicit consent on this).

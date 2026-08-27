@@ -1,3 +1,8 @@
+---
+title: Terms of Service
+description: Nutzungsbedingungen und Terms of Service for the EmailVerify Discord bot.
+---
+
 # Nutzungsbedingungen / Terms of Service
 
 **Stand / Last updated:** April 2026

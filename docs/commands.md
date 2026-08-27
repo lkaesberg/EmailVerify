@@ -1,3 +1,8 @@
+---
+title: Command Reference
+description: Every EmailVerify slash command — role and domain configuration, domain-specific roles, blacklists, CSV allowlists, settings, moderation and data deletion.
+---
+
 # Commands
 
 ## 👤 User Commands

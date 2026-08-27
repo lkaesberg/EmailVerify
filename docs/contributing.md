@@ -1,3 +1,8 @@
+---
+title: Contributors and Translations
+description: The people who build and translate EmailVerify, how to contribute a new language, and what the AGPL-3.0 licence means for contributors and self-hosters.
+---
+
 # Contributors
 
 #### Developer

@@ -1,80 +1,9 @@
-<meta name="description" content="Status page for EmailVerify services including the mail server and bot API.">
-<meta name="keywords" content="EmailVerify Status Services Health Check">
+---
+title: Service Status
+description: Live status of the EmailVerify Discord bot services — the verification mail server and the statistics API.
+---
 
 # Service Status
-
-<style>
-.status-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 24px 0;
-}
-
-.status-card {
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  padding: 20px;
-  background: #f6f8fa;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-
-.status-card h3 {
-  margin: 0 0 8px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  animation: pulse 2s infinite;
-}
-
-.status-indicator.online {
-  background-color: #4caf50;
-  box-shadow: 0 0 8px #4caf50;
-}
-
-.status-indicator.offline {
-  background-color: #f44336;
-  box-shadow: 0 0 8px #f44336;
-  animation: none;
-}
-
-.status-indicator.checking {
-  background-color: #ff9800;
-  box-shadow: 0 0 8px #ff9800;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.status-text {
-  font-size: 14px;
-  color: #4b5563;
-  margin: 4px 0 0 24px;
-}
-
-.status-url {
-  font-size: 12px;
-  color: #6b7280;
-  margin: 8px 0 0 24px;
-  font-family: monospace;
-}
-
-.last-checked {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 16px;
-  text-align: right;
-}
-</style>
 
 <div class="status-container">
   <div class="status-card">

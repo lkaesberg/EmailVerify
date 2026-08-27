@@ -1,3 +1,8 @@
+---
+title: Impressum
+description: Anbieterkennzeichnung nach § 5 DDG für EmailVerify.
+---
+
 # Impressum
 
 **Stand:** April 2026

@@ -1,3 +1,8 @@
+---
+title: Widerrufsbelehrung
+description: Widerrufsrecht und Muster-Widerrufsformular für kostenpflichtige EmailVerify-Leistungen nach § 312g BGB.
+---
+
 # Widerrufsbelehrung
 
 **Stand:** April 2026

@@ -1,31 +1,58 @@
 site_name: EmailVerify for Discord
 site_description: A Discord bot that verifies users own a specific email address — domain-based access control with privacy-first storage.
 site_url: https://emailbot.larskaesberg.de/
+site_author: Lars Kaesberg
 repo_url: https://github.com/lkaesberg/EmailVerify
+copyright: >
+  © Lars Kaesberg — EmailVerify is free software under
+  <a href="https://github.com/lkaesberg/EmailVerify/blob/main/LICENSE">AGPL-3.0-or-later</a>.
 theme:
   name: material
+  custom_dir: overrides
   icon:
     repo: fontawesome/brands/github
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   favicon: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
   palette:
-    scheme: default
-    primary: indigo
-    accent: green
+    # Follows the visitor's OS preference by default; the header toggle overrides it.
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: green
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
   features:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.tracking
     - navigation.top
     - navigation.instant
+    - navigation.instant.progress
     - navigation.indexes
+    - navigation.footer
     - toc.follow
     - content.code.copy
     - content.code.annotate
+    - content.tooltips
     - search.suggest
     - search.highlight
+    - search.share
 extra_css:
   - stylesheets/extra.css
+extra_javascript:
+  - javascripts/extra.js
 markdown_extensions:
   - admonition
   - attr_list
@@ -44,6 +71,10 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.keys
+  - toc:
+      permalink: true
+plugins:
+  - search
 extra:
   social:
     - icon: fontawesome/brands/discord
@@ -52,17 +83,31 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/lkaesberg/EmailVerify
       name: GitHub repository
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/watch?v=LMWu3Ui2IAk
+      name: Setup video
+  # Consumed by overrides/main.html for Open Graph / Twitter card tags.
+  image: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
+  invite_url: https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands
 nav:
   - Home: 'index.md'
+  - Get started:
+      - 'Quick start': 'setup.md'
+      - 'All commands': 'commands.md'
+      - 'Compare alternatives': 'compare.md'
+  - Use cases:
+      - 'Universities & schools': 'use-cases/university.md'
+      - 'Companies & teams': 'use-cases/company.md'
+      - 'Courses, events & hackathons': 'use-cases/communities.md'
   - Premium: 'premium.md'
-  - Commands: 'commands.md'
-  - Statistics: 'statistics.md'
-  - Status: 'status.md'
-  - Contributing: 'contributing.md'
+  - Project:
+      - Statistics: 'statistics.md'
+      - Status: 'status.md'
+      - Contributors: 'contributing.md'
   - Legal:
-    - Impressum: 'legal/impressum.md'
-    - Datenschutz: 'legal/datenschutz.md'
-    - AGB: 'legal/agb.md'
-    - Widerruf: 'legal/widerruf.md'
-    - Terms: 'legal/terms.md'
+      - Impressum: 'legal/impressum.md'
+      - Datenschutz: 'legal/datenschutz.md'
+      - AGB: 'legal/agb.md'
+      - Widerruf: 'legal/widerruf.md'
+      - Terms: 'legal/terms.md'
   - Buy Me a Coffee❤️: https://buymeacoffee.com/sral12486

@@ -1,2 +1,4 @@
-User-Agent: *
-Allow: *
+User-agent: *
+Allow: /
+
+Sitemap: https://emailbot.larskaesberg.de/sitemap.xml

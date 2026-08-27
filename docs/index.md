@@ -1,12 +1,24 @@
-<meta name="description" content="EmailVerify is a Discord bot that verifies users own a specific email address before granting roles — perfect for university servers, employee groups, and any closed community.">
-<meta name="keywords" content="EmailVerify Discord Bot Email Verification Domain Restriction University Discord Server Lars Kaesberg">
-<meta name="author" content="Lars Benedikt Kaesberg">
+---
+title: EmailVerify — Discord Email Verification Bot
+description: Verify that Discord members really own an email address at a domain you choose — @*.edu, your company domain, or a fixed allowlist — before they get a role. Free for 25 verifications a month, open source, GDPR-friendly.
+faq:
+  - q: How does email verification on Discord work?
+    a: The member clicks a button in your server, types their email address into a popup, and receives a 6-digit code. Entering that code back in Discord proves they control the mailbox, and the bot assigns the role you configured. No external account and no OAuth is involved.
+  - q: Is EmailVerify free?
+    a: Yes. Every server gets 25 verification emails per month at no cost, with every configuration feature included. About 95% of servers never exceed that. Busier servers can buy credit packs or a subscription through Discord.
+  - q: Can I restrict my Discord server to university students?
+    a: Yes. Add @*.edu as an allowed domain to accept any US university address, or add a specific domain such as @students.uni-example.de. You can also map different domains to different roles, so staff and students get separate roles automatically.
+  - q: Does the bot store email addresses?
+    a: Only as cryptographic hashes. The plaintext address exists just long enough to send the verification code and is never written to disk, so a database compromise cannot reveal your members' addresses.
+  - q: Can I self-host EmailVerify?
+    a: Yes. The source is on GitHub under AGPL-3.0 and there is a prebuilt Docker image. You supply your own SMTP credentials and the quota system does not apply.
+---
 
 <div class="hero-head" markdown>
 
 # EmailVerify for Discord
 
-<span class="laurel-badge" aria-label="The #1 email verification bot for Discord since 2021"><svg class="laurel-side" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><use href="#laurel-branch"></use></svg><span class="laurel-inner"><span class="laurel-title">#1 Email<br>Verification<br>on Discord</span><span class="laurel-sub">SINCE 2021</span></span><svg class="laurel-side laurel-side--right" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><use href="#laurel-branch"></use></svg></span>
+<span class="laurel-badge" aria-label="The #1 email verification bot for Discord since 2021"><svg class="laurel-side" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true"><use xlink:href="#laurel-branch"></use></svg><span class="laurel-inner"><span class="laurel-title">#1 Email<br>Verification<br>on Discord</span><span class="laurel-sub">SINCE 2021</span></span><svg class="laurel-side laurel-side--right" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true"><use xlink:href="#laurel-branch"></use></svg></span>
 
 </div>
 
@@ -15,37 +27,84 @@ A user enters their email, gets a 6-digit code, types it back, and a role is ass
 Built for university servers, employee groups, and any closed community where you want to know who's joining.
 { .hero-lead }
 
+<div class="ev-cta" markdown>
 [:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
-[:fontawesome-brands-discord: Join support server](https://discord.com/invite/fEBSHUQXu2){ .md-button }
+[Quick start guide →](setup.md){ .md-button }
 [See pricing →](premium.md){ .md-button }
+</div>
+
+---
+
+## See it in 60 seconds
+
+<div class="ev-video">
+  <img src="assets/video-thumb.jpg" alt="Video: setting up EmailVerify in a Discord server" width="1280" height="720" loading="lazy">
+  <button class="ev-video-btn" type="button" data-ev-video="LMWu3Ui2IAk" data-ev-title="EmailVerify — Email Verification for Discord Servers (Setup in 60 Seconds)">
+    <span class="ev-video-play" aria-hidden="true"></span>
+    <span class="ev-video-text">
+      <span class="ev-video-caption">Watch the 60-second setup walkthrough</span>
+      <span class="ev-video-note">Click to play · loads from YouTube</span>
+    </span>
+  </button>
+</div>
+
+Prefer to read? The [quick start guide](setup.md) covers the same three steps.
 
 ---
 
 ## Live numbers
 
-<div class="grid cards" markdown>
-
-- :material-server-network: __Servers__
-
-    ---
-
-    Currently active in **<span id="serverCount">…</span>** Discord servers.
-
-- :material-account-check: __Verified users__
-
-    ---
-
-    **<span id="verifiedToday">…</span>** today, **<span id="verifiedAll">…</span>** all-time.
-
-- :material-email-fast: __Emails sent__
-
-    ---
-
-    **<span id="emailsToday">…</span>** today, **<span id="emailsAll">…</span>** all-time.
-
+<div class="ev-figures">
+  <div class="ev-figure">
+    <span class="ev-figure-value" id="serverCount">…</span>
+    <span class="ev-figure-label">Discord servers</span>
+    <span class="ev-figure-sub">running the bot right now</span>
+  </div>
+  <div class="ev-figure">
+    <span class="ev-figure-value" id="verifiedAll">…</span>
+    <span class="ev-figure-label">Members verified</span>
+    <span class="ev-figure-sub"><span id="verifiedToday">…</span> today</span>
+  </div>
+  <div class="ev-figure">
+    <span class="ev-figure-value" id="emailsAll">…</span>
+    <span class="ev-figure-label">Emails delivered</span>
+    <span class="ev-figure-sub"><span id="emailsToday">…</span> today</span>
+  </div>
 </div>
 
 [Detailed statistics →](statistics.md)
+
+---
+
+## Who it's for
+
+<div class="grid cards ev-grid-3" markdown>
+
+- :material-school:{ .lg .middle } __Universities & schools__
+
+    ---
+
+    Gate a course, faculty or society server behind `@*.edu` or your own institution's domain, and split students from staff automatically.
+
+    [:octicons-arrow-right-24: Discord verification for universities](use-cases/university.md)
+
+- :material-office-building:{ .lg .middle } __Companies & teams__
+
+    ---
+
+    Restrict an internal or partner server to people with a working company mailbox, with an audit trail of who verified and when.
+
+    [:octicons-arrow-right-24: Discord verification for companies](use-cases/company.md)
+
+- :material-ticket-confirmation:{ .lg .middle } __Courses, events & hackathons__
+
+    ---
+
+    Upload a CSV of registrants or paying students and let only those exact addresses through — no domain in common required.
+
+    [:octicons-arrow-right-24: Verification for paid and ticketed communities](use-cases/communities.md)
+
+</div>
 
 ---
 
@@ -93,6 +152,32 @@ Built for university servers, employee groups, and any closed community where yo
 
 ---
 
+## How setup works
+
+<div class="ev-steps" markdown>
+
+<div class="ev-step" markdown>
+**Invite the bot and run `/setup`.**
+A three-step wizard walks you through the verified role, the allowed domains, and the channel the verification button lives in.
+</div>
+
+<div class="ev-step" markdown>
+**Check delivery with `/testmail`.**
+Sends a real verification mail to an address you pick, so you find out about a spam-folder problem before your members do.
+</div>
+
+<div class="ev-step" markdown>
+**Post the button with `/button`.**
+Members click it, verify, and get their role. Nothing else for you to run.
+</div>
+
+</div>
+
+[Full quick start →](setup.md){ .md-button }
+[All commands →](commands.md){ .md-button }
+
+---
+
 ## Free for almost everyone
 
 Every server gets **25 verification emails per month**, no setup needed. Looking at usage stats from the past few months, **about 95% of servers send 25 or fewer per month** — so for nearly everyone reading this, the bot keeps working completely free.
@@ -100,6 +185,7 @@ Every server gets **25 verification emails per month**, no setup needed. Looking
 If you do hit the limit, you'll get warnings at 80% and 95% before sending pauses. From there, [credit packs or a subscription](premium.md) takes over.
 
 [See pricing →](premium.md){ .md-button .md-button--primary }
+[How it compares to other bots →](compare.md){ .md-button }
 
 ---
 
@@ -118,15 +204,34 @@ This is a single-developer project that has been running on personal infrastruct
 
 ---
 
+## Common questions
+
+??? question "How does email verification on Discord actually work?"
+    The member clicks a button in your server and types their email address into a popup. The bot sends a 6-digit code to that address; entering the code back in Discord proves they control the mailbox, and the configured role is assigned. There is no external account to create and no OAuth consent screen.
+
+??? question "Can I restrict my Discord server to university students?"
+    Yes. Add `@*.edu` to accept any US university address, or a specific domain like `@students.uni-example.de`. You can map several domains to several roles, so staff and students end up separated automatically. See the [university guide](use-cases/university.md).
+
+??? question "Does the bot store email addresses?"
+    Only as cryptographic hashes. The plaintext exists just long enough to send the code — it is never written to disk. A database compromise cannot reveal your members' addresses.
+
+??? question "Can I self-host it?"
+    Yes, it's AGPL-3.0 with a prebuilt Docker image. Bring your own SMTP credentials and the quota system doesn't apply. Instructions are in the [repository README](https://github.com/lkaesberg/EmailVerify#-self-hosting).
+
+??? question "What if a member never receives the code?"
+    The "Code Sent" message has a **Resend code** button with a 60-second cooldown. If mail is landing in spam for everyone, run `/testmail` — most of the time it's a filter on the recipient's side, and paid plans route through Zoho ZeptoMail for noticeably better inbox placement.
+
+---
+
 ## Built with
 
-<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 24px; margin: 20px 0;">
-<a href="https://discord.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/discord.png" alt="Discord" style="height: 56px; width: auto;" title="Discord"></a>
-<a href="https://nodejs.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/node.png" alt="Node.js" style="height: 56px; width: auto;" title="Node.js"></a>
-<a href="https://www.npmjs.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/npm.png" alt="npm" style="height: 40px; width: auto;" title="npm"></a>
-<a href="https://discord.js.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/djs.png" alt="Discord.js" style="height: 56px; width: auto;" title="Discord.js"></a>
-<a href="https://nodemailer.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/nodemailer.webp" alt="Nodemailer" style="height: 48px; width: auto;" title="Nodemailer"></a>
-<a href="https://www.zoho.com/zeptomail/"><img src="https://www.zoho.com/branding/images/zoho-logo-512.png" alt="Zoho ZeptoMail" style="height: 48px; width: auto;" title="Zoho ZeptoMail (Pro delivery)"></a>
+<div class="ev-builtwith">
+<a href="https://discord.com/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/discord.png" alt="Discord" title="Discord"></a>
+<a href="https://nodejs.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/node.png" alt="Node.js" title="Node.js"></a>
+<a href="https://www.npmjs.com/"><img class="is-small" src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/npm.png" alt="npm" title="npm"></a>
+<a href="https://discord.js.org/"><img src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/djs.png" alt="Discord.js" title="Discord.js"></a>
+<a href="https://nodemailer.com/"><img class="is-small" src="https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/nodemailer.webp" alt="Nodemailer" title="Nodemailer"></a>
+<a href="https://www.zoho.com/zeptomail/"><img class="is-small" src="https://www.zoho.com/branding/images/zoho-logo-512.png" alt="Zoho ZeptoMail" title="Zoho ZeptoMail (Pro delivery)"></a>
 </div>
 
 <script>
