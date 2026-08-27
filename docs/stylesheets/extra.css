@@ -866,6 +866,11 @@
   height: 2.4rem;
 }
 
+/* Wordmarks read correctly at a smaller cap height than square icon logos. */
+.md-typeset .ev-builtwith img.is-wordmark {
+  height: 1.7rem;
+}
+
 /* Several of the logos are dark-on-transparent PNGs that vanish on slate. */
 [data-md-color-scheme="slate"] .ev-builtwith {
   background: hsla(0, 0%, 100%, .92);
@@ -969,6 +974,10 @@
 
   .md-typeset .ev-builtwith img.is-small {
     height: 1.8rem;
+  }
+
+  .md-typeset .ev-builtwith img.is-wordmark {
+    height: 1.3rem;
   }
 
   .ev-step {

@@ -18,7 +18,7 @@ faq:
 Setting up email verification on a Discord server takes about three minutes. Watch it happen, or follow the written steps below.
 
 <div class="ev-video">
-  <img src="assets/video-thumb.jpg" alt="Video: setting up EmailVerify in a Discord server" width="1280" height="720" loading="lazy">
+  <img src="/assets/video-thumb.jpg" alt="Video: setting up EmailVerify in a Discord server" width="1280" height="720" loading="lazy">
   <button class="ev-video-btn" type="button" data-ev-video="LMWu3Ui2IAk" data-ev-title="EmailVerify — Email Verification for Discord Servers (Setup in 60 Seconds)">
     <span class="ev-video-play" aria-hidden="true"></span>
     <span class="ev-video-text">
