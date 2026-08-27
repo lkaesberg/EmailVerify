@@ -49,11 +49,23 @@
   <meta property="og:title" content="{{ page_title }}">
   <meta property="og:description" content="{{ page_description }}">
   <meta property="og:image" content="{{ page_image }}">
+  {%- if config.extra.image_alt %}
+  <meta property="og:image:alt" content="{{ config.extra.image_alt }}">
+  {%- endif %}
+  {%- if config.extra.image_width and config.extra.image_height %}
+  {#- Discord and Slack reserve the embed's layout from these before the image
+      itself arrives; without them a wide banner can render as a small square. #}
+  <meta property="og:image:width" content="{{ config.extra.image_width }}">
+  <meta property="og:image:height" content="{{ config.extra.image_height }}">
+  {%- endif %}
   <meta property="og:url" content="{{ page_url }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ page_title }}">
   <meta name="twitter:description" content="{{ page_description }}">
   <meta name="twitter:image" content="{{ page_image }}">
+  {%- if config.extra.image_alt %}
+  <meta name="twitter:image:alt" content="{{ config.extra.image_alt }}">
+  {%- endif %}
 
   {%- if page and page.is_homepage %}
   <script type="application/ld+json">
