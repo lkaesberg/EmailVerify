@@ -4,7 +4,8 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "node src/sharder.js"
+    "start": "node src/index.js",
+    "test": "node --test \"test/*.test.js\""
   },
   "author": "Lars Benedikt Kaesberg",
   "license": "AGPL-3.0-or-later",
@@ -22,6 +23,7 @@
     "nodemailer-smtp-transport": "^2.7.4",
     "posthog-node": "^5.21.2",
     "sqlite3": "^5.1.7",
+    "telegraf": "^4.16.3",
     "topgg-autoposter": "^2.0.2"
   },
   "devDependencies": {

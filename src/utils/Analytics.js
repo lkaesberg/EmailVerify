@@ -22,9 +22,13 @@
 
 const crypto = require('crypto')
 const config = require('../../config/config.json')
+const { platformOf } = require('../core/PlatformKey')
 
 const phCfg = config.posthog || {}
-const enabled = !!phCfg.enabled && typeof phCfg.apiKey === 'string' && phCfg.apiKey.trim().length > 0
+// Hard off-switch, so a test run or a local experiment can never emit into the
+// production PostHog project just because config.json happens to hold a real key.
+const disabled = process.env.EMAILVERIFY_DISABLE_ANALYTICS === '1'
+const enabled = !disabled && !!phCfg.enabled && typeof phCfg.apiKey === 'string' && phCfg.apiKey.trim().length > 0
 const host = (phCfg.host && String(phCfg.host).trim()) || 'https://eu.i.posthog.com'
 // Salt for hashing user ids into stable pseudonyms. Prefer an explicit salt;
 // fall back to the bot token (secret + stable across restarts) so no extra
@@ -60,9 +64,9 @@ function hashUser(userId) {
  *
  * @param {Object}  opts
  * @param {string}  opts.event                 event name (required)
- * @param {string}  [opts.userId]              Discord user id (hashed before send)
- * @param {string}  [opts.guildId]             Discord guild id (attached as a `guild` group)
- * @param {import('discord.js').Guild} [opts.guild] resolved guild (for id + name)
+ * @param {string}  [opts.userId]              platform user id (hashed before send)
+ * @param {string}  [opts.guildId]             community storage key (attached as a `guild` group)
+ * @param {{id: string, name?: string}} [opts.guild] resolved community (for id + name)
  * @param {Object}  [opts.properties]          extra event properties
  */
 function capture({ event, userId = null, guildId = null, guild = null, properties = {} } = {}) {
@@ -73,7 +77,13 @@ function capture({ event, userId = null, guildId = null, guild = null, propertie
         const distinctId = hasUser ? hashUser(userId) : (gid ? `guild_${gid}` : 'system')
 
         const props = { ...properties }
-        if (gid) props.guild_id = gid
+        if (gid) {
+            props.guild_id = gid
+            // Both platforms share these tables and this PostHog project, so every
+            // guild-scoped event carries the platform it came from — otherwise
+            // Discord and Telegram funnels are silently pooled together.
+            props.platform = platformOf(gid)
+        }
         if (guild?.name) props.guild_name = guild.name
         // Don't spin up person profiles for guild/system-scoped events.
         if (!hasUser) props.$process_person_profile = false
@@ -95,7 +105,7 @@ function capture({ event, userId = null, guildId = null, guild = null, propertie
 function identifyGuild(guild) {
     if (!client || !guild?.id) return
     try {
-        const properties = { name: guild.name }
+        const properties = { name: guild.name, platform: platformOf(guild.id) }
         if (typeof guild.memberCount === 'number') properties.member_count = guild.memberCount
         client.groupIdentify({ groupType: GUILD_GROUP_TYPE, groupKey: guild.id, properties })
     } catch (err) {

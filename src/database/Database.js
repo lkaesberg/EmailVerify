@@ -14,7 +14,9 @@ const md5hash = require("../crypto/Crypto")
 
 class Database {
     constructor() {
-        this.db = new sqlite3.Database('config/bot.db');
+        // Path is overridable so tests can run against a throwaway file; production
+        // keeps the mounted-volume default.
+        this.db = new sqlite3.Database(process.env.EMAILVERIFY_DB_PATH || 'config/bot.db');
 
         // All shard processes open this same file. busy_timeout makes a process wait
         // briefly instead of erroring with SQLITE_BUSY when another shard is writing.
@@ -205,6 +207,39 @@ class Database {
             this.db.run("ALTER TABLE guild_stats ADD warnedDenied5 INTEGER DEFAULT 0")
             this.db.run("ALTER TABLE guild_stats ADD warnedDenied20 INTEGER DEFAULT 0")
         })
+        this.runMigration(21, () => {
+            // Telegram support. Community ids are namespaced by PlatformKey rather than
+            // by a new `platform` column, so nothing here rewrites an existing key —
+            // these are purely additive fields for state Discord keeps outside the DB.
+            //
+            // Subscriptions: Discord tiers live in the entitlements API, which Telegram
+            // has no equivalent of. Stars subscriptions are only ever announced once (as
+            // a successful_payment), so the tier has to be persisted here and expired by
+            // a sweep rather than re-read from the platform on demand.
+            this.db.run("ALTER TABLE guild_premium ADD subscriptionTier TEXT DEFAULT ''")
+            this.db.run("ALTER TABLE guild_premium ADD subscriptionExpiresAt INTEGER DEFAULT 0")
+            this.db.run("ALTER TABLE guild_premium ADD subscriptionChargeId TEXT DEFAULT ''")
+            // Telegram has no roles, so the gate is a per-community mode:
+            //   'joinRequest' (default) | 'mute' | 'inviteLink'
+            // managedChats is the JSON array of chat ids this config gates.
+            this.db.run("ALTER TABLE guilds ADD gateMode TEXT DEFAULT 'joinRequest'")
+            this.db.run("ALTER TABLE guilds ADD managedChats TEXT DEFAULT '[]'")
+            // Stars payment ledger. successful_payment can be redelivered, so the
+            // provider charge id is the primary key and applying a payment is an
+            // INSERT-first operation — a duplicate delivery fails the insert and is
+            // dropped instead of double-crediting.
+            this.db.run(`CREATE TABLE IF NOT EXISTS star_payments(
+                chargeId TEXT PRIMARY KEY,
+                guildID TEXT NOT NULL,
+                userID TEXT NOT NULL,
+                product TEXT NOT NULL,
+                stars INTEGER DEFAULT 0,
+                isRecurring INTEGER DEFAULT 0,
+                refundedAt INTEGER DEFAULT 0,
+                createdAt INTEGER NOT NULL
+            );`)
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_star_payments_guild ON star_payments(guildID);")
+        })
     }
 
     /**
@@ -263,12 +298,14 @@ class Database {
 
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain'])
+            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle, gateMode, managedChats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain', serverSettings.gateMode || 'joinRequest', JSON.stringify(serverSettings.managedChats || [])])
     }
 
     async getServerSettings(guildID, callback) {
         const serverSettings = new ServerSettings()
+        // Platform is derived from the key, not stored — see core/PlatformKey.
+        serverSettings.setPlatformFromKey(guildID)
         await this.db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], async (err, result) => {
                 if (err) {
                     throw err;
@@ -345,6 +382,17 @@ class Database {
                     }
 
                     serverSettings.emailStyle = result.emailStyle === 'styled' ? 'styled' : 'plain'
+
+                    serverSettings.gateMode = result.gateMode || 'joinRequest'
+                    // Parse managedChats (JSON array of Telegram chat ids)
+                    try {
+                        serverSettings.managedChats = result.managedChats ? JSON.parse(result.managedChats) : []
+                    } catch {
+                        serverSettings.managedChats = []
+                    }
+                    if (!Array.isArray(serverSettings.managedChats)) {
+                        serverSettings.managedChats = []
+                    }
                     
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
                     if (serverSettings.defaultRoles.length === 0 && serverSettings.verifiedRoleName) {
@@ -362,14 +410,26 @@ class Database {
             [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
     }
 
+    /**
+     * Look up who verified with this email in this community, or null.
+     *
+     * The callback fires on every path — miss and error included. It previously fired
+     * only on a hit, so a caller that awaited it hung forever on a miss (and the
+     * `if (!currentUserEmail)` guards in the revoke paths were unreachable), while an
+     * error threw from inside a sqlite callback where nothing could catch it.
+     */
     getEmailUser(email, guildID, callback) {
         this.db.get("SELECT * FROM userEmails WHERE guildID = ? AND email = ?", [guildID, email], (err, result) => {
                 if (err) {
-                    throw err;
+                    console.error('Error getting email user:', err)
+                    callback(null)
+                    return
                 }
-                if (result !== undefined) {
-                    callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
+                if (result === undefined) {
+                    callback(null)
+                    return
                 }
+                callback(new EmailUser(result.email, result.userID, result.guildID, result.groupID, result.isPublic))
             }
         )
     }
@@ -608,14 +668,23 @@ class Database {
             this.db.get("SELECT * FROM guild_premium WHERE guildID = ?", [guildID], (err, result) => {
                 if (err) {
                     console.error('Error getting guild premium:', err)
-                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free' })
+                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free', subscriptionTier: null, subscriptionExpiresAt: 0, subscriptionChargeId: '' })
                     return
                 }
                 if (result === undefined) {
-                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free' })
+                    resolve({ bonusCredits: 0, csvUnlocked: false, mailMode: 'free', subscriptionTier: null, subscriptionExpiresAt: 0, subscriptionChargeId: '' })
                 } else {
                     const mailMode = result.mailMode === 'zeptomail' ? 'zeptomail' : 'free'
-                    resolve({ bonusCredits: result.bonusCredits, csvUnlocked: !!result.csvUnlocked, mailMode })
+                    resolve({
+                        bonusCredits: result.bonusCredits,
+                        csvUnlocked: !!result.csvUnlocked,
+                        mailMode,
+                        // A lapsed subscription reads as absent: the daily sweep clears the
+                        // row eventually, but the gate must not depend on the sweep having run.
+                        subscriptionTier: (result.subscriptionExpiresAt > Date.now() && result.subscriptionTier) ? result.subscriptionTier : null,
+                        subscriptionExpiresAt: result.subscriptionExpiresAt || 0,
+                        subscriptionChargeId: result.subscriptionChargeId || ''
+                    })
                 }
             })
         })
@@ -905,6 +974,168 @@ class Database {
                         return
                     }
                     resolve()
+                }
+            )
+        })
+    }
+
+    /**
+     * Every unexpired code outstanding for one user, across communities.
+     *
+     * Telegram has no per-guild interaction context the way a Discord customId does,
+     * so when someone types a code into the bot DM this is how we work out which
+     * community they mean. Ambiguity (more than one row) is reported to the user
+     * rather than guessed at.
+     */
+    getPendingVerificationsForUser(userID, now = Date.now()) {
+        return new Promise((resolve) => {
+            this.db.all(
+                "SELECT * FROM pending_verifications WHERE userID = ? AND expiresAt > ?",
+                [userID, now],
+                (err, rows) => {
+                    if (err) {
+                        console.error('Error reading pending verifications for user:', err)
+                        resolve([])
+                        return
+                    }
+                    resolve(rows || [])
+                }
+            )
+        })
+    }
+
+    // ---------------------------------------------------------------------------
+    // Stored subscriptions (Telegram Stars)
+    //
+    // Discord subscriptions are read live from the entitlements API. Telegram
+    // announces a Stars subscription exactly once, as a successful_payment, so the
+    // tier has to be persisted with the expiry Telegram reports and re-checked
+    // locally on every gate decision.
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Record or extend a stored subscription. Called on the initial purchase and on
+     * every recurring renewal.
+     * @param {string} guildID
+     * @param {{tier: string, expiresAt: number, chargeId?: string}} sub
+     */
+    setGuildSubscription(guildID, { tier, expiresAt, chargeId = '' }) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `INSERT INTO guild_premium (guildID, subscriptionTier, subscriptionExpiresAt, subscriptionChargeId)
+                 VALUES (?, ?, ?, ?)
+                 ON CONFLICT(guildID) DO UPDATE SET
+                     subscriptionTier = excluded.subscriptionTier,
+                     subscriptionExpiresAt = excluded.subscriptionExpiresAt,
+                     subscriptionChargeId = excluded.subscriptionChargeId`,
+                [guildID, tier, expiresAt, chargeId],
+                (err) => {
+                    if (err) {
+                        console.error('Error setting guild subscription:', err)
+                        reject(err)
+                        return
+                    }
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /** Immediately end a stored subscription (cancellation or refund). */
+    clearGuildSubscription(guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "UPDATE guild_premium SET subscriptionTier = '', subscriptionExpiresAt = 0, subscriptionChargeId = '' WHERE guildID = ?",
+                [guildID],
+                (err) => {
+                    if (err) console.error('Error clearing guild subscription:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /**
+     * Clear every subscription whose paid period has elapsed. Run on a daily sweep;
+     * getGuildPremium already treats a lapsed row as unsubscribed, so this is
+     * housekeeping rather than part of the gate.
+     * @returns {Promise<number>} rows cleared
+     */
+    expireLapsedSubscriptions(now = Date.now()) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "UPDATE guild_premium SET subscriptionTier = '', subscriptionChargeId = '' WHERE subscriptionTier != '' AND subscriptionExpiresAt > 0 AND subscriptionExpiresAt <= ?",
+                [now],
+                function (err) {
+                    if (err) {
+                        console.error('Error expiring lapsed subscriptions:', err)
+                        resolve(0)
+                        return
+                    }
+                    resolve(this.changes || 0)
+                }
+            )
+        })
+    }
+
+    // ---------------------------------------------------------------------------
+    // Telegram Stars payment ledger
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Claim a Stars payment for processing. Telegram can redeliver successful_payment,
+     * so the insert itself is the idempotency check: the charge id is the primary key,
+     * and a duplicate delivery loses the race and returns false. Callers must only
+     * apply the purchase (credits, CSV unlock, subscription) when this returns true.
+     * @returns {Promise<boolean>} true when this delivery is the first for the charge
+     */
+    recordStarPayment({ chargeId, guildID, userID, product, stars = 0, isRecurring = false }) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `INSERT INTO star_payments (chargeId, guildID, userID, product, stars, isRecurring, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                 ON CONFLICT(chargeId) DO NOTHING`,
+                [chargeId, guildID, userID, product, stars, isRecurring ? 1 : 0, Date.now()],
+                function (err) {
+                    if (err) {
+                        // Fail closed: an unrecorded payment must not be applied, or a
+                        // redelivery after a transient DB error would double-credit.
+                        console.error('Error recording star payment:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    getStarPayment(chargeId) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT * FROM star_payments WHERE chargeId = ?", [chargeId], (err, result) => {
+                if (err) {
+                    console.error('Error reading star payment:', err)
+                    resolve(null)
+                    return
+                }
+                resolve(result || null)
+            })
+        })
+    }
+
+    /** Mark a charge refunded. Returns false if it was already refunded or unknown. */
+    markStarPaymentRefunded(chargeId, now = Date.now()) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "UPDATE star_payments SET refundedAt = ? WHERE chargeId = ? AND refundedAt = 0",
+                [now, chargeId],
+                function (err) {
+                    if (err) {
+                        console.error('Error marking star payment refunded:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
                 }
             )
         })

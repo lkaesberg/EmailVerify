@@ -7,6 +7,8 @@
 // Software Foundation, either version 3 of the License, or (at your option) any
 // later version. See the LICENSE file for details.
 
+const { platformOf, DISCORD } = require('../core/PlatformKey')
+
 class ServerSettings {
     constructor() {
         this.domains = []
@@ -39,9 +41,24 @@ class ServerSettings {
         this.allowedEmails = []
         // Email rendering style: 'plain' (default, deliverability-optimized text) or 'styled' (HTML)
         this.emailStyle = "plain"
+        // Which platform this community lives on, derived from its storage key.
+        // Set by Database.getServerSettings; defaults to Discord for bare ids.
+        this.platform = DISCORD
+        // Telegram gate mode — how an unverified user is held back, since Telegram
+        // has no roles: 'joinRequest' | 'mute' | 'inviteLink'. Unused on Discord.
+        this.gateMode = "joinRequest"
+        // Telegram chat ids this configuration gates (JSON array in the DB).
+        this.managedChats = []
     }
 
     get status() {
+        // "Configured enough to verify anyone". The answer is platform-specific
+        // because the two platforms grant access by different means.
+        if (this.platform !== DISCORD) {
+            // Telegram grants access to chats, not roles, so a gated chat is the
+            // minimum viable configuration.
+            return this.managedChats.length > 0
+        }
         // Bot is configured if at least one role is configured.
         // Empty domains + empty allowedEmails = "accept any email" (default-open),
         // so the email source no longer needs to be explicitly set.
@@ -49,6 +66,12 @@ class ServerSettings {
                          Object.keys(this.domainRoles).length > 0 ||
                          this.verifiedRoleName !== "" // Legacy support
         return hasRoles
+    }
+
+    /** Derive and store `platform` from this community's storage key. */
+    setPlatformFromKey(storageKey) {
+        this.platform = platformOf(storageKey)
+        return this
     }
 }
 

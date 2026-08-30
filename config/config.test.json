@@ -1,6 +1,6 @@
 {
-  "token": "YOUR_DISCORD_BOT_TOKEN",
-  "clientId": "YOUR_DISCORD_CLIENT_ID",
+  "token": "test-token",
+  "clientId": "test-client-id",
   "email": "verify@example.com",
   "username": "smtp-username",
   "password": "smtp-password",
@@ -12,16 +12,16 @@
   "operatorWebhookUrl": "",
   "websiteUrl": "",
   "monetization": {
-    "enabled": false,
+    "enabled": true,
     "freeMonthlyLimit": 25,
     "currency": "EUR",
     "skus": {
-      "subscriptionTier1": "",
-      "subscriptionTier2": "",
-      "credits100": "",
-      "credits500": "",
-      "credits2000": "",
-      "csvUnlock": ""
+      "subscriptionTier1": "sku-subscriptionTier1",
+      "subscriptionTier2": "sku-subscriptionTier2",
+      "credits100": "sku-credits100",
+      "credits500": "sku-credits500",
+      "credits2000": "sku-credits2000",
+      "csvUnlock": "sku-csvUnlock"
     },
     "prices": {
       "subscriptionTier1": 0,

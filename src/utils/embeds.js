@@ -210,6 +210,7 @@ module.exports = {
     createVerificationFailedLogEmbed,
     createMailLimitReachedEmbed,
     createCSVPremiumRequiredEmbed,
+    createMailFailedEmbed,
 };
 
 function createMailLimitReachedEmbed(language, websiteUrl = null) {
@@ -232,4 +233,16 @@ function createCSVPremiumRequiredEmbed(language, storeLink = null) {
         .setTitle(getLocale(language, 'premiumCsvRequiredTitle'))
         .setDescription(description)
         .setColor(0x5865F2);
+}
+
+/**
+ * Delivery of the verification code failed. Previously built inline in MailSender;
+ * it moved here when sending became platform-agnostic and only the rendering
+ * stayed on the Discord side.
+ */
+function createMailFailedEmbed(language, email) {
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'mailFailedTitle'))
+        .setDescription(getLocale(language, 'mailFailedDescription', email))
+        .setColor(0xED4245);
 }

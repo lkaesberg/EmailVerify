@@ -12,6 +12,7 @@ const config = require('../../config/config.json')
 const { getLocale } = require('../Language')
 const OperatorWebhook = require('../utils/OperatorWebhook')
 const analytics = require('../utils/Analytics')
+const { platformOf, DISCORD } = require('../core/PlatformKey')
 
 const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
@@ -45,6 +46,19 @@ class PremiumManager {
     }
 
     /**
+     * The effective tier for a community, from either source.
+     *
+     * Discord reads entitlements live from its API; Telegram Stars announces a
+     * subscription once and it is persisted in guild_premium, already filtered for
+     * expiry by Database.getGuildPremium. Entitlements win when both are present so
+     * the Discord path behaves exactly as before (stored tier is never set for a
+     * Discord guild).
+     */
+    resolveTier(entitlements, premium) {
+        return this.getSubscriptionTier(entitlements) || (premium && premium.subscriptionTier) || null
+    }
+
+    /**
      * Project when the free monthly quota will run out at the current sending pace.
      * Returns a Date within this month, or null when there's no useful signal (no
      * sends yet, already over the limit — the 100% warning covers that — or on pace
@@ -67,11 +81,20 @@ class PremiumManager {
      * given usage, or null. The date renders as a Discord timestamp so it localizes
      * itself to each reader's locale/timezone.
      */
-    forecastLine(language, mailsSentMonth) {
+    forecastLine(language, mailsSentMonth, formatDate = PremiumManager.discordDate) {
         const runOut = this.computeRunOutForecast(mailsSentMonth, this.freeMonthlyLimit)
         if (!runOut) return null
-        const unix = Math.floor(runOut.getTime() / 1000)
-        return getLocale(language || 'english', 'premiumForecastRunOut', `<t:${unix}:D>`)
+        return getLocale(language || 'english', 'premiumForecastRunOut', formatDate(runOut))
+    }
+
+    /** Discord renders this per-reader in their own locale and timezone. */
+    static discordDate(date) {
+        return `<t:${Math.floor(date.getTime() / 1000)}:D>`
+    }
+
+    /** Telegram has no timestamp markup, so send an unambiguous absolute date. */
+    static plainDate(date) {
+        return date.toISOString().slice(0, 10)
     }
 
     /**
@@ -135,10 +158,12 @@ class PremiumManager {
         if (!this.enabled) return { allowed: true, source: 'disabled' }
 
         // 1. Subscription → always allowed, always Zepto, free quota irrelevant.
-        const tier = this.getSubscriptionTier(entitlements)
-        if (tier) return { allowed: true, source: 'subscription' }
-
+        //    The premium row is read first because a Telegram subscription lives in it;
+        //    for Discord the entitlement still decides and this read is otherwise unused
+        //    on the subscription path.
         const premium = await database.getGuildPremium(guildID)
+        const tier = this.resolveTier(entitlements, premium)
+        if (tier) return { allowed: true, source: 'subscription' }
 
         // 2. ZeptoMail-credits opt-in mode: no free quota, credit-funded Zepto sends.
         //    When credits are exhausted we atomically flip the guild back to 'free' and
@@ -236,12 +261,13 @@ class PremiumManager {
     async canUseCSVFeature(guildID, entitlements) {
         if (!this.enabled) return { allowed: true }
 
+        const premium = await database.getGuildPremium(guildID)
+
         // Tier 2 subscription includes CSV
-        const tier = this.getSubscriptionTier(entitlements)
+        const tier = this.resolveTier(entitlements, premium)
         if (tier === 'tier2') return { allowed: true }
 
         // One-time CSV purchase stored in DB
-        const premium = await database.getGuildPremium(guildID)
         if (premium.csvUnlocked) return { allowed: true }
 
         return { allowed: false }
@@ -338,8 +364,8 @@ class PremiumManager {
      * Returns a full premium status object for display.
      */
     async getPremiumStatus(guildID, entitlements) {
-        const tier = this.getSubscriptionTier(entitlements)
         const premium = await database.getGuildPremium(guildID)
+        const tier = this.resolveTier(entitlements, premium)
         const stats = await new Promise(resolve => {
             database.getGuildStats(guildID, resolve)
         })
@@ -354,6 +380,7 @@ class PremiumManager {
             bonusCredits: premium.bonusCredits,
             csvUnlocked: premium.csvUnlocked,
             mailMode: premium.mailMode || 'free',
+            subscriptionExpiresAt: premium.subscriptionExpiresAt || 0,
             zeptoAvailable: this.zeptoConfigured,
             hasUnlimitedMails: !!tier
         }
@@ -361,4 +388,8 @@ class PremiumManager {
 }
 
 const premiumManager = new PremiumManager()
+// Only the instance is exported, so surface the date formatters on it — the Telegram
+// adapter needs plainDate when building quota warnings.
+premiumManager.discordDate = PremiumManager.discordDate
+premiumManager.plainDate = PremiumManager.plainDate
 module.exports = premiumManager

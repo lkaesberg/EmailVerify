@@ -12,8 +12,30 @@ env:
   IMAGE_NAME: lkaesberg/emailverify
 
 jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The app reads config/config.json unconditionally. The test fixture keeps
+      # every integration off but leaves monetization enabled, so the quota and
+      # subscription paths are actually exercised rather than short-circuited.
+      - name: Provide a test config
+        run: cp config/config.test.json config/config.json
+
+      - run: npm install
+
+      - run: npm test
+
   docker-nightly:
     name: Docker (nightly)
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 

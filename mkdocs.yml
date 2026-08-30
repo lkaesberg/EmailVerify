@@ -104,6 +104,7 @@ nav:
   - Get started:
       - 'Quick start': 'setup.md'
       - 'All commands': 'commands.md'
+      - 'Telegram': 'telegram.md'
       - 'Compare alternatives': 'compare.md'
   - Use cases:
       - 'Universities & schools': 'use-cases/university.md'
