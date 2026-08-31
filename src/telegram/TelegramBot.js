@@ -28,6 +28,20 @@ const CONTEXT_TTL_MS = 30 * 60 * 1000
 
 const GATE_MODES = ['joinRequest', 'mute', 'inviteLink']
 
+// The update types we ask Telegram for.
+//
+// `chat_member` has to be listed explicitly: Telegram's default — which is what an
+// empty allowed_updates means, and what telegraf sends when the option is omitted —
+// is "every type EXCEPT chat_member". Without this list the `mute` gate never sees
+// anyone arrive and silently does nothing.
+const ALLOWED_UPDATES = [
+    'message',
+    'callback_query',
+    'pre_checkout_query',
+    'chat_join_request',
+    'chat_member'
+]
+
 /**
  * The Telegram front-end.
  *
@@ -67,7 +81,13 @@ class TelegramBot {
         await this.#publishCommands()
         // Long polling, deliberately: webhooks would need an ingress and a second
         // port, and port 8181 already belongs to the stats API on Discord shard 0.
-        this.bot.launch({ dropPendingUpdates: false })
+        //
+        // launch() only settles once polling stops, so it must not be awaited — but it
+        // must be caught. This process is the Discord ShardingManager, and an unhandled
+        // rejection here (a revoked token answers 401) would take the shards down with
+        // it, which is exactly what the Telegram side is supposed to be unable to do.
+        this.bot.launch({ dropPendingUpdates: false, allowedUpdates: ALLOWED_UPDATES })
+            .catch((err) => console.error('[Telegram] polling stopped:', err))
         const me = await this.telegram.getMe()
         this.username = me.username
         if (!this.cfg.botUsername) this.cfg.botUsername = me.username
@@ -164,7 +184,7 @@ class TelegramBot {
         const chatId = DeepLink.decode(payload)
         if (!chatId) {
             const resumed = await this.#resumeContext(ctx.from.id)
-            if (!resumed) return this.#reply(ctx, getLocale(defaultLanguage, 'telegramNoContext'))
+            if (!resumed) return this.#reply(ctx, await this.#noContextMessage(ctx.from.id))
             return this.#promptFor(ctx, resumed)
         }
         const chatKey = key(TELEGRAM, chatId)
@@ -180,7 +200,7 @@ class TelegramBot {
             return this.#reply(ctx, link || getLocale(defaultLanguage, 'telegramNoContext'))
         }
         const chatKey = await this.#contextFor(ctx.from.id)
-        if (!chatKey) return this.#reply(ctx, getLocale(defaultLanguage, 'telegramNoContext'))
+        if (!chatKey) return this.#reply(ctx, await this.#noContextMessage(ctx.from.id))
         // Restart cleanly: drop any half-finished code so /verify always means "begin".
         await database.deletePendingVerification(key(TELEGRAM, ctx.from.id), chatKey).catch(() => {})
         return this.#promptFor(ctx, chatKey)
@@ -206,7 +226,7 @@ class TelegramBot {
     async #onPrivateText(ctx, text) {
         const userID = key(TELEGRAM, ctx.from.id)
         const chatKey = await this.#contextFor(ctx.from.id)
-        if (!chatKey) return this.#reply(ctx, getLocale(defaultLanguage, 'telegramNoContext'))
+        if (!chatKey) return this.#reply(ctx, await this.#noContextMessage(ctx.from.id))
 
         const { settings, community } = await this.#load(chatKey)
         const pending = await this.verification.peekPending(chatKey, userID)
@@ -323,14 +343,11 @@ class TelegramBot {
         this.#remember(userId, chatKey)
         analytics.capture({ event: 'member_joined', userId: key(TELEGRAM, userId), guild: community })
 
+        // Failure is expected whenever they have never started the bot — there is no
+        // way to reach them, which is exactly why admins publish the deep link.
         const text = getLocale(settings.language, 'telegramJoinRequestPrompt', community.name)
             + '\n\n' + getLocale(settings.language, 'telegramAskEmail')
-        try {
-            await this.telegram.sendMessage(userId, text, { parse_mode: 'Markdown' })
-        } catch {
-            // Expected whenever they have never started the bot — there is no way to
-            // reach them, which is exactly why admins publish the deep link.
-        }
+        await this.#send(userId, text)
     }
 
     async #onChatMember(ctx) {
@@ -349,9 +366,8 @@ class TelegramBot {
         this.#remember(userId, chatKey)
         const link = this.#linkFor(update.chat.id)
         if (link) {
-            await this.telegram.sendMessage(update.chat.id,
-                getLocale(settings.language, 'telegramJoinRequestPrompt', update.chat.title) + `\n${link}`,
-                { parse_mode: 'Markdown' }).catch(() => {})
+            await this.#send(update.chat.id,
+                getLocale(settings.language, 'telegramJoinRequestPrompt', update.chat.title) + `\n${link}`)
         }
     }
 
@@ -375,8 +391,7 @@ class TelegramBot {
         const chatKey = key(TELEGRAM, ctx.chat.id)
         await new Promise((resolve) => database.getServerSettings(chatKey, (settings) => {
             if (!settings.managedChats.includes(chatKey)) settings.managedChats.push(chatKey)
-            database.updateServerSettings(chatKey, settings)
-            resolve()
+            database.updateServerSettings(chatKey, settings).then(resolve)
         }))
 
         const link = this.#linkFor(ctx.chat.id)
@@ -400,8 +415,7 @@ class TelegramBot {
         await new Promise((resolve) => database.getServerSettings(chatKey, (settings) => {
             settings.gateMode = mode
             if (!settings.managedChats.includes(chatKey)) settings.managedChats.push(chatKey)
-            database.updateServerSettings(chatKey, settings)
-            resolve()
+            database.updateServerSettings(chatKey, settings).then(resolve)
         }))
         return this.#reply(ctx, getLocale(defaultLanguage, 'telegramGateModeSet', mode))
     }
@@ -468,7 +482,9 @@ class TelegramBot {
 
         if (action !== 'list') {
             settings[field] = next
-            database.updateServerSettings(chatKey, settings)
+            // Awaited: the reply below states what the list now is, and an un-awaited
+            // write can still be in flight when the next command reads the row back.
+            await database.updateServerSettings(chatKey, settings)
         }
         return this.#reply(ctx, next.length
             ? getLocale(settings.language, listKey, next.join(', '))
@@ -485,8 +501,7 @@ class TelegramBot {
         }
         await new Promise((resolve) => database.getServerSettings(scope.chatKey, (settings) => {
             settings.language = requested
-            database.updateServerSettings(scope.chatKey, settings)
-            resolve()
+            database.updateServerSettings(scope.chatKey, settings).then(resolve)
         }))
         return this.#reply(ctx, getLocale(requested, 'telegramLanguageSet', requested))
     }
@@ -541,7 +556,14 @@ class TelegramBot {
         const chatKey = inGroup
             ? key(TELEGRAM, ctx.chat.id)
             : await this.#contextFor(ctx.from.id)
-        if (!chatKey) return this.#reply(ctx, getLocale(defaultLanguage, 'telegramNoContext'))
+        if (!chatKey) return this.#reply(ctx, await this.#noContextMessage(ctx.from.id))
+
+        // Billing is admin-only wherever it is asked from. In a DM the check has to run
+        // against the gated chat, or any member who ever verified there could read the
+        // community's usage, quota and credit balance.
+        if (!inGroup && !await this.#isAdminOf(chatKey, ctx.from.id)) {
+            return this.#reply(ctx, getLocale(defaultLanguage, 'telegramAdminOnly'))
+        }
 
         const { settings, community } = await this.#load(chatKey)
         const status = await premiumManager.getPremiumStatus(chatKey, null)
@@ -589,9 +611,14 @@ class TelegramBot {
         return this.#reply(ctx, getLocale(defaultLanguage, 'telegramPurchaseFailed'))
     }
 
-    async #isAdmin(ctx) {
+    #isAdmin(ctx) {
+        return this.#isAdminOf(ctx.chat.id, ctx.from.id)
+    }
+
+    /** Admin check against an arbitrary chat, so a DM can be authorized too. */
+    async #isAdminOf(chatIdOrKey, userId) {
         try {
-            const member = await this.telegram.getChatMember(ctx.chat.id, ctx.from.id)
+            const member = await this.telegram.getChatMember(Number(nativeId(chatIdOrKey)), userId)
             return ['creator', 'administrator'].includes(member.status)
         } catch {
             return false
@@ -624,6 +651,16 @@ class TelegramBot {
         return rows[0].guildID
     }
 
+    /**
+     * Why we don't know which community this DM is about. Two codes outstanding is a
+     * different problem from none at all — telling someone to open a link they already
+     * used is a dead end, so that case gets its own message.
+     */
+    async #noContextMessage(userId) {
+        const rows = await database.getPendingVerificationsForUser(key(TELEGRAM, userId)).catch(() => [])
+        return getLocale(defaultLanguage, rows.length > 1 ? 'telegramPickCommunity' : 'telegramNoContext')
+    }
+
     async #load(chatKey) {
         const settings = await new Promise((resolve) => database.getServerSettings(chatKey, resolve))
         let name = String(chatKey)
@@ -647,6 +684,19 @@ class TelegramBot {
             .catch(() => ctx.reply(text).catch(() => {}))
     }
 
+    /**
+     * Same plain-text fallback as #reply, for the paths that send to a chat id rather
+     * than answering an update. Chat titles go into these messages verbatim, and a
+     * group called `Physics_2026` is enough to make Telegram reject the Markdown —
+     * without the retry those prompts just never arrive.
+     */
+    #send(chatId, text) {
+        return this.telegram.sendMessage(chatId, text, {
+            parse_mode: 'Markdown',
+            link_preview_options: { is_disabled: true }
+        }).catch(() => this.telegram.sendMessage(chatId, text).catch(() => {}))
+    }
+
     #deleteMessage(ctx) {
         return this.telegram.deleteMessage(ctx.chat.id, ctx.message.message_id)
     }
@@ -659,9 +709,17 @@ class TelegramBot {
         for (const [k, ts] of this.authorizer.pendingJoinRequests) {
             if (now - ts > 24 * 60 * 60 * 1000) this.authorizer.pendingJoinRequests.delete(k)
         }
+        // The service's rate-limiter map only drops an entry on a successful
+        // verification; everyone who abandons the flow would otherwise stay in it for
+        // the life of the process. Discord's shards prune the same map on their own.
+        this.verification.pruneRateLimits(now)
+        for (const [id, ts] of this.notifier.emaillistLockedLastNotify) {
+            if (now - ts > 24 * 60 * 60 * 1000) this.notifier.emaillistLockedLastNotify.delete(id)
+        }
         database.expireLapsedSubscriptions().catch(() => {})
     }
 }
 
 module.exports = TelegramBot
 module.exports.GATE_MODES = GATE_MODES
+module.exports.ALLOWED_UPDATES = ALLOWED_UPDATES

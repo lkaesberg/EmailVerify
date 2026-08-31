@@ -24,6 +24,17 @@ const MAX_CODE_ATTEMPTS = 5
 // Flat cooldown between "Resend code" clicks (separate from the escalating
 // email-request backoff — resending to the SAME address is lower-risk).
 const RESEND_COOLDOWN_MS = 60 * 1000
+// How long a rate-limiter entry may sit idle past its backoff before a sweep may
+// drop it. Entries are only removed on a successful verification, so without this
+// everyone who abandons the flow stays in the map for the life of the process.
+const RATE_LIMIT_IDLE_MS = 60 * 60 * 1000
+
+// Deliberately stricter than the old "exactly one @ and no space", which admitted
+// `a@b`, `@x` and `a@.` and handed them straight to the mail provider. Not
+// RFC-complete — it wants a non-empty local part free of whitespace and address
+// separators, and a domain with a real TLD.
+const EMAIL_RE = /^[^\s@<>,;:"'\\]+@[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/
+const EMAIL_MAX_LENGTH = 254
 
 /**
  * The verification flow itself, with no knowledge of the chat platform it serves.
@@ -126,7 +137,7 @@ class VerificationService {
         // Also checks against the uploaded email list. If neither domains nor an
         // allowedEmails list is configured, all valid addresses are accepted
         // (subject to the blacklist).
-        const hasValidFormat = emailText.split('@').length - 1 === 1 && !emailText.includes(' ')
+        const hasValidFormat = emailText.length <= EMAIL_MAX_LENGTH && EMAIL_RE.test(emailText)
         const noRestrictionsConfigured = settings.domains.length === 0 && allowedEmails.length === 0
         const matchesDomain = emailMatchesDomains(emailText, settings.domains)
         // allowedEmails are stored as MD5 hashes of the lowercased address (same scheme as userEmails)
@@ -229,7 +240,7 @@ class VerificationService {
         // so a 6-digit code can't be brute-forced. incrementPendingAttempts is a
         // single atomic UPDATE…RETURNING; on a DB error we fail closed (generic
         // error, attempt not revealed) instead of treating it as "not at the cap".
-        if (row.code !== code) {
+        if (!this.#codeMatches(row.code, code)) {
             const attempts = await database.incrementPendingAttempts(userID, guildID)
             if (attempts === 'error') {
                 this.#codeFailed(ctx, 'db_error')
@@ -279,16 +290,6 @@ class VerificationService {
             return { outcome: 'authorization_failed', detail: 'no_targets_resolved' }
         }
 
-        // Unverify any previous holder of this email.
-        try {
-            this.authorizer.revokePrevious?.(community, settings, row.emailHash, userID, resolved.targets, settings.language)
-        } catch (e) {
-            console.error('[Verification] revokePrevious failed:', e)
-        }
-
-        // Persist the new verified user (primary grant kept in the legacy field for back-compat).
-        database.updateEmailUser(new EmailUser(row.emailHash, userID, guildID, resolved.primaryId || '', 0))
-
         const granted = await this.authorizer.grant(community, settings, userID, resolved.targets, row.logEmail)
         if (!granted || !granted.ok) {
             await restorePending()
@@ -297,6 +298,19 @@ class VerificationService {
             this.#hook('authorizationFailed', ctx, detail)
             return { outcome: 'authorization_failed', detail }
         }
+
+        // Only now that access actually exists: take it away from whoever held this
+        // address before, and record the new owner. Doing either before the grant meant
+        // a failed grant had already kicked the previous holder (Telegram revokes with
+        // ban+unban) and left the database claiming a verification that never happened.
+        try {
+            this.authorizer.revokePrevious?.(community, settings, row.emailHash, userID, resolved.targets, settings.language)
+        } catch (e) {
+            console.error('[Verification] revokePrevious failed:', e)
+        }
+
+        // Persist the new verified user (primary grant kept in the legacy field for back-compat).
+        await database.updateEmailUser(new EmailUser(row.emailHash, userID, guildID, resolved.primaryId || '', 0))
 
         const labels = granted.labels || []
         this.#hook('verified', ctx, { email: row.logEmail, labels })
@@ -428,6 +442,29 @@ class VerificationService {
         return null
     }
 
+    /**
+     * Constant-time code comparison. The attempt cap already makes brute force
+     * impractical, so this is belt-and-braces — but it costs nothing, and the length
+     * check leaks only a length that is fixed at six digits anyway.
+     */
+    #codeMatches(expected, given) {
+        const a = Buffer.from(String(expected))
+        const b = Buffer.from(String(given))
+        if (a.length !== b.length) return false
+        return crypto.timingSafeEqual(a, b)
+    }
+
+    /**
+     * Drop rate-limiter entries whose backoff elapsed long ago. Called from each
+     * front-end's periodic sweep; without it the map only ever shrinks when someone
+     * completes a verification.
+     */
+    pruneRateLimits(now = Date.now(), maxIdleMs = RATE_LIMIT_IDLE_MS) {
+        for (const [k, t] of this.userTimeouts) {
+            if (t.timestamp + t.waitseconds * 1000 < now - maxIdleMs) this.userTimeouts.delete(k)
+        }
+    }
+
     #reject(ctx, reason) {
         analytics.capture({
             event: 'verification_email_rejected',
@@ -463,3 +500,4 @@ module.exports = VerificationService
 module.exports.CODE_TTL_MS = CODE_TTL_MS
 module.exports.MAX_CODE_ATTEMPTS = MAX_CODE_ATTEMPTS
 module.exports.RESEND_COOLDOWN_MS = RESEND_COOLDOWN_MS
+module.exports.RATE_LIMIT_IDLE_MS = RATE_LIMIT_IDLE_MS

@@ -6,6 +6,10 @@ on:
       - main
     tags:
       - '*'
+  # Without this, nothing was ever tested before it reached main.
+  pull_request:
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -21,7 +25,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Match the Dockerfile: testing on a different major than we ship on is
+          # how a runtime-only breakage reaches production green.
+          node-version: '22'
+          cache: 'npm'
 
       # The app reads config/config.json unconditionally. The test fixture keeps
       # every integration off but leaves monetization enabled, so the quota and
@@ -29,7 +36,7 @@ jobs:
       - name: Provide a test config
         run: cp config/config.test.json config/config.json
 
-      - run: npm install
+      - run: npm ci
 
       - run: npm test
 
@@ -72,6 +79,9 @@ jobs:
 
   docker-release:
     name: Docker (release)
+    # A tag used to build and push `latest` in parallel with the tests, and `deploy`
+    # only waited on this job -- so a tag with failing tests shipped to production.
+    needs: test
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 

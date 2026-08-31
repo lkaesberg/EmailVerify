@@ -24,7 +24,7 @@ Choose with `/gatemode <mode>` in the gated chat.
 | Mode | How it holds people back | Needs |
 |---|---|---|
 | `joinRequest` *(default)* | The chat requires approval; the bot approves once the email is confirmed. | Chat set to "approve new members" |
-| `mute` | People can join and read, but cannot post until verified. | *Ban users* permission |
+| `mute` | People can join and read, but cannot post until verified. | *Ban users* permission, and group privacy **off** |
 | `inviteLink` | The chat stays private. After verifying, the member gets a personal invite link that works once and expires. | — |
 
 ### Routing people into different chats
@@ -82,6 +82,10 @@ there is no "redeem" step as there is with Discord's credit packs.
   link from `/setup` is the entry point you publish.
 - **Notifications to admins** are best-effort for the same reason: an
   administrator who has never started the bot cannot be messaged.
+- **The `mute` gate needs member updates.** It works by reacting to people joining,
+  which Telegram only reports to a bot that is an administrator of the chat. If the
+  bot is demoted, `mute` silently stops holding anyone back — `joinRequest` and
+  `inviteLink` keep working, because those are driven by the member's own action.
 - **Payouts** for Stars go out through Fragment as TON, with a 1,000-Star
   minimum and a hold of about three weeks. Stars bought inside the iOS or
   Android apps are worth noticeably less than ones bought on the web, because

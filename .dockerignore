@@ -1,0 +1,35 @@
+# Without this, `COPY . /usr/app/` baked the git history, the built docs site, the
+# host's node_modules and — on a local build — the real config/config.json with its
+# bot tokens and SMTP password into the image.
+
+.git
+.github
+.gitignore
+.dockerignore
+.idea
+.claude
+.DS_Store
+
+node_modules
+npm-debug.log*
+
+# Built by mkdocs; not part of the runtime image.
+site
+docs
+mkdocs.yml
+overrides
+images
+README.md
+
+# Secrets and live state. config.example.json is kept so a fresh container can be
+# pointed at a template.
+config/config.json
+config/bot.db
+config/bot.db-shm
+config/bot.db-wal
+config/ServerStats.json
+config/ServerStatsHistory.log
+
+test
+Dockerfile
+docker-compose.yml

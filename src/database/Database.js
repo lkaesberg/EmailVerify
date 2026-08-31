@@ -286,20 +286,53 @@ class Database {
         runNext(0)
     }
 
+    /**
+     * Erase a user's stored verification data.
+     *
+     * pending_verifications matters as much as userEmails here: it is the one table
+     * that holds a plaintext address (logEmail, needed so "resend" has somewhere to
+     * send), so leaving it behind meant a deletion request left the address on disk
+     * until the row expired.
+     */
     deleteUserData(userID) {
         this.db.run("DELETE FROM userEmails WHERE userID = ?;", [userID])
+        this.db.run("DELETE FROM pending_verifications WHERE userID = ?;", [userID])
     }
 
+    /**
+     * Erase a community's configuration and verification records.
+     *
+     * guild_premium and star_payments are deliberately kept. Credits and CSV unlocks
+     * are paid for and must survive the bot being removed and re-added (this runs on
+     * guildDelete as well as on an explicit request), and star_payments is the charge-id
+     * ledger that makes a redelivered Telegram payment idempotent — dropping it would
+     * turn a replay into a double credit.
+     */
     deleteServerData(guildID) {
         this.db.run("DELETE FROM guilds WHERE guildid = ?;", [guildID])
         this.db.run("DELETE FROM userEmails WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM pending_verifications WHERE guildID = ?;", [guildID])
     }
 
 
+    /**
+     * Persist a community's settings.
+     *
+     * Resolves (never rejects) once the write has landed. node-sqlite3 runs statements
+     * in parallel mode unless explicitly serialized, so a read issued after an
+     * un-awaited write can genuinely overtake it — a caller that saves and then reports
+     * back what it saved has to await this or it may describe the previous state.
+     */
     updateServerSettings(guildID, serverSettings) {
-        this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle, gateMode, managedChats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain', serverSettings.gateMode || 'joinRequest', JSON.stringify(serverSettings.managedChats || [])])
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle, gateMode, managedChats) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain', serverSettings.gateMode || 'joinRequest', JSON.stringify(serverSettings.managedChats || [])],
+                (err) => {
+                    if (err) console.error('Error updating server settings:', err)
+                    resolve()
+                })
+        })
     }
 
     async getServerSettings(guildID, callback) {
@@ -404,10 +437,22 @@ class Database {
         )
     }
 
+    /**
+     * Record a verified user. Resolves (never rejects) once the write has landed, so
+     * the verification flow can await it instead of racing ahead of its own bookkeeping;
+     * legacy fire-and-forget callers are unaffected.
+     */
     updateEmailUser(emailUser) {
-        this.db.run(
-            "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
-            [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
+                [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic],
+                (err) => {
+                    if (err) console.error('Error storing verified user:', err)
+                    resolve()
+                }
+            )
+        })
     }
 
     /**

@@ -25,7 +25,10 @@ manager.on('shardCreate', (shard) => {
 (async () => {
   try {
     await manager.spawn();
-    if (typeof topggToken !== 'undefined') {
+    // Truthiness, not `typeof`: the example config ships `"topggToken": ""`, which is a
+    // string, so the old check started AutoPoster with an empty token on every default
+    // self-host and left it erroring in the background.
+    if (topggToken) {
       const poster = AutoPoster(topggToken, manager);
       poster.on('error', () => {});
       console.log('Posting stats to topGG via manager!');

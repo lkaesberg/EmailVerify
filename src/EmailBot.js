@@ -601,9 +601,7 @@ setInterval(function () {
 const CLEANUP_STALE_MS = 60 * 60 * 1000
 setInterval(() => {
     const now = Date.now()
-    for (const [userId, t] of verification.userTimeouts) {
-        if (t.timestamp + t.waitseconds * 1000 < now - CLEANUP_STALE_MS) verification.userTimeouts.delete(userId)
-    }
+    verification.pruneRateLimits(now, CLEANUP_STALE_MS)
     for (const [key, v] of codePromptMessages) {
         if (!v || v.ts < now - CLEANUP_STALE_MS) codePromptMessages.delete(key)
     }

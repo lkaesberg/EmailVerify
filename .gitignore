@@ -1,8 +1,10 @@
 node_modules
-package-lock.json
 config/config.json
 .idea
 config/bot.db
+# SQLite sidecars: internals of a live database, never source
+config/bot.db-shm
+config/bot.db-wal
 src/bot.db
 config/ServerStats.json
 discord-verify.txt

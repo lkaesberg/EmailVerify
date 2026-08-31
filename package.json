@@ -2,7 +2,7 @@
   "name": "emailbot",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test \"test/*.test.js\""
@@ -10,7 +10,7 @@
   "author": "Lars Benedikt Kaesberg",
   "license": "AGPL-3.0-or-later",
   "engines": {
-    "node": ">=16.11"
+    "node": ">=20"
   },
   "dependencies": {
     "@discordjs/builders": "^1.13.1",
@@ -19,14 +19,10 @@
     "discord-api-types": "^0.38.37",
     "discord.js": "^14.25.1",
     "express": "^5.2.1",
-    "nodemailer": "^7.0.3",
-    "nodemailer-smtp-transport": "^2.7.4",
+    "nodemailer": "^9.0.6",
     "posthog-node": "^5.21.2",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "telegraf": "^4.16.3",
     "topgg-autoposter": "^2.0.2"
-  },
-  "devDependencies": {
-    "process": "^0.11.10"
   }
 }

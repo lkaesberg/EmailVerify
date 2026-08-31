@@ -80,10 +80,6 @@ class TelegramAuthorizer {
         this.pendingJoinRequests.set(`${userId}:${chatId}`, Date.now())
     }
 
-    hasJoinRequest(userId, chatId) {
-        return this.pendingJoinRequests.has(`${userId}:${chatId}`)
-    }
-
     /**
      * Which chats this email earns access to: the always-on chats plus any mapped to
      * a domain pattern the address matches, deduplicated.

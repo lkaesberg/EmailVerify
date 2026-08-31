@@ -49,7 +49,6 @@
     "enabled": false,
     "token": "",
     "botUsername": "",
-    "gateTimeoutMinutes": 30,
     "inviteLinkTtlMinutes": 15,
     "stars": {
       "enabled": false,

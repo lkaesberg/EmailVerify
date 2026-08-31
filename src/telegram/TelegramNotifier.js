@@ -8,6 +8,7 @@
 // later version. See the LICENSE file for details.
 
 const { getLocale } = require('../Language')
+const database = require('../database/Database')
 const analytics = require('../utils/Analytics')
 const premiumManager = require('../premium/PremiumManager')
 const { nativeId } = require('../core/PlatformKey')
@@ -40,9 +41,24 @@ class TelegramNotifier {
         return this.#toAdmins(ctx, getLocale(ctx.language, 'emaillistLockedAdminMessage'))
     }
 
-    mailDenied(ctx) {
+    /**
+     * Mirrors PremiumManager.notifyMailDenied on the Discord side, for two reasons:
+     * recording the denial is what makes `mailsDeniedMonth` real for Telegram
+     * communities at all (it drove the "members turned away" figure and the mail_denied
+     * funnel to zero), and the thresholds are what stop every single denied attempt
+     * turning into a DM to every administrator.
+     */
+    async mailDenied(ctx) {
+        let crossings
+        try {
+            crossings = await database.recordMailDeniedAndCheckThresholds(ctx.community.id)
+        } catch (e) {
+            console.error('[Telegram] Failed to record mail denial:', e)
+            return
+        }
+        if (!crossings.crossed1 && !crossings.crossed5 && !crossings.crossed20) return
         return this.#toAdmins(ctx, getLocale(
-            ctx.language, 'telegramMailDeniedAdmin', '1', ctx.community.name
+            ctx.language, 'telegramMailDeniedAdmin', String(crossings.deniedMonth ?? 1), ctx.community.name
         ))
     }
 

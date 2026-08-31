@@ -12,7 +12,6 @@ const config = require('../../config/config.json')
 const { getLocale } = require('../Language')
 const OperatorWebhook = require('../utils/OperatorWebhook')
 const analytics = require('../utils/Analytics')
-const { platformOf, DISCORD } = require('../core/PlatformKey')
 
 const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
