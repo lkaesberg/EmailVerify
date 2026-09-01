@@ -76,6 +76,11 @@ markdown_extensions:
 plugins:
   - search
 extra:
+  # Short brand Google should show as the "site name" in search results (the
+  # line above the page title). Google reads it from the WebSite JSON-LD and
+  # og:site_name in overrides/main.html; site_name above stays the longer
+  # header/title form.
+  brand: EmailVerify
   social:
     - icon: fontawesome/brands/discord
       link: https://discord.com/invite/fEBSHUQXu2

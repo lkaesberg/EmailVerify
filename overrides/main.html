@@ -45,7 +45,7 @@
   {%- endif -%}
 
   <meta property="og:type" content="{% if page and page.is_homepage %}website{% else %}article{% endif %}">
-  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:site_name" content="{{ config.extra.brand }}">
   <meta property="og:title" content="{{ page_title }}">
   <meta property="og:description" content="{{ page_description }}">
   <meta property="og:image" content="{{ page_image }}">
@@ -68,6 +68,18 @@
   {%- endif %}
 
   {%- if page and page.is_homepage %}
+  {#- Google derives the "site name" shown above search results from WebSite
+      structured data on the homepage (falling back to og:site_name, then the
+      domain). Without this block it showed the bare domain. #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "{{ config.extra.brand }}",
+    "alternateName": ["{{ config.site_name }}", "Email Verify"],
+    "url": "{{ config.site_url }}"
+  }
+  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
