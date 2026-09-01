@@ -98,7 +98,7 @@ jobs:
       # a commit that is on main's HEAD.
       - name: Trigger Coolify deployment
         env:
-          COOLIFY_URL: https://coolify.checkmythesis.com
+          COOLIFY_URL: https://coolify.wksolutions.de
           COOLIFY_APP_UUID: fsyzdu0vfspz8py52fgkucib
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
