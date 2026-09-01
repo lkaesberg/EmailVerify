@@ -5,7 +5,7 @@ description: Widerrufsrecht und Muster-Widerrufsformular für kostenpflichtige E
 
 # Widerrufsbelehrung
 
-**Stand:** April 2026
+**Stand:** August 2026
 
 Diese Widerrufsbelehrung gilt für Verbraucher, die in Discord kostenpflichtige
 Premium-Funktionen des Bots **EmailVerify** erwerben (Standard-/Pro-Abonnement,
@@ -25,10 +25,10 @@ CSV-Freischaltung).
 
 Um Ihr Widerrufsrecht auszuüben, müssen Sie uns
 
-> **Lars Benedikt Kaesberg**
-> Hannoversche Straße 8
-> 37075 Göttingen
-> E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
+> **WKSolutions GbR**
+> Siedlungsweg 24
+> 37124 Rosdorf
+> E-Mail: [contact@wksolutions.de](mailto:contact@wksolutions.de)
 
 mittels einer eindeutigen Erklärung (z. B. per E-Mail) über Ihren Entschluss,
 diesen Vertrag zu widerrufen, informieren. Sie können dafür das untenstehende
@@ -77,10 +77,10 @@ ein Wertersatz anfallen.
 > aus und senden Sie es zurück.
 >
 > An:
-> Lars Benedikt Kaesberg
-> Hannoversche Straße 8
-> 37075 Göttingen
-> E-Mail: contact@larskaesberg.de
+> WKSolutions GbR
+> Siedlungsweg 24
+> 37124 Rosdorf
+> E-Mail: contact@wksolutions.de
 >
 > Hiermit widerrufe(n) ich/wir (\*) den von mir/uns (\*) abgeschlossenen Vertrag
 > über den Kauf der folgenden Waren (\*) / die Erbringung der folgenden
@@ -113,11 +113,11 @@ right to cancel within 14 days without reason.
 
 To exercise this right, send a clear statement (email is enough) to:
 
-> Lars Benedikt Kaesberg
-> Hannoversche Straße 8
-> 37075 Göttingen
+> WKSolutions GbR
+> Siedlungsweg 24
+> 37124 Rosdorf
 > Germany
-> Email: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
+> Email: [contact@wksolutions.de](mailto:contact@wksolutions.de)
 
 We will refund any payments received within 14 days of receiving the
 cancellation notice, using the same payment method as the original transaction.

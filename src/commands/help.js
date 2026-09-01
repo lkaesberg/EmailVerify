@@ -52,7 +52,7 @@ function buildMemberEmbed() {
             },
             sourceField
         )
-        .setFooter({ text: 'Server admins see setup instructions here • emailbot.larskaesberg.de' });
+        .setFooter({ text: 'Server admins see setup instructions here • getemailverified.com' });
 }
 
 module.exports = {
@@ -178,7 +178,7 @@ module.exports = {
                 },
                 sourceField
             )
-            .setFooter({ text: 'Need more help? Visit emailbot.larskaesberg.de' });
+            .setFooter({ text: 'Need more help? Visit getemailverified.com' });
 
         await interaction.reply({
             embeds: [helpEmbed],

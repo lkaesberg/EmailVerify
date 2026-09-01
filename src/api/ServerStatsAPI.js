@@ -41,6 +41,7 @@ class ServerStatsAPI {
     registerEndpoints() {
         this.app.use(cors({
             origin: [
+                "https://getemailverified.com",
                 "https://emailbot.larskaesberg.de",
                 "https://EmailBot.srtf.dev",
                 "http://localhost:8000"

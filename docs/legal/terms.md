@@ -57,7 +57,7 @@ entfernt werden.
 ### Kontakt
 
 - Discord-Support-Server: <https://discord.com/invite/fEBSHUQXu2>
-- E-Mail: <contact@larskaesberg.de>
+- E-Mail: <contact@wksolutions.de>
 
 ---
 
@@ -106,4 +106,4 @@ acceptance; alternatively, the bot can be removed from the server.
 ### Contact
 
 - Discord support: <https://discord.com/invite/fEBSHUQXu2>
-- Email: <contact@larskaesberg.de>
+- Email: <contact@wksolutions.de>

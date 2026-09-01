@@ -319,7 +319,7 @@ async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
             await ErrorNotifier.notify({
                 guild: guild,
                 errorTitle: 'Missing Permissions',
-                errorMessage: 'The bot does not have permission to create slash commands. The bot will leave the server.\n\nTo fix this, please re-invite the bot with proper permissions: https://emailbot.larskaesberg.de/',
+                errorMessage: 'The bot does not have permission to create slash commands. The bot will leave the server.\n\nTo fix this, please re-invite the bot with proper permissions: https://getemailverified.com/',
                 language: 'english'
             });
 
@@ -558,7 +558,7 @@ bot.once('clientReady', async () => {
 
     bot.user.setActivity("/verify | Website", {
         type: "PLAYING",
-        url: "https://emailbot.larskaesberg.de"
+        url: "https://getemailverified.com"
     });
 
     // Operator notification: only fire from the primary shard to avoid N-per-restart spam.
@@ -612,7 +612,7 @@ bot.once('clientReady', async () => {
 
 setInterval(function () {
     bot.user.setActivity("/verify | Website", {
-        type: "PLAYING", url: "https://emailbot.larskaesberg.de"
+        type: "PLAYING", url: "https://getemailverified.com"
     })
 }, 3600000).unref();
 

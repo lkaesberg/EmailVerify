@@ -19,7 +19,7 @@
     ·
     <a href="https://github.com/lkaesberg/EmailBot/issues">Request Feature</a>
     </p>
-    <a href="https://emailbot.larskaesberg.de/">🌐 Website</a>
+    <a href="https://getemailverified.com/">🌐 Website</a>
   </p>
 </p>
 

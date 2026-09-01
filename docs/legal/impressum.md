@@ -5,18 +5,22 @@ description: Anbieterkennzeichnung nach § 5 DDG für EmailVerify.
 
 # Impressum
 
-**Stand:** April 2026
+**Stand:** August 2026
 
-## Angaben gemäß § 5 TMG
+## Angaben gemäß § 5 DDG
 
-Lars Benedikt Kaesberg
-Hannoversche Straße 8
-37075 Göttingen
+WKSolutions GbR
+Siedlungsweg 24
+37124 Rosdorf
 Deutschland
+
+**Vertretungsberechtigte Gesellschafter:**
+Jan Philip Wahle
+Lars Benedikt Kaesberg
 
 ## Kontakt
 
-E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
+E-Mail: [contact@wksolutions.de](mailto:contact@wksolutions.de)
 
 ## Umsatzsteuer
 
@@ -70,22 +74,26 @@ von Rechtsverletzungen werden wir derartige Links umgehend entfernen.
 
 # Imprint (English)
 
-**Last updated:** April 2026
+**Last updated:** August 2026
 
-## Information pursuant to § 5 TMG
+## Information pursuant to § 5 DDG
 
-Lars Benedikt Kaesberg
-Hannoversche Straße 8
-37075 Göttingen
+WKSolutions GbR
+Siedlungsweg 24
+37124 Rosdorf
 Germany
+
+**Represented by its partners:**
+Jan Philip Wahle
+Lars Benedikt Kaesberg
 
 ## Contact
 
-Email: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
+Email: [contact@wksolutions.de](mailto:contact@wksolutions.de)
 
 ## VAT
 
-Small business owner pursuant to § 19 UStG (German VAT Act). Under this
+Small business pursuant to § 19 UStG (German VAT Act). Under this
 regulation, no VAT is charged and none is shown on invoices.
 
 ## Responsible for content under § 18 (2) MStV

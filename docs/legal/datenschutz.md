@@ -5,7 +5,7 @@ description: Wie EmailVerify personenbezogene Daten verarbeitet — gehashte E-M
 
 # Datenschutzerklärung
 
-**Stand:** April 2026
+**Stand:** August 2026
 
 Diese Datenschutzerklärung informiert über die Verarbeitung personenbezogener
 Daten bei der Nutzung des Discord-Bots **EmailVerify** sowie der zugehörigen
@@ -13,11 +13,17 @@ Premium-Funktionen.
 
 ## 1. Verantwortlicher
 
-Lars Benedikt Kaesberg
-Hannoversche Straße 8
-37075 Göttingen
+WKSolutions GbR
+vertreten durch die Gesellschafter Jan Philip Wahle und Lars Benedikt Kaesberg
+Siedlungsweg 24
+37124 Rosdorf
 Deutschland
-E-Mail: [contact@larskaesberg.de](mailto:contact@larskaesberg.de)
+E-Mail: [contact@wksolutions.de](mailto:contact@wksolutions.de)
+
+Soweit Server-Betreiber (z. B. Unternehmen oder Hochschulen) den Bot zur
+Verifizierung ihrer eigenen Mitglieder einsetzen, handelt WKSolutions insoweit
+als Auftragsverarbeiter; hierfür steht ein
+[Auftragsverarbeitungsvertrag (AVV)](avv.md) zur Verfügung.
 
 Ein Datenschutzbeauftragter ist gesetzlich nicht erforderlich (§ 38 BDSG, da
 weniger als 20 Personen mit der Datenverarbeitung beschäftigt sind).
@@ -73,7 +79,7 @@ notwendigen Verarbeitungen durch Dienstleister:
 | Dienstleister | Zweck | Sitz / Drittlandtransfer |
 |---|---|---|
 | **Discord, Inc.** | Bereitstellung der Bot-Plattform; Discord verarbeitet alle Befehle und Server-IDs | USA (Drittland; SCCs / Data Privacy Framework) |
-| **eigener SMTP-Server** (mail.larskaesberg.de) | Versand der Verifizierungs-E-Mails (kostenlose Stufe und Bonus-Guthaben) | Deutschland |
+| **Hetzner Online GmbH** | Hosting des Bots und des eigenen SMTP-Servers (mail.larskaesberg.de) für den Versand der Verifizierungs-E-Mails (kostenlose Stufe und Bonus-Guthaben) | Rechenzentrum Helsinki, Finnland (EU); AV-Vertrag geschlossen |
 | **Zoho Corporation Pvt. Ltd. (ZeptoMail, EU-Endpunkt)** | Versand der Verifizierungs-E-Mails für Abonnement-Kunden (sofern aktiviert); EU-Endpunkt `api.zeptomail.eu` | EU (Datenresidenz EU; Auftragsverarbeitung) |
 
 Discord ist kein klassischer Auftragsverarbeiter im Sinne der DSGVO, sondern
@@ -82,14 +88,15 @@ durch Discord folgt der [Discord-Datenschutzerklärung](https://discord.com/priv
 
 ### 4.1 Diese Website
 
-Diese Website (`emailbot.larskaesberg.de`) wird über **GitHub Pages**
+Diese Website (`getemailverified.com`) wird über **GitHub Pages**
 (GitHub, Inc., USA) ausgeliefert. Beim Abruf verarbeitet GitHub technisch
 notwendige Verbindungsdaten einschließlich Ihrer IP-Adresse; Einzelheiten in der
 [GitHub-Datenschutzerklärung](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
 Die Website setzt **keine Cookies** und bindet **kein Tracking** ein.
 
 Die auf der Startseite und den Statistikseiten angezeigten Zahlen werden von
-`emailbotstats.larskaesberg.de` (eigener Server, Deutschland) geladen. Es werden
+`emailbotstats.larskaesberg.de` (eigener Server, Hetzner-Rechenzentrum
+Helsinki, Finnland/EU) geladen. Es werden
 dabei nur aggregierte Zählwerte übertragen, keine personenbezogenen Daten.
 
 **Video-Einbindung (YouTube).** Auf der Startseite und der Quick-Start-Seite ist
@@ -131,7 +138,7 @@ Sie haben das Recht auf
   die Zukunft.
 
 Zur Wahrnehmung dieser Rechte genügt eine formlose E-Mail an
-<contact@larskaesberg.de>.
+<contact@wksolutions.de>.
 
 ## 7. Löschung
 
@@ -165,8 +172,13 @@ Maßgeblich ist jeweils die unter „Stand" genannte Fassung.
 EmailVerify processes personal data only as needed to deliver its verification
 service.
 
-**Controller:** Lars Benedikt Kaesberg, Hannoversche Straße 8, 37075 Göttingen,
-Germany — [contact@larskaesberg.de](mailto:contact@larskaesberg.de).
+**Controller:** WKSolutions GbR (partners: Jan Philip Wahle, Lars Benedikt
+Kaesberg), Siedlungsweg 24, 37124 Rosdorf, Germany —
+[contact@wksolutions.de](mailto:contact@wksolutions.de).
+
+Where server operators (e.g. companies or universities) use the bot to verify
+their own members, WKSolutions acts as a processor on their behalf; a
+[Data Processing Agreement (DPA)](avv.md) is available.
 
 **Data processed:** Discord user ID, server ID, hashed (MD5 of lowercase) email
 address, aggregate per-server statistics, server configuration set by admins.
@@ -179,8 +191,9 @@ verification email entered by the user — revocable any time via `/data delete`
 
 **Sub-processors:**
 - Discord, Inc. (US; SCC/DPF) — platform.
-- Self-hosted SMTP `mail.larskaesberg.de` (Germany) — email delivery for free
-  tier and bonus credits.
+- Hetzner Online GmbH (data center Helsinki, Finland/EU; DPA in place) —
+  hosting of the bot and the self-hosted SMTP server `mail.larskaesberg.de`
+  used for email delivery for free tier and bonus credits.
 - Zoho ZeptoMail EU endpoint `api.zeptomail.eu` (EU) — email delivery for
   subscription customers (if enabled).
 - GitHub, Inc. (US) — hosting of this website via GitHub Pages. No cookies, no
@@ -198,5 +211,5 @@ leaves the server.
 
 **Your rights:** access, rectification, erasure, restriction, portability,
 objection, withdrawal of consent (GDPR Arts. 15–21, 7(3)). Email
-[contact@larskaesberg.de](mailto:contact@larskaesberg.de) to exercise them.
+[contact@wksolutions.de](mailto:contact@wksolutions.de) to exercise them.
 You may also lodge a complaint with a German Data Protection Authority.

@@ -5,12 +5,13 @@ description: Allgemeine Geschäftsbedingungen für die Nutzung des EmailVerify D
 
 # Allgemeine Geschäftsbedingungen (AGB)
 
-**Stand:** April 2026
+**Stand:** August 2026
 
 Diese AGB regeln die Nutzung des Discord-Bots **EmailVerify** (im Folgenden
 "Bot") sowie der zugehörigen kostenpflichtigen Premium-Funktionen.
 
-Anbieter ist Lars Benedikt Kaesberg, Hannoversche Straße 8, 37075 Göttingen
+Anbieter ist die WKSolutions GbR, Siedlungsweg 24, 37124 Rosdorf, vertreten
+durch die Gesellschafter Jan Philip Wahle und Lars Benedikt Kaesberg
 (im Folgenden "Anbieter"; weitere Informationen siehe [Impressum](impressum.md)).
 
 ## § 1 Geltungsbereich, Vertragspartner

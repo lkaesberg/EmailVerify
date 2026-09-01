@@ -1,10 +1,10 @@
 site_name: EmailVerify for Discord
 site_description: A Discord bot that verifies users own a specific email address — domain-based access control with privacy-first storage.
-site_url: https://emailbot.larskaesberg.de/
+site_url: https://getemailverified.com/
 site_author: Lars Kaesberg
 repo_url: https://github.com/lkaesberg/EmailVerify
 copyright: >
-  © Lars Kaesberg — EmailVerify is free software under
+  © WKSolutions GbR — EmailVerify is free software under
   <a href="https://github.com/lkaesberg/EmailVerify/blob/main/LICENSE">AGPL-3.0-or-later</a>.
 theme:
   name: material
@@ -89,7 +89,7 @@ extra:
   # Social-preview banner, consumed by overrides/main.html for the Open Graph /
   # Twitter / Discord embed. This MUST be an absolute URL — link scrapers do not
   # resolve relative paths. A page can override it with `image:` in front matter.
-  image: https://emailbot.larskaesberg.de/assets/og-image.png
+  image: https://getemailverified.com/assets/og-image.png
   image_alt: >-
     EmailVerify — email verification for Discord servers. Verify members by
     domain in 30 seconds. 6-digit code, @*.edu wildcards, open source.
@@ -120,4 +120,5 @@ nav:
       - AGB: 'legal/agb.md'
       - Widerruf: 'legal/widerruf.md'
       - Terms: 'legal/terms.md'
+      - AV-Vertrag (DPA): 'legal/avv.md'
   - Buy Me a Coffee❤️: https://buymeacoffee.com/sral12486
