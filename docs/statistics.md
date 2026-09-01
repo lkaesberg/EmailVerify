@@ -97,7 +97,7 @@ description: Live usage statistics for the EmailVerify Discord bot — servers r
 <script>
 (function () {
 'use strict';
-const API_BASE = 'https://emailbotstats.larskaesberg.de';
+const API_BASE = 'https://stats.getemailverified.com';
 
 // Load Chart.js on demand. With MkDocs Material's `navigation.instant`, page
 // content (including this script) is re-executed after the body is swapped in,

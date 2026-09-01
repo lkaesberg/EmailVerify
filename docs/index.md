@@ -247,7 +247,7 @@ This is a single-developer project that has been running on personal infrastruct
 //  2. Element references captured on the first visit point at detached nodes
 //     after the swap, so look them up on every write, and clear the previous
 //     page's timer instead of stacking a second one.
-const API_BASE = 'https://emailbotstats.larskaesberg.de';
+const API_BASE = 'https://stats.getemailverified.com';
 
 function setValue(id, value) {
   const el = document.getElementById(id);

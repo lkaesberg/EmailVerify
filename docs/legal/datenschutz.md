@@ -95,7 +95,7 @@ notwendige Verbindungsdaten einschließlich Ihrer IP-Adresse; Einzelheiten in de
 Die Website setzt **keine Cookies** und bindet **kein Tracking** ein.
 
 Die auf der Startseite und den Statistikseiten angezeigten Zahlen werden von
-`emailbotstats.larskaesberg.de` (eigener Server, Hetzner-Rechenzentrum
+`stats.getemailverified.com` (eigener Server, Hetzner-Rechenzentrum
 Helsinki, Finnland/EU) geladen. Es werden
 dabei nur aggregierte Zählwerte übertragen, keine personenbezogenen Daten.
 

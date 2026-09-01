@@ -12,7 +12,7 @@ description: Live status of the EmailVerify Discord bot services — the verific
       EmailBot API
     </h3>
     <div id="api-status" class="status-text">Checking...</div>
-    <div class="status-url">https://emailbotstats.larskaesberg.de</div>
+    <div class="status-url">https://stats.getemailverified.com</div>
   </div>
 
   <div class="status-card">
@@ -40,7 +40,7 @@ description: Live status of the EmailVerify Discord bot services — the verific
 
 | Service | Description | Endpoint |
 |---------|-------------|----------|
-| EmailBot API | Provides statistics and bot functionality | `emailbotstats.larskaesberg.de` |
+| EmailBot API | Provides statistics and bot functionality | `stats.getemailverified.com` |
 | Mail Server | SMTP server for sending verification emails | `mail.larskaesberg.de` |
 | Email Delivery | Monitors email send/verification ratio | - |
 
@@ -67,7 +67,7 @@ function updateLastChecked() {
 
 async function checkApiStatus() {
   try {
-    const response = await fetch('https://emailbotstats.larskaesberg.de/stats/current', {
+    const response = await fetch('https://stats.getemailverified.com/stats/current', {
       method: 'GET',
       mode: 'cors'
     });
