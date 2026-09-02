@@ -3,7 +3,10 @@ title: How to Set Up Email Verification on a Discord Server
 description: Step-by-step guide to adding email verification to a Discord server — invite the bot, pick your allowed domains, post the verification button. Takes about three minutes, with a 60-second video walkthrough.
 video_id: LMWu3Ui2IAk
 video_title: EmailVerify — Email Verification for Discord Servers (Setup in 60 Seconds)
-video_date: 2026-08-27
+# Full ISO 8601 date-time with offset — Search Console flags a bare date as
+# "missing timezone". Quoted so PyYAML does not turn it into a datetime object,
+# which would render with a space instead of the "T".
+video_date: "2026-08-27T12:00:00+02:00"
 faq:
   - q: How long does it take to set up email verification on Discord?
     a: About three minutes. Invite the bot, run the /setup wizard to choose a role and the allowed email domains, then run /button to post the verification message. The wizard handles all three steps in sequence.
