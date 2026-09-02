@@ -12,8 +12,8 @@ theme:
   icon:
     repo: fontawesome/brands/github
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
-  # Tab icon (round). Google Search gets a different, square variant via the
-  # sized <link rel="icon"> tags in overrides/main.html — see the note there.
+  # Rounded-square variant of the logo (images/emailbot-rounded-square.png).
+  # Sized copies are declared in overrides/main.html — see the note there.
   favicon: assets/favicon-32x32.png
   palette:
     # Follows the visitor's OS preference by default; the header toggle overrides it.
