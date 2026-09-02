@@ -16,7 +16,7 @@ faq:
 
 <div class="hero-head" markdown>
 
-# EmailVerify for Discord
+# EmailVerify
 
 <span class="laurel-badge" aria-label="The #1 email verification bot for Discord since 2021"><svg class="laurel-side" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true"><use xlink:href="#laurel-branch"></use></svg><span class="laurel-inner"><span class="laurel-title">#1 Email<br>Verification<br>on Discord</span><span class="laurel-sub">SINCE 2021</span></span><svg class="laurel-side laurel-side--right" viewBox="0 0 420 802" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true"><use xlink:href="#laurel-branch"></use></svg></span>
 

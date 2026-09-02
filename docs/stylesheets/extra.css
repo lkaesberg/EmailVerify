@@ -902,11 +902,12 @@
     gap: .8rem;
   }
 
-  /* Headline first, badge underneath it and centred. */
+  /* Headline first and centred, badge underneath it and centred too. */
   .md-typeset .hero-head h1 {
     font-size: 1.6rem;
     flex-basis: 100%;
     order: -1;
+    text-align: center;
   }
 
   .md-typeset .hero-head .laurel-badge {
