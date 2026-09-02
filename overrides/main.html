@@ -22,6 +22,16 @@
 {% endblock %}
 
 {% block extrahead %}
+  {#- Two favicon designs, picked by size. Browsers take the 16/32px round icon
+      for the tab. Google Search only uses icons of 48px or larger, fills any
+      transparency with white and crops the result to a circle — so the round
+      icon (transparent corners) came out as a blue dot inside a white ring.
+      The 48/192px files are the square variant with blue edge to edge, which
+      crops to a clean full disc. #}
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ 'assets/favicon-16x16.png' | url }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ 'assets/favicon-32x32.png' | url }}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ 'assets/favicon-48x48.png' | url }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ 'assets/favicon-192x192.png' | url }}">
   {%- set page_title = config.site_name -%}
   {%- if page and page.meta and page.meta.title -%}
     {%- set page_title = page.meta.title -%}
