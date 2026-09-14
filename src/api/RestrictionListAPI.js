@@ -218,7 +218,7 @@ function createRestrictionListRouter(bot) {
         const check = await premiumManager.canUseApiFeature(guildId, entitlements)
         if (!check.allowed) {
             return fail(res, 403, 'tier2_required',
-                'The restriction-list API requires an active top-tier subscription for this server.')
+                'The restriction-list API requires an active Pro subscription for this server.')
         }
 
         req.guildId = guildId

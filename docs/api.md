@@ -4,8 +4,8 @@ Keep your server's allowed-email list in sync from your own systems — a studen
 information system, an HR export, a CRM, a nightly cron job — instead of uploading
 a CSV by hand every time someone joins or leaves.
 
-!!! info "Included with the top subscription tier"
-    The API is available to servers on the **top subscription tier**. The one-time
+!!! info "Included with the Pro subscription"
+    The API is available to servers on the **Pro** subscription. The one-time
     CSV unlock does *not* include it: the API is a live service we host and
     rate-limit, so access follows the subscription and stops when it lapses.
 
@@ -192,7 +192,7 @@ Every error has the same shape:
 | `400` | `confirmation_required` | Bulk delete without `?confirm=true` |
 | `401` | `missing_token` | No `Authorization: Bearer` header |
 | `401` | `invalid_token` | Token unknown or revoked — generate a new one |
-| `403` | `tier2_required` | The subscription isn't active on this server |
+| `403` | `tier2_required` | The Pro subscription isn't active on this server |
 | `404` | `not_in_list` | That address wasn't on the list |
 | `404` | `guild_not_configured` | The server has never run `/setup` |
 | `413` | `payload_too_large` | Body over 1 MB — split the batch |
