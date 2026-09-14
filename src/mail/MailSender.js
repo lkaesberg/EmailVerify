@@ -17,7 +17,7 @@ const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
 const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
-const { createMailLimitReachedEmbed } = require('../utils/embeds')
+const { createMailLimitReachedEmbed, createInvalidEmailEmbed } = require('../utils/embeds')
 const analytics = require('../utils/Analytics')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
@@ -115,6 +115,7 @@ module.exports = class MailSender {
             let info = null
             let usedProvider = null
             let lastError = null
+            let invalidRecipient = false
 
             if (useZepto) {
                 try {
@@ -122,24 +123,33 @@ module.exports = class MailSender {
                     usedProvider = 'zeptomail'
                 } catch (err) {
                     lastError = err
-                    console.warn(`[MailSender] ZeptoMail send failed for guild=${ctxGuild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
-                    const now = Date.now()
-                    if (now - this.zeptoFallbackLastWebhookAt >= ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS) {
-                        this.zeptoFallbackLastWebhookAt = now
-                        OperatorWebhook.notify({
-                            title: '✉️ ZeptoMail fallback',
-                            description: 'A premium mail send failed; falling back to self-SMTP. Verification still completes for the user. This alert is throttled to once per 24h — further fallbacks during this window are logged to stdout only.',
-                            fields: [
-                                { name: 'Guild', value: ctxGuild?.id ? `\`${ctxGuild.id}\` (${ctxGuild.name})` : 'n/a', inline: false },
-                                { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
-                            ],
-                            level: 'warn'
-                        })
+                    if (err.invalidRecipient) {
+                        // The member typed an address the provider won't accept. Self-SMTP
+                        // would reject the same address, so there is nothing to fall back
+                        // to — and this must not consume the global 24h outage-alert budget,
+                        // or one typo would mask a real ZeptoMail outage for the rest of the day.
+                        invalidRecipient = true
+                        console.warn(`[MailSender] ZeptoMail rejected the recipient for guild=${ctxGuild?.id ?? 'unknown'}:`, err.message)
+                    } else {
+                        console.warn(`[MailSender] ZeptoMail send failed for guild=${ctxGuild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
+                        const now = Date.now()
+                        if (now - this.zeptoFallbackLastWebhookAt >= ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS) {
+                            this.zeptoFallbackLastWebhookAt = now
+                            OperatorWebhook.notify({
+                                title: '✉️ ZeptoMail fallback',
+                                description: 'A premium mail send failed and was retried on self-SMTP. The retry usually succeeds, but it is not guaranteed — check stdout if users report failures. Recipient addresses rejected by ZeptoMail are not reported here. This alert is throttled to once per 24h; further fallbacks during this window are logged to stdout only.',
+                                fields: [
+                                    { name: 'Guild', value: ctxGuild?.id ? `\`${ctxGuild.id}\` (${ctxGuild.name})` : 'n/a', inline: false },
+                                    { name: 'Error', value: `\`${(err?.message || 'unknown').slice(0, 1000)}\``, inline: false }
+                                ],
+                                level: 'warn'
+                            })
+                        }
                     }
                 }
             }
 
-            if (!info) {
+            if (!info && !invalidRecipient) {
                 try {
                     info = await this.selfProvider.sendMail(sendOpts)
                     usedProvider = 'self-smtp'
@@ -157,7 +167,14 @@ module.exports = class MailSender {
                     userId: interaction.user?.id || null,
                     guildId: serverId,
                     guild: ctxGuild,
-                    properties: { provider_attempted: usedProvider || 'unknown', source: premiumSource }
+                    properties: {
+                        // usedProvider is only set once a provider accepted the message;
+                        // on a rejected recipient we never got that far but do know who
+                        // rejected it.
+                        provider_attempted: usedProvider || (invalidRecipient ? 'zeptomail' : 'unknown'),
+                        source: premiumSource,
+                        reason: invalidRecipient ? 'invalid_recipient' : 'send_failed'
+                    }
                 })
                 if (emailNotify) {
                     console.log('EMAIL ERROR for:', toEmail)
@@ -174,10 +191,14 @@ module.exports = class MailSender {
                 if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                     database.refundGuildCredit(serverId).catch(() => {})
                 }
-                const errorEmbed = new EmbedBuilder()
-                    .setTitle(getLocale(language, "mailFailedTitle"))
-                    .setDescription(getLocale(language, "mailFailedDescription", toEmail))
-                    .setColor(0xED4245)
+                // A rejected recipient is the member's typo, not an outage — point them at
+                // the address instead of showing the generic "mail system failed" embed.
+                const errorEmbed = invalidRecipient
+                    ? createInvalidEmailEmbed(language)
+                    : new EmbedBuilder()
+                        .setTitle(getLocale(language, "mailFailedTitle"))
+                        .setDescription(getLocale(language, "mailFailedDescription", toEmail))
+                        .setColor(0xED4245)
                 // A deferred-but-unreplied interaction is resolved via editReply so the
                 // "Bot is thinking…" state never hangs on delivery failure.
                 if (interaction.deferred && !interaction.replied) {
@@ -275,16 +296,25 @@ module.exports = class MailSender {
         let usedProvider = null
         let lastError = null
 
+        let invalidRecipient = false
+
         if (useZepto) {
             try {
                 info = await this.zeptoProvider.sendMail(sendOpts)
                 usedProvider = 'zeptomail'
             } catch (err) {
                 lastError = err
-                console.warn(`[MailSender] ZeptoMail test send failed for guild=${guildId} — falling back to self-SMTP:`, err.message)
+                if (err.invalidRecipient) {
+                    // Same reasoning as sendEmail: self-SMTP cannot rescue an address the
+                    // provider rejected, so report it to the admin as what it is.
+                    invalidRecipient = true
+                    console.warn(`[MailSender] ZeptoMail rejected the test recipient for guild=${guildId}:`, err.message)
+                } else {
+                    console.warn(`[MailSender] ZeptoMail test send failed for guild=${guildId} — falling back to self-SMTP:`, err.message)
+                }
             }
         }
-        if (!info) {
+        if (!info && !invalidRecipient) {
             try {
                 info = await this.selfProvider.sendMail(sendOpts)
                 usedProvider = 'self-smtp'
@@ -298,6 +328,9 @@ module.exports = class MailSender {
         if (failed) {
             if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                 database.refundGuildCredit(guildId).catch(() => {})
+            }
+            if (invalidRecipient) {
+                return { ok: false, error: 'The mail provider rejected that address as invalid — double-check the spelling and the domain.' }
             }
             const rejectedNote = info?.rejected?.length ? `Rejected: ${info.rejected.join(', ')}` : null
             return { ok: false, error: lastError?.message || rejectedNote || 'unknown error' }
