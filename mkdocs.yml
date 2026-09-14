@@ -1,4 +1,4 @@
-site_name: EmailVerify for Discord
+site_name: EmailVerify Bot
 site_description: A Discord bot that verifies users own a specific email address — domain-based access control with privacy-first storage.
 site_url: https://getemailverified.com/
 site_author: Lars Kaesberg
@@ -12,8 +12,8 @@ theme:
   icon:
     repo: fontawesome/brands/github
   logo: https://raw.githubusercontent.com/lkaesberg/EmailBot/main/images/emailbot.png
-  # Rounded-square variant of the logo (images/emailbot-rounded-square.png).
-  # Sized copies are declared in overrides/main.html — see the note there.
+  # Default tag only; the real set of icons (opaque PNGs + rounded SVG) is in
+  # overrides/main.html — see the note there.
   favicon: assets/favicon-32x32.png
   palette:
     # Follows the visitor's OS preference by default; the header toggle overrides it.
@@ -78,11 +78,20 @@ markdown_extensions:
 plugins:
   - search
 extra:
-  # Short brand Google should show as the "site name" in search results (the
-  # line above the page title). Google reads it from the WebSite JSON-LD and
-  # og:site_name in overrides/main.html; site_name above stays the longer
-  # header/title form.
-  brand: EmailVerify
+  # Site name Google should show above search results, fed into og:site_name
+  # and the WebSite JSON-LD in overrides/main.html. It MUST be unique on the
+  # web: plain "EmailVerify" is already the site name of emailverify.com/.io/.co
+  # (global email-validation services) and Google refuses to give one name to
+  # two global sites — it showed the bare domain for three weeks instead.
+  # Platform-neutral on purpose (Telegram is planned), so not "… for Discord".
+  # Keep this identical to site_name and the homepage H1; Google cross-checks.
+  brand: EmailVerify Bot
+  # Fallbacks Google may pick if it rejects `brand`. Docs recommend listing the
+  # lowercase domain as the last resort.
+  brand_alternates:
+    - EmailVerify
+    - GetEmailVerified
+    - getemailverified.com
   social:
     - icon: fontawesome/brands/discord
       link: https://discord.com/invite/fEBSHUQXu2

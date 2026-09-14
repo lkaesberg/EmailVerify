@@ -22,16 +22,18 @@
 {% endblock %}
 
 {% block extrahead %}
-  {#- Rounded-square favicon (22% corner radius) at several sizes. Google
-      Search fills any transparency with white and crops the icon to its
-      inscribed circle, so the old fully round icon showed as a blue dot inside
-      a white ring. With a corner radius under ~29% the transparent corners lie
-      entirely outside that circle: Google gets a solid blue disc, browser tabs
-      get rounded corners. Same file works for both — no size-based tricks. #}
+  {#- Favicons. Google Search fills transparent pixels with white and shrinks
+      any icon that has transparency onto a white disc — that is the white ring
+      seen around the earlier round and rounded-square icons. The PNGs are
+      therefore the square logo with NO alpha channel (blue edge to edge), which
+      Google crops to a clean circle. Google does not read SVG favicons, so the
+      SVG (same square, rounded via clipPath) is what browser tabs show. It is
+      listed last because Firefox prefers the last icon in <head>. #}
   <link rel="icon" type="image/png" sizes="16x16" href="{{ 'assets/favicon-16x16.png' | url }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ 'assets/favicon-32x32.png' | url }}">
   <link rel="icon" type="image/png" sizes="48x48" href="{{ 'assets/favicon-48x48.png' | url }}">
   <link rel="icon" type="image/png" sizes="192x192" href="{{ 'assets/favicon-192x192.png' | url }}">
+  <link rel="icon" type="image/svg+xml" sizes="any" href="{{ 'assets/favicon.svg' | url }}">
   {%- set page_title = config.site_name -%}
   {%- if page and page.meta and page.meta.title -%}
     {%- set page_title = page.meta.title -%}
@@ -86,7 +88,7 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "{{ config.extra.brand }}",
-    "alternateName": ["{{ config.site_name }}", "Email Verify"],
+    "alternateName": {{ config.extra.brand_alternates | tojson }},
     "url": "{{ config.site_url }}"
   }
   </script>
@@ -95,7 +97,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "EmailVerify",
-    "alternateName": "EmailVerify for Discord",
+    "alternateName": "{{ config.extra.brand }}",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Discord",
     "url": "{{ config.site_url }}",
