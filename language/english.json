@@ -273,5 +273,9 @@
   "apiTokenFieldCreated": "Created",
   "apiTokenFieldLastUsed": "Last used",
   "apiTokenFieldListSize": "Addresses on list",
-  "apiTokenNeverUsed": "Never"
+  "apiTokenNeverUsed": "Never",
+  "emaillistAddInvalid": "⚠️ **That doesn't look like a valid email address.**",
+  "emaillistAddNoSettings": "⚠️ **This server isn't set up yet.** Run `/setup` first.",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` is already on the allowed email list.**",
+  "emaillistAdded": "✅ **Address added!**\n\n`%VAR%` can now verify. %VAR% address(es) on the list."
 }

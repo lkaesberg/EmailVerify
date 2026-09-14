@@ -273,5 +273,9 @@
   "apiTokenFieldLastUsed": "ใช้ล่าสุด",
   "apiTokenFieldListSize": "ที่อยู่ในรายการ",
   "apiTokenNeverUsed": "ไม่เคย",
-  "apiTokenDocsValue": "https://getemailverified.com/api/"
+  "apiTokenDocsValue": "https://getemailverified.com/api/",
+  "emaillistAddInvalid": "⚠️ **นี่ดูเหมือนจะไม่ใช่ที่อยู่อีเมลที่ถูกต้อง**",
+  "emaillistAddNoSettings": "⚠️ **เซิร์ฟเวอร์นี้ยังไม่ได้ตั้งค่า** กรุณารัน `/setup` ก่อน",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` อยู่ในรายการอีเมลที่อนุญาตอยู่แล้ว**",
+  "emaillistAdded": "✅ **เพิ่มที่อยู่แล้ว!**\n\n`%VAR%` สามารถยืนยันตัวตนได้แล้ว มี %VAR% ที่อยู่ในรายการ"
 }

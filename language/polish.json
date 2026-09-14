@@ -273,5 +273,9 @@
   "apiTokenFieldLastUsed": "Ostatnie użycie",
   "apiTokenFieldListSize": "Adresy na liście",
   "apiTokenNeverUsed": "Nigdy",
-  "apiTokenDocsValue": "https://getemailverified.com/api/"
+  "apiTokenDocsValue": "https://getemailverified.com/api/",
+  "emaillistAddInvalid": "⚠️ **To nie wygląda na prawidłowy adres e-mail.**",
+  "emaillistAddNoSettings": "⚠️ **Ten serwer nie jest jeszcze skonfigurowany.** Najpierw uruchom `/setup`.",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` już znajduje się na liście dozwolonych adresów.**",
+  "emaillistAdded": "✅ **Adres dodany!**\n\n`%VAR%` może się teraz zweryfikować. Adresów na liście: %VAR%."
 }

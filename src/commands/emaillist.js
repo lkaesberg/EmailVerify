@@ -60,6 +60,17 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('add')
+                .setDescription('Add a single email address to the allowed list')
+                .addStringOption(option =>
+                    option
+                        .setName('email')
+                        .setDescription('The email address to allow')
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('remove')
                 .setDescription('Remove a single email address from the allowed list')
                 .addStringOption(option =>
@@ -95,6 +106,58 @@ module.exports = {
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 await interaction.reply({
                     content: getLocale(language, "emaillistCleared", count.toString()),
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            if (subcommand === 'add') {
+                // Gated like `upload`, not like `remove`/`clear`: growing the allowlist is
+                // the paid capability, whereas shrinking it is the escape hatch a server
+                // needs even after its access lapses.
+                const csvCheck = await premiumManager.canUseCSVFeature(interaction.guildId, interaction.entitlements)
+                if (!csvCheck.allowed) {
+                    const premiumStatus = await premiumManager.getPremiumStatus(interaction.guildId, interaction.entitlements)
+                    const components = buildPlanButtons(premiumStatus, { context: 'csvRequired' })
+                    try {
+                        await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, appStoreUrl())], components, flags: MessageFlags.Ephemeral })
+                    } catch (err) {
+                        if (err.code === 50035) {
+                            await interaction.reply({ embeds: [createCSVPremiumRequiredEmbed(language, null)], components: [], flags: MessageFlags.Ephemeral })
+                        } else {
+                            throw err
+                        }
+                    }
+                    return
+                }
+
+                const raw = interaction.options.getString('email', true).trim().toLowerCase();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+                    await interaction.reply({
+                        content: getLocale(language, "emaillistAddInvalid"),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const result = await database.addAllowedEmailHashes(interaction.guildId, [md5hash(raw)]);
+                if (result.missing) {
+                    await interaction.reply({
+                        content: getLocale(language, "emaillistAddNoSettings"),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+                if (result.added === 0) {
+                    await interaction.reply({
+                        content: getLocale(language, "emaillistAddDuplicate", raw),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                await interaction.reply({
+                    content: getLocale(language, "emaillistAdded", raw, result.total.toString()),
                     flags: MessageFlags.Ephemeral
                 });
                 return;

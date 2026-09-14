@@ -273,5 +273,9 @@
   "apiTokenFieldLastUsed": "שימוש אחרון",
   "apiTokenFieldListSize": "כתובות ברשימה",
   "apiTokenNeverUsed": "מעולם לא",
-  "apiTokenDocsValue": "https://getemailverified.com/api/"
+  "apiTokenDocsValue": "https://getemailverified.com/api/",
+  "emaillistAddInvalid": "⚠️ **זו לא נראית ככתובת מייל תקינה.**",
+  "emaillistAddNoSettings": "⚠️ **השרת הזה עדיין לא הוגדר.** הרץ קודם `/setup`.",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` כבר נמצאת ברשימת המיילים המורשים.**",
+  "emaillistAdded": "✅ **הכתובת נוספה!**\n\n`%VAR%` יכולה כעת לעבור אימות. %VAR% כתובות ברשימה."
 }

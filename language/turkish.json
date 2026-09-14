@@ -273,5 +273,9 @@
   "apiTokenFieldLastUsed": "Son kullanım",
   "apiTokenFieldListSize": "Listedeki adresler",
   "apiTokenNeverUsed": "Hiç",
-  "apiTokenDocsValue": "https://getemailverified.com/api/"
+  "apiTokenDocsValue": "https://getemailverified.com/api/",
+  "emaillistAddInvalid": "⚠️ **Bu geçerli bir e-posta adresine benzemiyor.**",
+  "emaillistAddNoSettings": "⚠️ **Bu sunucu henüz kurulmadı.** Önce `/setup` komutunu çalıştırın.",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` zaten izin verilen e-posta listesinde.**",
+  "emaillistAdded": "✅ **Adres eklendi!**\n\n`%VAR%` artık doğrulanabilir. Listedeki adres sayısı: %VAR%."
 }

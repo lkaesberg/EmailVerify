@@ -135,6 +135,7 @@ While a list exists, **only** addresses on it can verify.
 
 | Command | Description |
 |---------|-------------|
+| `/emaillist add <email>` | Add a single address to the list. **Pro or CSV unlock required** |
 | `/emaillist upload <file>` | Upload a CSV/TXT of addresses (one per row). Appends to the list; duplicates are skipped. **Pro or CSV unlock required** |
 | `/emaillist remove <email>` | Remove a single address from the list |
 | `/emaillist clear` | Remove every address, returning the server to domain-only checking |
@@ -143,9 +144,12 @@ Addresses are stored hashed, so the individual entries can never be listed back 
 only the count, shown in `/status`. `remove` still works on a hashed list: the
 address you type is hashed and the matching entry deleted.
 
-`remove` and `clear` are deliberately **not** gated behind Pro, so a server whose
-CSV access has lapsed can still shrink or empty a list that would otherwise block
-all verification.
+`add` and `upload` are the paid capability. `remove` and `clear` are deliberately
+**not** gated behind Pro, so a server whose CSV access has lapsed can still shrink
+or empty a list that would otherwise block all verification.
+
+For adding addresses in bulk from your own systems rather than by hand, see the
+[allowed-email API](api.md).
 
 ### 🔌 Allowed-email API (Pro)
 

@@ -273,5 +273,9 @@
   "apiTokenFieldLastUsed": "마지막 사용",
   "apiTokenFieldListSize": "목록의 주소 수",
   "apiTokenNeverUsed": "없음",
-  "apiTokenDocsValue": "https://getemailverified.com/api/"
+  "apiTokenDocsValue": "https://getemailverified.com/api/",
+  "emaillistAddInvalid": "⚠️ **올바른 이메일 주소가 아닌 것 같습니다.**",
+  "emaillistAddNoSettings": "⚠️ **이 서버는 아직 설정되지 않았습니다.** 먼저 `/setup` 을 실행하세요.",
+  "emaillistAddDuplicate": "ℹ️ **`%VAR%` 은(는) 이미 허용된 이메일 목록에 있습니다.**",
+  "emaillistAdded": "✅ **주소가 추가되었습니다!**\n\n이제 `%VAR%` 로 인증할 수 있습니다. 목록의 주소: %VAR%개."
 }
