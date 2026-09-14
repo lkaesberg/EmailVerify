@@ -1,0 +1,27 @@
+# Without this file `COPY . /usr/app/` bakes whatever happens to be in the
+# working tree into the image. CI builds from a clean checkout so it never
+# noticed, but a local `docker build` would copy in host node_modules (whose
+# native sqlite3 binding is built for the wrong platform -- "invalid ELF
+# header" at runtime) and, worse, the operator's real config.json and bot.db
+# into an image published to a public registry.
+.git
+.github
+node_modules
+npm-debug.log
+
+# Secrets and live state -- never belongs in an image.
+config/config.json
+config/bot.db
+config/bot.db-shm
+config/bot.db-wal
+config/ServerStats.json
+config/ServerStatsHistory.log
+src/bot.db
+discord-verify.txt
+
+# Docs site + tooling artefacts.
+site
+docs
+mkdocs.yml
+.playwright-mcp
+.idea

@@ -8,3 +8,4 @@ config/ServerStats.json
 discord-verify.txt
 config/ServerStatsHistory.log
 site
+.playwright-mcp
