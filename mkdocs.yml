@@ -112,6 +112,7 @@ nav:
       - 'Quick start': 'setup.md'
       - 'All commands': 'commands.md'
       - 'Compare alternatives': 'compare.md'
+      - 'Allowed-email API': 'api.md'
   - Use cases:
       - 'Universities & schools': 'use-cases/university.md'
       - 'Companies & teams': 'use-cases/company.md'

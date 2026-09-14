@@ -60,6 +60,17 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('remove')
+                .setDescription('Remove a single email address from the allowed list')
+                .addStringOption(option =>
+                    option
+                        .setName('email')
+                        .setDescription('The email address to remove')
+                        .setRequired(true)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('clear')
                 .setDescription('Remove all allowed email addresses from the list')
         )
@@ -84,6 +95,39 @@ module.exports = {
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 await interaction.reply({
                     content: getLocale(language, "emaillistCleared", count.toString()),
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            if (subcommand === 'remove') {
+                // Entries are stored as MD5 hashes of the lowercased address, so we
+                // hash the requested address and delete the matching hash -- the stored
+                // list never has to be readable to remove one entry from it.
+                //
+                // Deliberately not behind the CSV premium gate, for the same reason
+                // `clear` isn't: a server that has lost CSV access still needs a way to
+                // shrink or empty a list that is currently blocking all verification.
+                const raw = interaction.options.getString('email', true).trim().toLowerCase();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+                    await interaction.reply({
+                        content: getLocale(language, "emaillistRemoveInvalid"),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const result = await database.removeAllowedEmailHash(interaction.guildId, md5hash(raw));
+                if (result.missing || result.removed === 0) {
+                    await interaction.reply({
+                        content: getLocale(language, "emaillistRemoveNotFound", raw),
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                await interaction.reply({
+                    content: getLocale(language, "emaillistRemoved", raw, result.total.toString()),
                     flags: MessageFlags.Ephemeral
                 });
                 return;

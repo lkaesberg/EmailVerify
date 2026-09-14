@@ -128,6 +128,37 @@ Configure bot behavior and preferences.
 | `/set_error_notify user <user>` | Send error notifications to a specific user via DM |
 | `/set_error_notify status` | View current error notification settings |
 
+### 📋 Allowed Email List
+
+Restrict verification to a specific set of addresses rather than a whole domain.
+While a list exists, **only** addresses on it can verify.
+
+| Command | Description |
+|---------|-------------|
+| `/emaillist upload <file>` | Upload a CSV/TXT of addresses (one per row). Appends to the list; duplicates are skipped. **Pro or CSV unlock required** |
+| `/emaillist remove <email>` | Remove a single address from the list |
+| `/emaillist clear` | Remove every address, returning the server to domain-only checking |
+
+Addresses are stored hashed, so the individual entries can never be listed back —
+only the count, shown in `/status`. `remove` still works on a hashed list: the
+address you type is hashed and the matching entry deleted.
+
+`remove` and `clear` are deliberately **not** gated behind Pro, so a server whose
+CSV access has lapsed can still shrink or empty a list that would otherwise block
+all verification.
+
+### 🔌 Allowed-email API (Pro)
+
+Issue and manage the access token for the [allowed-email API](api.md), which lets
+your own systems keep the allowlist in sync. Requires the **Pro** subscription —
+the one-time CSV unlock does not include it.
+
+| Command | Description |
+|---------|-------------|
+| `/api token generate` | Issue a new API token, shown once, invalidating any previous one |
+| `/api token status` | Show when the token was created and last used, plus the current list size |
+| `/api token revoke` | Permanently disable the token |
+
 ### 💎 Premium
 
 Manage paid plans, credit packs, and the CSV unlock.

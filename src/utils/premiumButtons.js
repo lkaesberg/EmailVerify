@@ -92,10 +92,13 @@ function buildPlanButtons(status, opts = {}) {
     const tier = status.subscriptionTier
     const hasCsv = !!status.csvUnlocked || tier === 'tier2'
 
+    // Contexts where only Tier 2 unblocks what the user just tried to do, so
+    // offering Tier 1 (or the CSV unlock, below) would sell them something that
+    // does not help.
+    const tier2OnlyContext = context === 'csvRequired' || context === 'apiRequired'
+
     const subscriptions = []
-    // In csvRequired context, only Tier 2 actually grants CSV access — don't push
-    // Tier 1, which would mislead the user into buying a plan that doesn't help.
-    if (context !== 'csvRequired' && !tier && skus.subscriptionTier1) {
+    if (!tier2OnlyContext && !tier && skus.subscriptionTier1) {
         subscriptions.push(skus.subscriptionTier1)
     }
     if (tier !== 'tier2' && skus.subscriptionTier2) {
@@ -103,7 +106,9 @@ function buildPlanButtons(status, opts = {}) {
     }
 
     const oneTime = []
-    if (!hasCsv && skus.csvUnlock) oneTime.push(skus.csvUnlock)
+    // The CSV unlock deliberately does not grant API access, so it is not an answer
+    // to an apiRequired prompt either.
+    if (!hasCsv && context !== 'apiRequired' && skus.csvUnlock) oneTime.push(skus.csvUnlock)
 
     // Panic contexts (limit hit / quota warning) keep the choice small: the impulse
     // exits are the small packs; the 2,000 pack lives in the calmer /premium & /status
@@ -116,8 +121,8 @@ function buildPlanButtons(status, opts = {}) {
 
     // CSV-required prompts shouldn't show credit packs (they're for email quota, not CSV).
     // Mail-limit and quotaWarn prompts shouldn't show CSV unlock (it doesn't unblock email sends).
-    const includeCredits = context !== 'csvRequired'
-    const includeCsv = context !== 'mailLimit' && context !== 'quotaWarn'
+    const includeCredits = context !== 'csvRequired' && context !== 'apiRequired'
+    const includeCsv = context !== 'mailLimit' && context !== 'quotaWarn' && context !== 'apiRequired'
 
     const rows = []
     const topRow = []

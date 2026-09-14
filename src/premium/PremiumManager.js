@@ -248,6 +248,22 @@ class PremiumManager {
     }
 
     /**
+     * Determines whether the guild can use the restriction-list API.
+     *
+     * Deliberately stricter than canUseCSVFeature: this is a Tier 2 subscription
+     * benefit only. The one-time CSV unlock does NOT grant it, because the API is an
+     * ongoing service (a live endpoint we host and rate-limit) rather than a one-off
+     * capability, so it has to lapse when the subscription does.
+     *
+     * Returns { allowed: boolean, reason?: string }
+     */
+    async canUseApiFeature(guildID, entitlements) {
+        if (!this.enabled) return { allowed: true }
+        if (this.getSubscriptionTier(entitlements) === 'tier2') return { allowed: true }
+        return { allowed: false, reason: 'tier2_required' }
+    }
+
+    /**
      * Redeems the invoking user's unconsumed entitlements for the given guild.
      * Consumes credit packs and processes CSV durable unlocks.
      * Returns { creditsAdded: number, csvUnlocked: boolean, details: string[] }

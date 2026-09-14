@@ -205,6 +205,21 @@ class Database {
             this.db.run("ALTER TABLE guild_stats ADD warnedDenied5 INTEGER DEFAULT 0")
             this.db.run("ALTER TABLE guild_stats ADD warnedDenied20 INTEGER DEFAULT 0")
         })
+        this.runMigration(21, () => {
+            // Access tokens for the Tier 2 restriction-list API. Only the SHA-256 of the
+            // token is stored, so a database leak cannot yield a usable token and the
+            // plaintext exists only in the one ephemeral reply that issued it. One token
+            // per guild: regenerating replaces the row, which revokes the old token.
+            this.db.run(`CREATE TABLE IF NOT EXISTS guild_api_tokens(
+                guildID TEXT PRIMARY KEY,
+                tokenHash TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                createdBy TEXT,
+                lastUsedAt INTEGER
+            );`)
+            // Authentication looks the token up by hash on every request.
+            this.db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_guild_api_tokens_hash ON guild_api_tokens(tokenHash)")
+        })
     }
 
     /**
@@ -907,6 +922,181 @@ class Database {
                     resolve()
                 }
             )
+        })
+    }
+
+    // ---------------------------------------------------------------------------
+    // Tier 2 restriction-list API
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Store (or replace) a guild's API token hash. Replacing revokes the previous
+     * token, since a guild only ever has one.
+     */
+    setGuildApiToken(guildID, tokenHash, createdBy) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `INSERT INTO guild_api_tokens (guildID, tokenHash, createdAt, createdBy, lastUsedAt)
+                 VALUES (?, ?, ?, ?, NULL)
+                 ON CONFLICT(guildID) DO UPDATE SET tokenHash = excluded.tokenHash,
+                                                    createdAt = excluded.createdAt,
+                                                    createdBy = excluded.createdBy,
+                                                    lastUsedAt = NULL`,
+                [guildID, tokenHash, Date.now(), createdBy || null],
+                (err) => err ? reject(err) : resolve()
+            )
+        })
+    }
+
+    /** Resolve an incoming token hash to its guild. Returns null when unknown. */
+    getGuildIdByApiTokenHash(tokenHash) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT guildID FROM guild_api_tokens WHERE tokenHash = ?", [tokenHash], (err, row) => {
+                if (err) {
+                    console.error('Error looking up API token:', err)
+                    return resolve(null)
+                }
+                resolve(row ? row.guildID : null)
+            })
+        })
+    }
+
+    /** Token metadata for `/api token status`. Never returns the hash itself. */
+    getGuildApiTokenMeta(guildID) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT createdAt, createdBy, lastUsedAt FROM guild_api_tokens WHERE guildID = ?", [guildID], (err, row) => {
+                if (err || !row) return resolve(null)
+                resolve({ createdAt: row.createdAt, createdBy: row.createdBy, lastUsedAt: row.lastUsedAt })
+            })
+        })
+    }
+
+    revokeGuildApiToken(guildID) {
+        return new Promise((resolve) => {
+            this.db.run("DELETE FROM guild_api_tokens WHERE guildID = ?", [guildID], function (err) {
+                if (err) {
+                    console.error('Error revoking API token:', err)
+                    return resolve(false)
+                }
+                resolve(this.changes > 0)
+            })
+        })
+    }
+
+    /** Best-effort last-used stamp; a failure here must never fail the request. */
+    touchGuildApiToken(guildID) {
+        this.db.run("UPDATE guild_api_tokens SET lastUsedAt = ? WHERE guildID = ?", [Date.now(), guildID], () => {})
+    }
+
+    /**
+     * Read-modify-write the guilds.allowedEmails column under BEGIN IMMEDIATE.
+     *
+     * updateServerSettings rewrites the whole row (INSERT OR REPLACE), so using it
+     * from the API would clobber any setting an admin changed via a slash command
+     * between our read and our write. These mutations touch one column, and the
+     * immediate transaction serializes them against the other shards -- API requests
+     * run on shard 0 while /emaillist can run on any shard, all against the same file.
+     *
+     * @param {(hashes: string[]) => {hashes: string[], result: Object}} mutate
+     */
+    #mutateAllowedEmails(guildID, mutate) {
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                this.db.run("BEGIN IMMEDIATE", (beginErr) => {
+                    if (beginErr) return reject(beginErr)
+
+                    const fail = (err) => this.db.run("ROLLBACK", () => reject(err))
+
+                    this.db.get("SELECT allowedEmails FROM guilds WHERE guildid = ?", [guildID], (err, row) => {
+                        if (err) return fail(err)
+                        if (row === undefined) {
+                            // No settings row yet: the guild has never been configured, so
+                            // there is no list to mutate and nothing sensible to create.
+                            return this.db.run("ROLLBACK", () => resolve({ missing: true }))
+                        }
+
+                        let current = []
+                        try {
+                            current = row.allowedEmails ? JSON.parse(row.allowedEmails) : []
+                        } catch {
+                            current = []
+                        }
+                        if (!Array.isArray(current)) current = []
+
+                        let next
+                        try {
+                            next = mutate(current)
+                        } catch (e) {
+                            return fail(e)
+                        }
+
+                        this.db.run(
+                            "UPDATE guilds SET allowedEmails = ? WHERE guildid = ?",
+                            [JSON.stringify(next.hashes), guildID],
+                            (updErr) => {
+                                if (updErr) return fail(updErr)
+                                this.db.run("COMMIT", (commitErr) => {
+                                    if (commitErr) return fail(commitErr)
+                                    resolve(next.result)
+                                })
+                            }
+                        )
+                    })
+                })
+            })
+        })
+    }
+
+    /** Add hashed addresses. Returns { added, skipped, total }. */
+    addAllowedEmailHashes(guildID, hashes) {
+        return this.#mutateAllowedEmails(guildID, (current) => {
+            const set = new Set(current)
+            let added = 0
+            for (const h of hashes) {
+                if (!set.has(h)) {
+                    set.add(h)
+                    added++
+                }
+            }
+            const list = Array.from(set)
+            return {
+                hashes: list,
+                result: { added, skipped: hashes.length - added, total: list.length }
+            }
+        })
+    }
+
+    /** Remove one hashed address. Returns { removed, total }. */
+    removeAllowedEmailHash(guildID, hash) {
+        return this.#mutateAllowedEmails(guildID, (current) => {
+            const list = current.filter(h => h !== hash)
+            return {
+                hashes: list,
+                result: { removed: current.length - list.length, total: list.length }
+            }
+        })
+    }
+
+    /** Empty the list. Returns { removed, total: 0 }. */
+    clearAllowedEmails(guildID) {
+        return this.#mutateAllowedEmails(guildID, (current) => ({
+            hashes: [],
+            result: { removed: current.length, total: 0 }
+        }))
+    }
+
+    /** Entry count without materializing the list for the caller. */
+    getAllowedEmailCount(guildID) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT allowedEmails FROM guilds WHERE guildid = ?", [guildID], (err, row) => {
+                if (err || row === undefined) return resolve(null)
+                try {
+                    const parsed = row.allowedEmails ? JSON.parse(row.allowedEmails) : []
+                    resolve(Array.isArray(parsed) ? parsed.length : 0)
+                } catch {
+                    resolve(0)
+                }
+            })
         })
     }
 }

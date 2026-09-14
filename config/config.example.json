@@ -11,6 +11,7 @@
     "topggToken": "",
     "operatorWebhookUrl": "",
     "websiteUrl": "",
+    "apiBaseUrl": "https://stats.example.com/api/v1",
     "monetization": {
         "enabled": false,
         "freeMonthlyLimit": 25,

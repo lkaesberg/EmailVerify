@@ -18,6 +18,7 @@ All purchases run through Discord's native subscription system. Discord handles 
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
 | **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
+| **Allowed-email API** | — | — | ✓ |
 | **Quota warnings (80% / 95% / 100%)** | ✓ | n/a | n/a |
 | **Domain rules, role mapping, blacklist** | ✓ | ✓ | ✓ |
 | **Privacy-first storage (hashed emails)** | ✓ | ✓ | ✓ |
@@ -69,6 +70,7 @@ Everything in Standard, plus the CSV features:
 
 - :material-file-upload: **Upload allowlists.** `/emaillist upload` accepts a CSV of specific addresses. Only those exact addresses can verify, regardless of domain. Useful for invite-only events, paid courses, alumni groups.
 - :material-file-download: **Export verification logs.** `/export logs` writes every verification (with timestamp, user ID, email, role tags) to CSV. Useful for compliance, audit trails, or just keeping records.
+- :material-api: **Allowed-email API.** Sync the allowlist straight from your own systems — a student information system, an HR export, a nightly cron job — instead of re-uploading a CSV by hand. Run `/api token generate` for an access token, then add, remove or clear addresses over HTTPS. See the [API guide](api.md).
 
 Best for: closed groups where the membership list is known up front, organisations with audit obligations.
 
@@ -157,6 +159,11 @@ If you want only the CSV import/export features and no subscription, there's a o
 Purely on CSV access, it pays for itself against the €9.99/month Pro subscription after **four months** — so it's the cheaper route both for a server that will keep using CSV indefinitely and for one that needs it for a single intake and nothing else. Pro is the better buy if you also want the unlimited verifications that come with it.
 
 (Does not include unlimited verifications — those still come from your free quota or credits.)
+
+It also does **not** include the [allowed-email API](api.md). The unlock is a
+permanent, one-time capability, whereas the API is a live endpoint we host and
+rate-limit on an ongoing basis — so it stays with the Pro subscription and lapses
+with it.
 
 ---
 

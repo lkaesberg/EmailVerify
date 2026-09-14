@@ -11,6 +11,7 @@ const ServerStats = require("../ServerStats");
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
+const { createRestrictionListRouter } = require("./RestrictionListAPI");
 
 class ServerStatsAPI {
     constructor(bot, startServer = true) {
@@ -84,6 +85,10 @@ class ServerStatsAPI {
                 serverCount: serverCount
             })
         });
+
+        // Tier 2 restriction-list API. Mounted last so it cannot shadow any stats
+        // route, and behind its own bearer auth -- everything above is public.
+        this.app.use('/api/v1', createRestrictionListRouter(this.bot));
 
         // Get historical stats from log file
         this.app.get('/stats/history', async (req, res) => {
