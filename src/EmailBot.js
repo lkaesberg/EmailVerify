@@ -23,8 +23,6 @@ const MailSender = require("./mail/MailSender")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
-const registerRemoveDomain = require("./bot/registerRemoveDomain")
-const registerBlacklistChoices = require("./bot/registerBlacklistChoices")
 const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder, EmbedBuilder} = require("discord.js");
 const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
@@ -37,6 +35,7 @@ const { getWebsiteUrl, describeSku, getCurrency } = require('./utils/premiumButt
 const onboarding = require('./utils/onboarding');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 const analytics = require('./utils/Analytics');
+const permissions = require('./utils/permissions');
 
 // Verification code lifetime and the number of wrong guesses tolerated before the
 // code is invalidated. The old in-memory codes had neither, leaving a 100k-keyspace
@@ -265,6 +264,15 @@ const commands = []
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     bot.commands.set(command.data.name, command);
+    // Pin every command to guild context.
+    //
+    // Guild-scoped commands could never be invoked in a DM, so nothing here was ever
+    // written to cope with one: every command reads guild settings, roles or members and
+    // would throw on `interaction.guild` being null. Global commands, by contrast, are
+    // DM-invocable by default — and setDefaultMemberPermissions does not apply there, so
+    // the admin gate would be gone too. Setting the context keeps the exact surface the
+    // bot had before the move to global registration.
+    command.data.setContexts(Discord.InteractionContextType.Guild);
     commands.push(command.data.toJSON())
 }
 
@@ -275,109 +283,121 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function registerCommands(guild, count = 0, total = 0, attempt = 1) {
+/**
+ * Publish the command set once, application-wide.
+ *
+ * Commands used to be registered per guild — one PUT per guild on every boot and on
+ * every join — purely because `/domain remove` and `/blacklist remove` carried the
+ * guild's own domains as static `choices`, which a global command cannot express. Both
+ * now use autocomplete (see utils/autocompleteList), so a single global registration
+ * serves every server and the per-guild traffic disappears entirely.
+ *
+ * Every shard calls this. The PUT is idempotent with an identical body, and paying one
+ * extra request per shard is what lets each shard know its own registration succeeded
+ * before it clears that guild's stale commands — no cross-shard coordination needed.
+ *
+ * @returns {Promise<boolean>} whether the command set is published
+ */
+async function registerGlobalCommands(attempt = 1) {
     try {
-        await rest.put(
-            Discord.Routes.applicationGuildCommands(clientId, guild.id),
-            { body: commands }
-        );
-
-        console.log(
-            `[Shard ${bot.shard?.ids ?? 'N/A'}] Successfully registered application commands for ${guild.name}: ${count}/${total}`
-        );
+        await rest.put(Discord.Routes.applicationCommands(clientId), { body: commands });
+        console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Registered ${commands.length} global application commands`);
+        return true;
     } catch (err) {
         const code = err?.code || err?.cause?.code;
-        const status = err?.status ?? err?.statusCode;
-        const discordCode = err?.rawError?.code;
+        const isTimeout = code === 'UND_ERR_CONNECT_TIMEOUT' || err?.message?.includes('Connect Timeout Error');
 
-        console.error(
-            `[Shard ${bot.shard?.ids ?? 'N/A'}] Failed to register commands for ${guild.name} ` +
-            `(attempt ${attempt}/${MAX_RETRIES}) – code=${code}, status=${status}, discordCode=${discordCode}`
-        );
-
-        const isTimeout =
-            code === 'UND_ERR_CONNECT_TIMEOUT' ||
-            err?.message?.includes('Connect Timeout Error');
-
-        // 1) Retry on transient timeouts
         if (isTimeout && attempt < MAX_RETRIES) {
-            console.log(
-                `Timeout while registering commands for ${guild.name}, ` +
-                `retrying in ${RETRY_DELAY_MS}ms...`
-            );
+            console.log(`Timeout registering global commands, retrying in ${RETRY_DELAY_MS}ms...`);
             await sleep(RETRY_DELAY_MS);
-            return registerCommands(guild, count, total, attempt + 1);
+            return registerGlobalCommands(attempt + 1);
         }
 
-        // 2) Handle real "missing permissions" cases → notify + leave
-        const missingPerms =
-            status === 403 ||          // HTTP Forbidden
-            discordCode === 50013;     // Discord: Missing Permissions
-
-        if (missingPerms) {
-            // Notify the guild owner about missing permissions before leaving
-            await ErrorNotifier.notify({
-                guild: guild,
-                errorTitle: 'Missing Permissions',
-                errorMessage: 'The bot does not have permission to create slash commands. The bot will leave the server.\n\nTo fix this, please re-invite the bot with proper permissions: https://getemailverified.com/',
-                language: 'english'
-            });
-
-            try {
-                await bot.guilds.cache.get(guild.id)?.leave();
-                console.log(`Left guild ${guild.name} due to missing permissions.`);
-            } catch (e) {
-                console.error(`Failed to leave guild ${guild.name}:`, e);
-            }
-
-            return;
-        }
-
-        // 3) Other errors: log and continue, don't crash or leave
-        console.warn(
-            `Non-fatal error while registering commands for ${guild.name}. ` +
-            `Not leaving guild; continuing.`
+        // Nothing to fall back on and nothing guild-specific to blame, so log loudly and
+        // leave the previously published command set in place rather than tearing it down.
+        console.error(
+            `[Shard ${bot.shard?.ids ?? 'N/A'}] Failed to register global commands ` +
+            `(attempt ${attempt}/${MAX_RETRIES}):`, err?.rawError ?? err?.message ?? err
         );
+        return false;
     }
 }
 
-async function registerAllGuilds(bot) {
-    const guilds = Array.from(bot.guilds.cache.values());
-    const total = guilds.length;
-    const concurrency = 5;
-    let index = 0;
+/**
+ * Remove the guild-scoped command copies left behind by the per-guild era.
+ *
+ * Discord serves a guild command and a global command of the same name side by side, so
+ * until this runs an admin in an old server sees every command twice. Clearing is a
+ * single PUT of an empty array; the result is recorded in the database so a guild is
+ * touched exactly once, no matter how often the bot restarts.
+ *
+ * @returns {Promise<boolean>} whether the guild can be marked done
+ */
+async function clearGuildCommands(guild) {
+    try {
+        await rest.put(Discord.Routes.applicationGuildCommands(clientId, guild.id), { body: [] });
+        return true;
+    } catch (err) {
+        const status = err?.status ?? err?.statusCode;
+        const discordCode = err?.rawError?.code;
 
-    async function worker() {
-        while (true) {
-            const i = index++;
-            if (i >= total) break;
+        // 403/50001/10004 mean the guild-command scope is gone or the guild is
+        // unreachable — either way there is nothing left to clear, so treat it as done
+        // instead of retrying it on every boot forever.
+        if (status === 403 || status === 404 || discordCode === 50001 || discordCode === 10004) return true;
 
-            const guild = guilds[i];
-            const count = i + 1;
-
-            await registerCommands(guild, count, total);
-
-            registerRemoveDomain(guild.id);
-            registerBlacklistChoices(guild.id);
-            database.getServerSettings(guild.id, async serverSettings => {
-                try {
-                    await bot.guilds.cache
-                        .get(guild.id)
-                        ?.channels.cache
-                        .get(serverSettings.channelID)
-                        ?.messages.fetch(serverSettings.messageID);
-                } catch (e) {
-                    // ignore
-                }
-            });
-        }
+        console.warn(`[Commands] Could not clear guild commands for ${guild.id}:`, err?.message ?? err);
+        return false;
     }
+}
 
-    await Promise.all(
-        Array.from({ length: concurrency }, () => worker())
-    );
+/**
+ * One-time sweep over this shard's guilds, clearing stale guild-scoped commands.
+ *
+ * Skipped entirely unless the global registration succeeded — removing a guild's working
+ * commands when the replacements are not published would leave that server with none.
+ */
+async function clearStaleGuildCommands(bot) {
+    const guilds = Array.from(bot.guilds.cache.values());
+    const pending = await database.getGuildsNeedingCommandCleanup(guilds.map(g => g.id));
+    const todo = guilds.filter(g => pending.has(g.id));
+    if (todo.length === 0) return;
 
-    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Finished registering commands for all guilds`);
+    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Clearing stale guild commands for ${todo.length} guild(s)`);
+
+    let index = 0;
+    let cleared = 0;
+    const worker = async () => {
+        while (index < todo.length) {
+            const guild = todo[index++];
+            if (await clearGuildCommands(guild)) {
+                await database.markGuildCommandsCleared(guild.id);
+                cleared++;
+            }
+        }
+    };
+    await Promise.all(Array.from({ length: 5 }, worker));
+
+    console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] Cleared stale guild commands: ${cleared}/${todo.length}`);
+}
+
+/**
+ * Warm this shard's guilds: prime the verification message so the persistent button's
+ * message is in cache. Command registration used to happen here too and no longer does.
+ */
+async function primeGuilds(bot) {
+    for (const guild of bot.guilds.cache.values()) {
+        database.getServerSettings(guild.id, async serverSettings => {
+            if (!serverSettings.channelID || !serverSettings.messageID) return;
+            try {
+                await guild.channels.cache
+                    .get(serverSettings.channelID)
+                    ?.messages.fetch(serverSettings.messageID);
+            } catch (e) {
+                // ignore
+            }
+        });
+    }
 }
 
 
@@ -541,7 +561,16 @@ bot.once('clientReady', async () => {
         }
     }
 
-    await registerAllGuilds(bot);
+    // Publish the command set once, then retire the guild-scoped copies this shard's
+    // guilds still carry. Strictly ordered: a guild must not lose its working commands
+    // before the global ones are live.
+    const published = await registerGlobalCommands();
+    if (published) {
+        await clearStaleGuildCommands(bot);
+    } else {
+        console.warn('[Commands] Global registration failed — leaving existing guild commands in place');
+    }
+    await primeGuilds(bot);
 
     // Seed guild group properties (name / member count) for this shard's guilds so
     // PostHog group analytics have labels from the first boot onward.
@@ -659,13 +688,9 @@ bot.on("guildMemberAdd", async member => {
                 try {
                     await member.roles.add(roleUnverified)
                 } catch (e) {
-                    await ErrorNotifier.notify({
-                        guild: member.guild,
-                        errorTitle: getLocale(serverSettings.language, 'errorRoleAssignTitle'),
-                        errorMessage: getLocale(serverSettings.language, 'errorRoleAssignMessage'),
-                        user: member.user,
-                        language: serverSettings.language
-                    })
+                    await permissions.notifyRoleAssignmentFailure(
+                        member.guild, serverSettings, serverSettings.language, member.user
+                    )
                 }
 
             }
@@ -678,7 +703,11 @@ bot.on("guildMemberAdd", async member => {
 
 bot.on('guildCreate', guild => {
     console.log(`[Shard ${bot.shard?.ids ?? 'N/A'}] New guild: ${guild.name}`)
-    registerCommands(guild)
+    // No command registration here: commands are global, so a new guild receives them
+    // from Discord the moment the bot is added. It also has no guild-scoped commands to
+    // retire, so record it as already cleaned up — otherwise the next restart would spend
+    // a pointless request clearing commands that were never there.
+    database.markGuildCommandsCleared(guild.id).catch(() => {})
     analytics.identifyGuild(guild)
     analytics.capture({ event: 'guild_joined', guild, properties: { member_count: guild.memberCount } })
 
@@ -695,7 +724,44 @@ bot.on('guildCreate', guild => {
             properties: { ...result, member_count: guild.memberCount }
         }))
         .catch(e => console.warn(`[Onboarding] failed for ${guild.id}:`, e?.message || e))
+        // Permission self-check at the only moment the admin is guaranteed to be looking:
+        // right after they added the bot. An invite that granted too little is otherwise
+        // invisible until a member fails to verify, which is where servers were churning.
+        //
+        // Chained after onboarding rather than fired alongside it: a fresh guild has no
+        // error channel configured, so this alert lands in the owner's DMs — the same
+        // place the welcome message just went. Sequencing them keeps the greeting first
+        // and the problem report second, instead of two DMs racing. Sends nothing at all
+        // when the invite was correct.
+        .finally(() => checkGuildPermissionHealth(guild, 'guild_joined'))
 })
+
+/**
+ * Audit a guild's permissions and role order and notify its admins if anything is wrong.
+ * Fire-and-forget, and throttled inside permissions.notifyPermissionIssues.
+ */
+function checkGuildPermissionHealth(guild, trigger) {
+    database.getServerSettings(guild.id, async serverSettings => {
+        const language = serverSettings.language || defaultLanguage
+        try {
+            const audit = await permissions.notifyPermissionIssues(guild, serverSettings, language)
+            if (!audit) return
+            analytics.capture({
+                event: 'permission_issue_detected',
+                guild,
+                properties: {
+                    trigger,
+                    missing_required: audit.permissions.missingRequired.map(p => p.name),
+                    missing_recommended: audit.permissions.missingRecommended.map(p => p.name),
+                    unassignable_roles: audit.roles.unassignable.length,
+                    unassignable_reasons: audit.roles.unassignable.map(u => u.reason)
+                }
+            })
+        } catch (e) {
+            console.warn(`[permissions] health check failed for ${guild.id}:`, e?.message || e)
+        }
+    })
+}
 
 // Premium purchase lifecycle — turn every Discord entitlement event into a
 // readable operator notification (and keep the raw log line as an audit trail).
@@ -1391,13 +1457,7 @@ bot.on('interactionCreate', async interaction => {
                 if (rolesToAdd.length === 0 && expectsRoles) {
                     analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'role_assignment_failed', detail: 'no_roles_resolved' } })
                     await restorePending()
-                    await ErrorNotifier.notify({
-                        guild: userGuild,
-                        errorTitle: getLocale(language, 'errorRoleAssignTitle'),
-                        errorMessage: getLocale(language, 'errorRoleAssignMessage'),
-                        user: interaction.user,
-                        language: language
-                    })
+                    await permissions.notifyRoleAssignmentFailure(userGuild, serverSettings, language, interaction.user)
                     await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
                     autoDelete(15000)
                     return
@@ -1427,13 +1487,7 @@ bot.on('interactionCreate', async interaction => {
                     // followUp), and resolve the deferred reply so it doesn't hang.
                     analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'role_assignment_failed', detail: 'role_add_error' } })
                     await restorePending()
-                    await ErrorNotifier.notify({
-                        guild: userGuild,
-                        errorTitle: getLocale(language, 'errorRoleAssignTitle'),
-                        errorMessage: getLocale(language, 'errorRoleAssignMessage'),
-                        user: interaction.user,
-                        language: language
-                    })
+                    await permissions.notifyRoleAssignmentFailure(userGuild, serverSettings, language, interaction.user)
                     await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
                     autoDelete(15000)
                     return
@@ -1472,7 +1526,12 @@ bot.on('interactionCreate', async interaction => {
     if (interaction.isAutocomplete()) {
         const command = bot.commands.get(interaction.commandName);
         if (!command || !command.autocomplete) return;
-        
+        // Every autocomplete source is per-guild configuration; without a guild there is
+        // nothing to suggest. Commands are pinned to guild context so this should be
+        // unreachable — it exists so a future context change degrades to empty
+        // suggestions instead of an exception per keystroke.
+        if (!interaction.guildId) return interaction.respond([]).catch(() => {});
+
         try {
             await command.autocomplete(interaction);
         } catch (error) {
@@ -1487,6 +1546,18 @@ bot.on('interactionCreate', async interaction => {
     if (!command) return;
 
     if (interaction.user.id === bot.user.id) return;
+
+    // Belt and braces for the same reason as the autocomplete guard above: every command
+    // dereferences interaction.guild and interaction.member, both null in a DM. Answer
+    // instead of throwing if one ever arrives without a guild.
+    if (!interaction.guild || !interaction.member) {
+        await interaction.reply({
+            content: getLocale(defaultLanguage, 'commandGuildOnly'),
+            flags: MessageFlags.Ephemeral
+        }).catch(() => {});
+        return;
+    }
+
     await database.getServerSettings(interaction.guild.id, async serverSettings => {
         let language
         try {

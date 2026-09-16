@@ -10,6 +10,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
+const permissions = require("../utils/permissions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -149,8 +150,14 @@ module.exports = {
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 
                 const totalRoles = serverSettings.domainRoles[domain].length;
+                // Same hierarchy trap as /role add: the mapping saves fine but the role
+                // can never be handed out unless the bot's role sits above it.
+                const roleWarning = await permissions.buildRoleWarning(
+                    interaction.guild, [role], serverSettings.language
+                );
+                const body = `**Domain role added!**\n\nDomain: \`${domain}\`\nRole: ${role.name}\n\nUsers verifying with this domain will receive ${totalRoles} role${totalRoles > 1 ? 's' : ''} (plus any default roles).`;
                 await interaction.reply({
-                    content: `**Domain role added!**\n\nDomain: \`${domain}\`\nRole: ${role.name}\n\nUsers verifying with this domain will receive ${totalRoles} role${totalRoles > 1 ? 's' : ''} (plus any default roles).`,
+                    content: roleWarning ? `${body}\n\n${roleWarning}` : body,
                     flags: MessageFlags.Ephemeral
                 });
             });

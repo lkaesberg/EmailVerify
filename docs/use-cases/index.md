@@ -29,6 +29,6 @@ solves a different problem depending on who is on the other side of the door.
 </div>
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Quick start guide →](../setup.md){ .md-button }
 </div>

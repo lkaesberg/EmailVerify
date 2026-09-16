@@ -13,6 +13,7 @@ const { MessageFlags, EmbedBuilder } = require('discord.js');
 const premiumManager = require("../premium/PremiumManager");
 const { buildPlanButtons, mobileHintLine } = require("../utils/premiumButtons");
 const { getLocale } = require("../Language");
+const permissions = require("../utils/permissions");
 
 const MONTH_KEYS = [
     'statusMonthJan', 'statusMonthFeb', 'statusMonthMar', 'statusMonthApr',
@@ -35,6 +36,49 @@ function clampField(value, max = 1024) {
 
 module.exports = {
     data: new SlashCommandBuilder().setDefaultPermission(true).setName('status').setDescription('View bot configuration, verification statistics, and check setup issues').setDefaultMemberPermissions(0),
+
+    /**
+     * Render the live permission / role-order audit as one embed field: either a single
+     * "all good" line, or exactly what is missing plus the one-click re-invite link. The
+     * full step-by-step fix is deliberately left to the notification the bot sends when
+     * something actually fails — /status stays scannable.
+     */
+    formatPermissionHealth(audit, language) {
+        if (!audit.resolved) return getLocale(language, 'statusPermissionsUnknown')
+
+        const lines = []
+        if (audit.permissions.missingRequired.length > 0) {
+            lines.push(getLocale(language, 'statusPermissionsMissingRequired',
+                audit.permissions.missingRequired.map(p => `**${permissions.permissionLabel(p, language)}**`).join(', ')))
+        }
+        if (audit.permissions.missingRecommended.length > 0) {
+            lines.push(getLocale(language, 'statusPermissionsMissingRecommended',
+                audit.permissions.missingRecommended.map(p => `**${permissions.permissionLabel(p, language)}**`).join(', ')))
+        }
+        if (audit.roles.unassignable.length > 0) {
+            lines.push(getLocale(language, 'statusPermissionsUnassignable',
+                audit.roles.unassignable.map(u => `<@&${u.role.id}>`).join(', ')))
+        }
+        if ((audit.channels || []).length > 0) {
+            lines.push(permissions.formatChannelIssues(audit.channels, language))
+        }
+
+        if (lines.length === 0) return getLocale(language, 'statusPermissionsOk')
+
+        // Each hint only appears when it actually applies: re-inviting fixes missing
+        // server-wide permissions and nothing else, and a channel override survives it.
+        const needsGuildFix = audit.permissions.missingRequired.length > 0
+            || audit.permissions.missingRecommended.length > 0
+            || audit.roles.unassignable.length > 0
+        if (needsGuildFix) {
+            const botRoleLabel = audit.roles.botRole
+                ? `<@&${audit.roles.botRole.id}>`
+                : getLocale(language, 'permBotRoleFallback')
+            lines.push(getLocale(language, 'statusPermissionsFixHint', botRoleLabel, permissions.buildInviteUrl()))
+        }
+        if ((audit.channels || []).length > 0) lines.push(getLocale(language, 'permChannelFix'))
+        return lines.join('\n\n')
+    },
 
     async getErrorNotifyStatus(guild, serverSettings, language) {
         const explicitChannelId = serverSettings.errorNotifyChannel;
@@ -115,9 +159,24 @@ module.exports = {
                 const statusIcon = isConfigured ? '✅' : '❌'
                 const statusText = getLocale(language, isConfigured ? 'statusStateReady' : 'statusStateNotConfigured')
 
+                // /status is the command an admin runs when something is wrong, so it has to
+                // answer the two questions the config alone cannot: does the bot hold the
+                // permissions it needs, and can it actually hand out the roles configured
+                // above? Both are live checks, not stored state.
+                const audit = await permissions.auditGuild(interaction.guild, serverSettings)
+
                 const issues = []
                 const hasAnyRoles = validDefaultRoles.length > 0 || domainRoleEntries.length > 0
                 if (!hasAnyRoles) issues.push('• ' + getLocale(language, 'statusIssueNoRoles'))
+                if (audit.resolved && audit.permissions.missingRequired.length > 0) {
+                    issues.push('• ' + getLocale(language, 'statusIssueMissingPerms'))
+                }
+                if (audit.resolved && audit.roles.unassignable.length > 0) {
+                    issues.push('• ' + getLocale(language, 'statusIssueRoleHierarchy'))
+                }
+                if (audit.resolved && (audit.channels || []).length > 0) {
+                    issues.push('• ' + getLocale(language, 'statusIssueChannelOverrides'))
+                }
                 // Quota & error warnings need at least one reachable destination —
                 // otherwise upsell/quota alerts silently go nowhere.
                 const hasWarningDestination = !!serverSettings.errorNotifyChannel
@@ -193,6 +252,11 @@ module.exports = {
                             value:
                                 `**${getLocale(language, 'statusAutoVerifyLabel')}:** ${serverSettings.autoVerify ? '✅ ' + enabledLabel : '❌ ' + disabledLabel}\n` +
                                 `**${getLocale(language, 'statusAutoAddUnverifiedLabel')}:** ${serverSettings.autoAddUnverified ? '✅ ' + enabledLabel : '❌ ' + disabledLabel}`,
+                            inline: false
+                        },
+                        {
+                            name: getLocale(language, 'statusFieldPermissions'),
+                            value: clampField(this.formatPermissionHealth(audit, language)),
                             inline: false
                         },
                         {

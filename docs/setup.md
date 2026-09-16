@@ -48,7 +48,7 @@ You need **Manage Server** permission on the Discord server, and a role you want
 
 <div class="ev-step" markdown>
 **Invite the bot.**
-Use the [invite link](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands) and pick your server. The bot posts a short welcome message with a link back to this guide.
+Use the [invite link](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands) and pick your server. The bot posts a short welcome message with a link back to this guide.
 </div>
 
 <div class="ev-step" markdown>
@@ -118,8 +118,29 @@ Wildcards work on both sides of the `@`, so `*spam*` blocks any address containi
 
 ## Troubleshooting
 
-??? question "`Can't find roles. Please contact the admin!`"
-    The EmailVerify role is below the role it's trying to assign. Move it up in **Server Settings → Roles**. This accounts for most reports of this error.
+??? question "`Can't find roles. Please contact the admin!` / roles aren't being assigned"
+    The EmailVerify role is below the role it's trying to assign. Open **Server Settings → Roles** and drag **EmailVerify** *above* every role it hands out. Discord enforces this and no permission setting overrides it.
+
+    You don't have to guess: run **`/status`**, which checks live whether the bot holds the permissions it needs and whether each configured role is actually assignable, and names the ones that aren't. The bot also warns you the moment you set an unassignable role with `/role`, `/domainrole` or `/setup`, and messages your admins when a real verification fails because of it.
+
+    A role that belongs to another bot, an integration, or Nitro boosting can **never** be assigned, by any bot, at any position — pick a different role for those.
+
+??? question "The bot is missing permissions"
+    Run **`/status`** — the **Bot Permissions & Role Order** section lists exactly what's missing and why each one is needed.
+
+    The quickest fix is to [re-invite the bot](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands). Re-inviting a bot that's already in the server doesn't remove it or reset anything — Discord just updates its permissions — so nothing is lost. Alternatively, enable the permissions by hand in **Server Settings → Roles → EmailVerify**.
+
+    | Permission | Needed for |
+    |---|---|
+    | Manage Roles | Assigning and removing the verified / unverified roles |
+    | View Channels | Seeing the channel with the verification button |
+    | Send Messages | Posting the verification button and log lines |
+    | Embed Links | Posting the verification button message, admin alerts and the welcome post. Slash-command replies and DMs work without it, so members can still verify — but `/button` and `/setup` can't post the button they click |
+    | Read Message History | Reading the log channel for `/export` |
+    | Attach Files | Attaching the CSV produced by `/export` |
+    | View Audit Log | DMing whoever added the bot with the setup guide |
+
+    The last three are optional: without them the bot still verifies members, but those specific features degrade.
 
 ??? question "Nobody is receiving the verification emails"
     Run `/testmail` with an address you control. If that arrives but members' don't, the recipients' mail provider is filtering — universities in particular run aggressive filters. Paid plans route through Zoho ZeptoMail (EU, transactional-only) which has substantially better inbox placement than shared SMTP.
@@ -136,6 +157,6 @@ Wildcards work on both sides of the `@`, so `*spam*` blocks any address containi
 ---
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Support server](https://discord.com/invite/fEBSHUQXu2){ .md-button }
 </div>

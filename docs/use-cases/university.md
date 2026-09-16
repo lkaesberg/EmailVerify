@@ -19,7 +19,7 @@ A university Discord fills up fast, and not everyone who joins belongs there. Co
 Email verification fixes that at the door: a member only gets a role once they've proven they receive mail at your institution's domain.
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Quick start guide →](../setup.md){ .md-button }
 </div>
 
@@ -144,6 +144,6 @@ Worth being precise about, because it changes how you should use it.
 - [Courses, events and hackathons](communities.md) — fixed allowlists instead of domains
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [See pricing](../premium.md){ .md-button }
 </div>

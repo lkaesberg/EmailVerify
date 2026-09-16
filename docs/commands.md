@@ -57,7 +57,7 @@ Assign different roles based on which email domain the user verifies with. Users
 | Default: `@Verified`<br>Domain: `@company.com` → `@Employee`, `@Staff` | User with `@company.com` gets: `@Employee`, `@Staff`, `@Verified` |
 | Domain: `@*.harvard.edu` → `@Harvard`<br>Domain: `@*.edu` → `@Student` | User with `@cs.harvard.edu` gets: `@Harvard`, `@Student` (all matching patterns) |
 
-> 💡 **Tip:** When using `/domainrole add`, the domain field autocompletes with your configured domains from `/domain add`.
+> 💡 **Tip:** `/domainrole add`, `/domain remove` and `/blacklist remove` all autocomplete from what you have configured — start typing and pick from the list. For `/domain remove` and `/blacklist remove` you can keep going with a comma to remove several at once.
 
 ### 📧 Domain Management
 

@@ -15,9 +15,9 @@ const {
     PermissionsBitField
 } = require('discord.js');
 const database = require("../database/Database.js");
-const registerRemoveDomain = require("../bot/registerRemoveDomain");
 const { parseDomains } = require("../utils/parseDomains");
 const { buildVerifyEmbed, buildVerifyButtons } = require("../bot/verifyMessage");
+const permissions = require("../utils/permissions");
 
 const WIZARD_COLOR = 0x5865F2;
 
@@ -53,8 +53,9 @@ function step2Message(savedRoleMentions, hierarchyWarning) {
         'Should verification be limited to specific email domains?\n' +
         '• **Restrict domains** — e.g. only `@company.com` or `@*.edu` addresses\n' +
         '• **Allow any email** — every valid address can verify';
+    // The warning arrives already prefixed and formatted (see utils/permissions).
     if (hierarchyWarning) {
-        description = `⚠️ ${hierarchyWarning}\n\n${description}`;
+        description = `${hierarchyWarning}\n\n${description}`;
     }
     const embed = new EmbedBuilder()
         .setTitle('🧭 Setup — Step 2 of 3: Email domains')
@@ -139,7 +140,6 @@ module.exports = {
 
         // Step 1 → save roles, show step 2
         if (interaction.customId === 'setupRoles' && interaction.isRoleSelectMenu()) {
-            const me = interaction.guild.members.me;
             const selected = interaction.values
                 .map(id => interaction.guild.roles.cache.get(id))
                 .filter(role => role && role.id !== interaction.guild.id && !role.managed);
@@ -164,13 +164,12 @@ module.exports = {
             }
             database.updateServerSettings(interaction.guildId, serverSettings);
 
-            // Pre-empt the most common failure: a selected role above the bot's highest
-            // role can never be assigned.
-            const tooHigh = me ? selected.filter(role => role.position >= me.roles.highest.position) : [];
-            const warning = tooHigh.length > 0
-                ? `The role(s) ${tooHigh.map(r => `<@&${r.id}>`).join(', ')} are **above my highest role**, so I can't assign them. ` +
-                  'Move my role higher in **Server Settings → Roles**, or verification will fail.'
-                : null;
+            // Pre-empt the most common failure: a role the bot cannot hand out (above its
+            // own role, or owned by another integration) can never be assigned. Shares the
+            // wording and the step-by-step fix with /role, /domainrole and the failure path.
+            const warning = await permissions.buildRoleWarning(
+                interaction.guild, selected, serverSettings.language
+            );
 
             const mentions = selected.map(r => `<@&${r.id}>`).join(', ');
             await interaction.update(step2Message(mentions, warning)).catch(() => {});
@@ -257,7 +256,6 @@ module.exports = {
             }
         }
         database.updateServerSettings(interaction.guildId, serverSettings);
-        await registerRemoveDomain(interaction.guildId);
 
         const display = domains.map(d => `\`${d.replaceAll('*', '✱')}\``).join(', ');
         const next = step3Message(`Allowed domains saved: ${display}`);

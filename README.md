@@ -70,7 +70,7 @@ This bot verifies that a Discord user owns an email address with a specific doma
 
 Use this link to invite the bot to your server:
 
-[![Invite Bot](https://img.shields.io/badge/Invite-EmailVerify%20Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands)
+[![Invite Bot](https://img.shields.io/badge/Invite-EmailVerify%20Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands)
 
 ### Quick Setup
 
@@ -309,6 +309,24 @@ npm start
 | `topggToken` | *(Optional)* Your Top.gg API token |
 
 > 💡 **Gmail Users:** You need to create an [App Password](https://support.google.com/accounts/answer/185833) and use that instead of your regular password.
+
+### Discord Developer Portal setup
+
+Two things in the portal matter beyond the token, and neither is set from code:
+
+**Installation → Default Install Settings → Guild Install.** This is what the App Directory
+and the "Add App" button on the bot's profile use, so it — not the invite links in this
+README — decides what most installs actually grant. Set:
+
+- **Scopes:** `bot`, `applications.commands`
+- **Permissions:** Manage Roles, View Channels, Send Messages, Embed Links, Read Message
+  History, Attach Files, View Audit Log (integer `268553344`)
+
+**Bot → Privileged Gateway Intents.** Enable **Server Members Intent**; the bot uses
+`GuildMembers` to assign roles on join.
+
+Commands are registered **globally** at startup — one API call for the whole application,
+not one per server — so nothing needs registering per guild.
 
 ### Debugging
 

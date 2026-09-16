@@ -99,7 +99,7 @@ Honest summary: it does one thing â€” email-domain and allowlist verification â€
 What it deliberately isn't: an anti-raid suite, a moderation bot, a captcha, or an SSO bridge. If you need those, run something alongside it.
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Quick start guide](setup.md){ .md-button }
 [See pricing](premium.md){ .md-button }
 </div>

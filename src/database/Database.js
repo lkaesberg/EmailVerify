@@ -220,6 +220,17 @@ class Database {
             // Authentication looks the token up by hash on every request.
             this.db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_guild_api_tokens_hash ON guild_api_tokens(tokenHash)")
         })
+        this.runMigration(22, () => {
+            // Commands moved from per-guild registration to a single global registration.
+            // Guilds that joined under the old scheme still hold a guild-scoped copy of
+            // every command, which Discord shows alongside the global ones — so each has
+            // to be cleared once. This table records which guilds are done, so the sweep
+            // costs one API call per guild ever rather than one per guild per restart.
+            this.db.run(`CREATE TABLE IF NOT EXISTS guild_command_cleanup(
+                guildID TEXT PRIMARY KEY,
+                clearedAt INTEGER NOT NULL
+            );`)
+        })
     }
 
     /**
@@ -1083,6 +1094,63 @@ class Database {
             hashes: [],
             result: { removed: current.length, total: 0 }
         }))
+    }
+
+    /**
+     * Guild ids that still hold stale guild-scoped commands, out of those passed in.
+     *
+     * Asked as one query over the shard's own guilds rather than one per guild, so a
+     * restart after the migration has completed costs a single read and no API calls.
+     *
+     * @param {string[]} guildIDs
+     * @returns {Promise<Set<string>>}
+     */
+    async getGuildsNeedingCommandCleanup(guildIDs) {
+        const pending = new Set(guildIDs)
+        if (pending.size === 0) return pending
+
+        // Chunked because every id is a bound parameter and SQLite caps those per
+        // statement — a shard holding a few thousand guilds would otherwise fail the
+        // query outright and, via the error path below, never clean up at all.
+        const CHUNK = 500
+        const ids = [...pending]
+        for (let i = 0; i < ids.length; i += CHUNK) {
+            const chunk = ids.slice(i, i + CHUNK)
+            const rows = await new Promise((resolve) => {
+                this.db.all(
+                    `SELECT guildID FROM guild_command_cleanup WHERE guildID IN (${chunk.map(() => '?').join(',')})`,
+                    chunk,
+                    (err, result) => {
+                        if (err) {
+                            console.warn('[DB] command-cleanup lookup failed:', err.message)
+                            return resolve(null)
+                        }
+                        resolve(result || [])
+                    }
+                )
+            })
+            // On a read error, skip this chunk for this boot only — nothing is written to
+            // guild_command_cleanup, so the next start retries it. Skipping rather than
+            // assuming "all pending" avoids re-clearing every guild on every boot if the
+            // table is ever unreadable, without permanently losing the cleanup.
+            if (rows === null) {
+                for (const id of chunk) pending.delete(id)
+                continue
+            }
+            for (const row of rows) pending.delete(row.guildID)
+        }
+        return pending
+    }
+
+    /** Record that a guild's stale guild-scoped commands have been removed. */
+    markGuildCommandsCleared(guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO guild_command_cleanup (guildID, clearedAt) VALUES (?, ?)",
+                [guildID, Date.now()],
+                () => resolve()
+            )
+        })
     }
 
     /** Entry count without materializing the list for the caller. */

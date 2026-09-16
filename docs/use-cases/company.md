@@ -17,7 +17,7 @@ Plenty of companies run a Discord — for engineering chat, for a customer or pa
 Gating on a company mailbox is the cheapest fix that actually means something. If someone can receive mail at `@yourcompany.com`, IT gave them that mailbox.
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Quick start guide →](../setup.md){ .md-button }
 </div>
 
@@ -132,6 +132,6 @@ Being clear about the limits, because access control oversold is worse than acce
 - [Courses, events and hackathons](communities.md) — allowlists for people with no domain in common
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [See pricing](../premium.md){ .md-button }
 </div>

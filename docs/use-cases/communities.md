@@ -19,7 +19,7 @@ Domain rules work when everyone shares an employer or an institution. They're us
 For that, you need an **allowlist**: a list of the exact addresses that are allowed in, and nobody else.
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [See pricing →](../premium.md){ .md-button }
 </div>
 
@@ -126,6 +126,6 @@ The CSV allowlist is part of the **Pro** plan, or available as a **one-time CSV 
 - [Companies and teams](company.md) — domain rules for a corporate mailbox
 
 <div class="ev-cta" markdown>
-[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[:fontawesome-brands-discord: Add EmailVerify to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Support server](https://discord.com/invite/fEBSHUQXu2){ .md-button }
 </div>

@@ -10,9 +10,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
-const registerRemoveDomain = require("../bot/registerRemoveDomain");
 const { getLocale } = require("../Language");
 const { parseDomains } = require("../utils/parseDomains");
+const { suggestFromList } = require("../utils/autocompleteList");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -38,6 +38,7 @@ module.exports = {
                         .setName('domains')
                         .setDescription('Domain(s) to remove (comma-separated for multiple)')
                         .setRequired(true)
+                        .setAutocomplete(true)
                 )
         )
         .addSubcommand(subcommand =>
@@ -51,6 +52,23 @@ module.exports = {
                 .setDescription('Remove all allowed domains (users won\'t be able to verify)')
         )
         .setDefaultMemberPermissions(0),
+
+    /**
+     * Suggest this guild's configured domains for `/domain remove`.
+     *
+     * This replaced per-guild command registration: the option used to carry static
+     * `choices` PATCHed into each guild's copy of the command, which is the only thing
+     * that forced guild-scoped commands (choices cannot vary per guild on a global
+     * command). Autocomplete is resolved at type time instead, so one global
+     * registration now serves every server — and it is not capped at 25 entries.
+     */
+    async autocomplete(interaction) {
+        const serverSettings = await new Promise(resolve =>
+            database.getServerSettings(interaction.guildId, resolve));
+        await interaction.respond(
+            suggestFromList(interaction.options.getFocused(), serverSettings.domains || [])
+        ).catch(() => {});
+    },
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
@@ -87,7 +105,6 @@ module.exports = {
 
                 if (addedDomains.length !== 0) {
                     database.updateServerSettings(interaction.guildId, serverSettings);
-                    await registerRemoveDomain(interaction.guildId);
                     
                     const addedList = addedDomains.map(d => `\`${d.replaceAll("*", "✱")}\``).join(', ');
                     await interaction.reply({
@@ -130,7 +147,6 @@ module.exports = {
                     });
                 } else {
                     database.updateServerSettings(interaction.guildId, serverSettings);
-                    await registerRemoveDomain(interaction.guildId, { data: this.data });
                     
                     const removedList = deletedDomains.map(d => `\`${d.replaceAll("*", "✱")}\``).join(', ');
                     await interaction.reply({
@@ -153,7 +169,6 @@ module.exports = {
                 const count = serverSettings.domains.length;
                 serverSettings.domains = [];
                 database.updateServerSettings(interaction.guildId, serverSettings);
-                await registerRemoveDomain(interaction.guildId, { data: this.data });
 
                 const language = serverSettings.language || 'english';
                 const hasAllowedEmails = (serverSettings.allowedEmails || []).length > 0;

@@ -10,6 +10,17 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
+const permissions = require("../utils/permissions");
+
+// A role that sits above the bot's own role, or is owned by another integration, can be
+// saved but never handed out. Saying so here — while the admin is still in the roles
+// mindset — is the difference between a 30-second drag and a member who silently fails
+// to verify days later.
+async function withRoleWarning(guild, content, roles, language) {
+    const warning = await permissions.buildRoleWarning(guild, roles, language);
+    return warning ? `${content}\n\n${warning}` : content;
+}
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -87,7 +98,12 @@ module.exports = {
                 database.updateServerSettings(interaction.guildId, serverSettings);
                 
                 await interaction.reply({
-                    content: `**Default role added:** ${role.name}\n\nAll verified users will now receive this role.\n*Use \`/role list\` to see all default roles.*`,
+                    content: await withRoleWarning(
+                        interaction.guild,
+                        `**Default role added:** ${role.name}\n\nAll verified users will now receive this role.\n*Use \`/role list\` to see all default roles.*`,
+                        [role],
+                        serverSettings.language
+                    ),
                     flags: MessageFlags.Ephemeral
                 });
             });
@@ -140,7 +156,12 @@ module.exports = {
                     .join('\n');
                 
                 await interaction.reply({
-                    content: `**Default Roles** (assigned to all verified users):\n${roleNames}\n\n*Use \`/role add\` or \`/role remove\` to modify.\nUse \`/domainrole\` to assign additional roles based on email domain.*`,
+                    content: await withRoleWarning(
+                        interaction.guild,
+                        `**Default Roles** (assigned to all verified users):\n${roleNames}\n\n*Use \`/role add\` or \`/role remove\` to modify.\nUse \`/domainrole\` to assign additional roles based on email domain.*`,
+                        serverSettings.defaultRoles,
+                        serverSettings.language
+                    ),
                     flags: MessageFlags.Ephemeral
                 });
             });
@@ -184,7 +205,12 @@ module.exports = {
                         serverSettings.unverifiedRoleName = unverifiedRole.id;
                         database.updateServerSettings(interaction.guildId, serverSettings);
                         await interaction.reply({
-                            content: `**Unverified role set to:** ${unverifiedRole.name}\n\nThis role will be removed when users complete email verification.\n*Tip: Use \`/settings auto-unverified\` to auto-assign this role to new members.*`,
+                            content: await withRoleWarning(
+                                interaction.guild,
+                                `**Unverified role set to:** ${unverifiedRole.name}\n\nThis role will be removed when users complete email verification.\n*Tip: Use \`/settings auto-unverified\` to auto-assign this role to new members.*`,
+                                [unverifiedRole],
+                                serverSettings.language
+                            ),
                             flags: MessageFlags.Ephemeral
                         });
                     }

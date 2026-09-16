@@ -114,7 +114,7 @@ extra:
   # before the image arrives; without them a wide banner can flash as a square.
   image_width: "2400"
   image_height: "1260"
-  invite_url: https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268504128&scope=bot%20applications.commands
+  invite_url: https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands
 nav:
   - Home: 'index.md'
   - Get started:
