@@ -123,6 +123,7 @@ nav:
       - 'Compare alternatives': 'compare.md'
       - 'Allowed-email API': 'api.md'
   - Use cases:
+      - 'use-cases/index.md'
       - 'Universities & schools': 'use-cases/university.md'
       - 'Companies & teams': 'use-cases/company.md'
       - 'Courses, events & hackathons': 'use-cases/communities.md'
@@ -132,6 +133,7 @@ nav:
       - Status: 'status.md'
       - Contributors: 'contributing.md'
   - Legal:
+      - 'legal/index.md'
       - Impressum: 'legal/impressum.md'
       - Datenschutz: 'legal/datenschutz.md'
       - AGB: 'legal/agb.md'
