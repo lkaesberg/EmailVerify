@@ -1,6 +1,6 @@
 ---
 title: Discord Verification Methods Compared
-description: Captcha bots, alt-account detection, phone verification, manual vetting, SSO and email domain verification — what each one actually proves about a Discord member, and which problem each one solves.
+description: Captcha bots, alt-account detection, phone verification, manual vetting, SSO and email domain verification compared. What each one actually proves about a Discord member, and which problem each one solves.
 faq:
   - q: What is the difference between a captcha bot and an email verification bot on Discord?
     a: A captcha bot proves the member is a human rather than a script. An email verification bot proves the member controls a mailbox at a domain you chose. They answer different questions, and a server that needs to know who someone is gains nothing from a captcha.

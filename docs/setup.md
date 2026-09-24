@@ -1,6 +1,6 @@
 ---
 title: How to Set Up Email Verification on a Discord Server
-description: Step-by-step guide to adding email verification to a Discord server — invite the bot, pick your allowed domains, post the verification button. Takes about three minutes, with a 60-second video walkthrough.
+description: Step-by-step guide to adding email verification to a Discord server. Invite the bot, pick your allowed domains and post the verification button. Takes about three minutes, with a 60-second video walkthrough.
 video_id: LMWu3Ui2IAk
 video_title: EmailVerify — Email Verification for Discord Servers (Setup in 60 Seconds)
 # Full ISO 8601 date-time with offset — Search Console flags a bare date as

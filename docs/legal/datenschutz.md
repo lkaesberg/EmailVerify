@@ -1,6 +1,6 @@
 ---
 title: Datenschutzerklärung
-description: Wie EmailVerify personenbezogene Daten verarbeitet — gehashte E-Mail-Adressen, Speicherdauer, Auftragsverarbeiter und Betroffenenrechte nach DSGVO.
+description: Wie EmailVerify personenbezogene Daten verarbeitet, von gehashten E-Mail-Adressen über Speicherdauer und Auftragsverarbeiter bis zu den Betroffenenrechten nach DSGVO.
 ---
 
 # Datenschutzerklärung

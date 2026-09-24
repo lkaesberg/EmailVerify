@@ -1,6 +1,6 @@
 ---
 title: Pricing — EmailVerify Premium Plans
-description: EmailVerify pricing. Free tier of 25 verification emails per month, plus optional subscriptions, one-time credit packs that never expire, and a CSV unlock — all billed through Discord.
+description: EmailVerify pricing. Free tier of 25 verification emails per month, plus optional subscriptions, one-time credit packs that never expire, and a CSV unlock, all billed through Discord.
 ---
 
 # Premium plans

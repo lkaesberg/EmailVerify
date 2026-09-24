@@ -1,6 +1,6 @@
 ---
 title: EmailVerify Bot — Email Verification for Discord
-description: Verify that Discord members really own an email address at a domain you choose — @*.edu, your company domain, or a fixed allowlist — before they get a role. Free for 25 verifications a month, open source, GDPR-friendly.
+description: Verify that Discord members really own an email address at a domain you choose (@*.edu, your company domain, or a fixed allowlist) before they get a role. Free for 25 verifications a month, open source, GDPR-friendly.
 faq:
   - q: How does email verification on Discord work?
     a: The member clicks a button in your server, types their email address into a popup, and receives a 6-digit code. Entering that code back in Discord proves they control the mailbox, and the bot assigns the role you configured. No external account and no OAuth is involved.

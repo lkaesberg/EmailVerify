@@ -1,5 +1,5 @@
 site_name: EmailVerify Bot
-site_description: A Discord bot that verifies users own a specific email address — domain-based access control with privacy-first storage.
+site_description: A Discord bot that verifies users own a specific email address, with domain-based access control and privacy-first storage.
 site_url: https://getemailverified.com/
 site_author: Lars Kaesberg
 repo_url: https://github.com/lkaesberg/EmailVerify

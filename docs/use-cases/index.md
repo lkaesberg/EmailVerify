@@ -1,6 +1,6 @@
 ---
 title: Discord Email Verification Use Cases
-description: How universities, companies and paid communities use EmailVerify to let only the right people into a Discord server — domain-based roles, wildcard domains and fixed allowlists.
+description: How universities, companies and paid communities use EmailVerify to let only the right people into a Discord server, with domain-based roles, wildcard domains and fixed allowlists.
 ---
 
 # Use cases

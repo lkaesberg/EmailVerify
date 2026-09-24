@@ -1,6 +1,6 @@
 ---
 title: Discord Verification for Paid Courses, Events and Hackathons
-description: Let only registered attendees, paying students or ticket holders into a Discord server. Upload a CSV allowlist of exact email addresses — no shared domain needed — and give everyone on the list a role automatically.
+description: Let only registered attendees, paying students or ticket holders into a Discord server. Upload a CSV allowlist of exact email addresses (no shared domain needed) and give everyone on the list a role automatically.
 faq:
   - q: How do I let only paying customers into my Discord server?
     a: Export the email addresses of your paying customers from your course or checkout platform, upload the CSV to the bot with /emaillist upload, and only those exact addresses can verify. Everyone else is turned away regardless of their email domain.

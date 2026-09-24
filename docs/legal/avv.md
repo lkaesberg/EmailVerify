@@ -1,6 +1,6 @@
 ---
 title: Auftragsverarbeitungsvertrag (AVV)
-description: Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Server-Betreiber, die EmailVerify zur Verifizierung ihrer Mitglieder einsetzen — inklusive Subunternehmer und technischer und organisatorischer Maßnahmen.
+description: Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Server-Betreiber, die EmailVerify zur Verifizierung ihrer Mitglieder einsetzen, inklusive Subunternehmer und technischer und organisatorischer Maßnahmen.
 ---
 
 # Auftragsverarbeitungsvertrag (AVV)

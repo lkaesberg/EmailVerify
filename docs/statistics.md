@@ -1,6 +1,6 @@
 ---
 title: EmailVerify Statistics — Live Discord Bot Usage
-description: Live usage statistics for the EmailVerify Discord bot — servers running it, members verified, and verification emails delivered, with history charts.
+description: Live usage statistics for the EmailVerify Discord bot, with servers running it, members verified and verification emails delivered, plus history charts.
 ---
 
 # Statistics
