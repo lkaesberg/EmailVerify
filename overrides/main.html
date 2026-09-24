@@ -79,6 +79,42 @@
   <meta name="twitter:image:alt" content="{{ config.extra.image_alt }}">
   {%- endif %}
 
+  {#- Discord "component embed": when a link to this site is posted in Discord,
+      this JSON replaces the Open Graph card with a Components V2 layout that
+      can carry link buttons (Add to server, …). The OG tags above stay as the
+      fallback. Spec: discord.com/developers/link-previews/component-embeds.
+      The payload is strict — only types 1/2/9/10/11/12/14/17, buttons must be
+      style 5 with no keys beyond type/url/style/label/emoji/disabled, and any
+      violation drops the whole embed — so change the shape carefully. Text is
+      Discord markdown, hence md() escaping front-matter strings. #}
+  {%- macro md(text) -%}
+    {{- text | replace("\\", "\\\\") | replace("*", "\\*") | replace("_", "\\_") | replace("~", "\\~")
+             | replace("`", "\\`") | replace("|", "\\|") | replace("[", "\\[") | replace("]", "\\]") -}}
+  {%- endmacro %}
+  {#- The homepage <title> carries a slogan for Google; in the card that just
+      wraps onto a second line, and the tagline already says "Discord app". #}
+  {%- set embed_title = config.extra.brand if page and page.is_homepage else page_title %}
+  {%- set discord_embed = {"component": {
+    "type": 17,
+    "accent_color": 5793266,
+    "components": [
+      {"type": 9,
+       "components": [
+         {"type": 10, "content": "## [" ~ md(embed_title) ~ "](" ~ page_url ~ ")\n-# " ~ md(config.extra.discord_embed_tagline)},
+         {"type": 10, "content": md(page_description)}
+       ],
+       "accessory": {"type": 11, "media": {"url": config.site_url ~ "assets/favicon-192x192.png"}}},
+      {"type": 14, "divider": true, "spacing": 1},
+      {"type": 1, "components": [
+        {"type": 2, "style": 5, "label": "Add to your server", "emoji": {"name": "➕"}, "url": config.extra.invite_url},
+        {"type": 2, "style": 5, "label": "Quick start", "url": config.site_url ~ "setup/"},
+        {"type": 2, "style": 5, "label": "Pricing", "url": config.site_url ~ "premium/"},
+        {"type": 2, "style": 5, "label": "Support server", "url": config.extra.social[0].link}
+      ]}
+    ]
+  }} %}
+  <script id="discord:component-embed" type="application/json">{{ discord_embed | tojson }}</script>
+
   {%- if page and page.is_homepage %}
   {#- Google derives the "site name" shown above search results from WebSite
       structured data on the homepage (falling back to og:site_name, then the
