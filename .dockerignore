@@ -23,5 +23,6 @@ discord-verify.txt
 site
 docs
 mkdocs.yml
+hooks
 .playwright-mcp
 .idea

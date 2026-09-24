@@ -55,6 +55,10 @@ extra_css:
   - stylesheets/extra.css
 extra_javascript:
   - javascripts/extra.js
+# Adds ?v=<content hash> to the two files above. Cloudflare caches them for
+# hours while serving HTML fresh — see the note in the hook.
+hooks:
+  - hooks/cache_bust.py
 markdown_extensions:
   - admonition
   - attr_list
