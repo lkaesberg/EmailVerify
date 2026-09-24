@@ -33,6 +33,83 @@ Built for university servers, employee groups, and any closed community where yo
 [See pricing →](premium.md){ .md-button }
 </div>
 
+<!--
+  Organisations whose members verify with EmailVerify. Picked from the
+  2026-09-24 database: only servers whose allowed domains all belong to one
+  organisation count (a server mixing @amazon.com with @ubc.ca says nothing
+  about either), and only organisations with 75+ distinct verified members.
+  Government, military and NHS insignia are left out on purpose — their use is
+  legally restricted. Logos are two-tone (black ink, white knockouts) so one
+  file serves both schemes; see section 12 of extra.css.
+-->
+<section class="ev-orgs" aria-labelledby="ev-orgs-title">
+  <p class="ev-orgs-title" id="ev-orgs-title">Used by communities at</p>
+  <div class="ev-orgs-viewport">
+    <ul class="ev-orgs-track">
+    <li><img src="/assets/orgs/google.svg" alt="Google" width="111" height="34" style="--h: 1.68rem" decoding="async"></li>
+    <li><img src="/assets/orgs/harvard.svg" alt="Harvard University" width="117" height="32" style="--h: 1.61rem" decoding="async"></li>
+    <li><img src="/assets/orgs/microsoft.svg" alt="Microsoft" width="136" height="29" style="--h: 1.45rem" decoding="async"></li>
+    <li><img src="/assets/orgs/stanford.svg" alt="Stanford University" width="137" height="29" style="--h: 1.44rem" decoding="async"></li>
+    <li><img src="/assets/orgs/berkeley.svg" alt="UC Berkeley" width="109" height="34" style="--h: 1.71rem" decoding="async"></li>
+    <li><img src="/assets/orgs/riotgames.svg" alt="Riot Games" width="89" height="39" style="--h: 1.97rem" decoding="async"></li>
+    <li><img src="/assets/orgs/columbia.svg" alt="Columbia University" width="165" height="25" style="--h: 1.26rem" decoding="async"></li>
+    <li><img src="/assets/orgs/cornell.svg" alt="Cornell University" width="170" height="23" style="--h: 1.14rem" decoding="async"></li>
+    <li><img src="/assets/orgs/akamai.svg" alt="Akamai" width="93" height="38" style="--h: 1.9rem" decoding="async"></li>
+    <li><img src="/assets/orgs/caltech.svg" alt="Caltech" width="127" height="31" style="--h: 1.53rem" decoding="async"></li>
+    <li><img src="/assets/orgs/cmu.svg" alt="Carnegie Mellon University" width="170" height="15" style="--h: 0.76rem" decoding="async"></li>
+    <li><img src="/assets/orgs/honda.svg" alt="Honda" width="169" height="22" style="--h: 1.08rem" decoding="async"></li>
+    <li><img src="/assets/orgs/nyu.svg" alt="New York University" width="103" height="35" style="--h: 1.76rem" decoding="async"></li>
+    <li><img src="/assets/orgs/ucla.svg" alt="UCLA" width="106" height="35" style="--h: 1.74rem" decoding="async"></li>
+    <li><img src="/assets/orgs/creditmutuel.svg" alt="Crédit Mutuel" width="170" height="23" style="--h: 1.13rem" decoding="async"></li>
+    <li><img src="/assets/orgs/gatech.svg" alt="Georgia Tech" width="132" height="30" style="--h: 1.48rem" decoding="async"></li>
+    <li><img src="/assets/orgs/northwestern.svg" alt="Northwestern University" width="170" height="23" style="--h: 1.14rem" decoding="async"></li>
+    <li><img src="/assets/orgs/duke.svg" alt="Duke University" width="90" height="39" style="--h: 1.96rem" decoding="async"></li>
+    <li><img src="/assets/orgs/umich.svg" alt="University of Michigan" width="142" height="28" style="--h: 1.41rem" decoding="async"></li>
+    <li><img src="/assets/orgs/illinois.svg" alt="University of Illinois Urbana-Champaign" width="149" height="27" style="--h: 1.36rem" decoding="async"></li>
+    <li><img src="/assets/orgs/purdue.svg" alt="Purdue University" width="151" height="27" style="--h: 1.35rem" decoding="async"></li>
+    <li><img src="/assets/orgs/utexas.svg" alt="The University of Texas at Austin" width="115" height="33" style="--h: 1.64rem" decoding="async"></li>
+    <li><img src="/assets/orgs/imperial.svg" alt="Imperial College London" width="117" height="32" style="--h: 1.61rem" decoding="async"></li>
+    <li><img src="/assets/orgs/ucl.svg" alt="University College London" width="116" height="33" style="--h: 1.63rem" decoding="async"></li>
+    <li><img src="/assets/orgs/kuleuven.svg" alt="KU Leuven" width="101" height="36" style="--h: 1.8rem" decoding="async"></li>
+    <li><img src="/assets/orgs/polytechnique.svg" alt="École Polytechnique" width="106" height="35" style="--h: 1.73rem" decoding="async"></li>
+    <li><img src="/assets/orgs/utoronto.svg" alt="University of Toronto" width="100" height="36" style="--h: 1.8rem" decoding="async"></li>
+    <li><img src="/assets/orgs/unsw.png" alt="UNSW Sydney" width="91" height="39" style="--h: 1.94rem" decoding="async"></li>
+    <li><img src="/assets/orgs/uwaterloo.svg" alt="University of Waterloo" width="169" height="21" style="--h: 1.04rem" decoding="async"></li>
+    <!-- Second copy: the track scrolls by exactly half its width, so this is what makes the loop seamless. -->
+    <li aria-hidden="true"><img src="/assets/orgs/google.svg" alt="" width="111" height="34" style="--h: 1.68rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/harvard.svg" alt="" width="117" height="32" style="--h: 1.61rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/microsoft.svg" alt="" width="136" height="29" style="--h: 1.45rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/stanford.svg" alt="" width="137" height="29" style="--h: 1.44rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/berkeley.svg" alt="" width="109" height="34" style="--h: 1.71rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/riotgames.svg" alt="" width="89" height="39" style="--h: 1.97rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/columbia.svg" alt="" width="165" height="25" style="--h: 1.26rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/cornell.svg" alt="" width="170" height="23" style="--h: 1.14rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/akamai.svg" alt="" width="93" height="38" style="--h: 1.9rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/caltech.svg" alt="" width="127" height="31" style="--h: 1.53rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/cmu.svg" alt="" width="170" height="15" style="--h: 0.76rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/honda.svg" alt="" width="169" height="22" style="--h: 1.08rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/nyu.svg" alt="" width="103" height="35" style="--h: 1.76rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/ucla.svg" alt="" width="106" height="35" style="--h: 1.74rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/creditmutuel.svg" alt="" width="170" height="23" style="--h: 1.13rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/gatech.svg" alt="" width="132" height="30" style="--h: 1.48rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/northwestern.svg" alt="" width="170" height="23" style="--h: 1.14rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/duke.svg" alt="" width="90" height="39" style="--h: 1.96rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/umich.svg" alt="" width="142" height="28" style="--h: 1.41rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/illinois.svg" alt="" width="149" height="27" style="--h: 1.36rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/purdue.svg" alt="" width="151" height="27" style="--h: 1.35rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/utexas.svg" alt="" width="115" height="33" style="--h: 1.64rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/imperial.svg" alt="" width="117" height="32" style="--h: 1.61rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/ucl.svg" alt="" width="116" height="33" style="--h: 1.63rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/kuleuven.svg" alt="" width="101" height="36" style="--h: 1.8rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/polytechnique.svg" alt="" width="106" height="35" style="--h: 1.73rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/utoronto.svg" alt="" width="100" height="36" style="--h: 1.8rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/unsw.png" alt="" width="91" height="39" style="--h: 1.94rem" decoding="async"></li>
+    <li aria-hidden="true"><img src="/assets/orgs/uwaterloo.svg" alt="" width="169" height="21" style="--h: 1.04rem" decoding="async"></li>
+    </ul>
+  </div>
+  <p class="ev-orgs-note">Student, alumni and employee servers at these organizations verify their members with EmailVerify. Logos are trademarks of their owners and don't imply endorsement.</p>
+</section>
+
 ---
 
 ## See it in 60 seconds

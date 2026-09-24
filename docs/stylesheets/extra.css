@@ -878,7 +878,116 @@
 }
 
 /* --------------------------------------------------------------------------
-   12. Responsive
+   12. "Used by communities at" logo carousel
+
+   The logos in assets/orgs/ are two-tone on purpose: black ink plus white
+   knockouts (text inside a box, detail inside a shield). Opacity turns the
+   ink into a uniform grey on light; on slate, invert() flips ink to white and
+   knockouts to black, so one file reads correctly in both schemes. Each <img>
+   carries its own --h, set from its aspect ratio, so long wordmarks and
+   compact marks look equally heavy.
+
+   The track holds the list twice and scrolls by exactly half its width, which
+   makes the loop seamless. Items use padding rather than `gap` so that half
+   the track is precisely one copy.
+   -------------------------------------------------------------------------- */
+
+.ev-orgs {
+  margin: 1.8rem 0 .4rem;
+}
+
+.md-typeset .ev-orgs-title {
+  margin: 0 0 .7rem;
+  font-size: .62rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ev-muted);
+}
+
+.ev-orgs-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+}
+
+.md-typeset ul.ev-orgs-track {
+  display: flex;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: ev-orgs-scroll 110s linear infinite;
+}
+
+/* `ul.` lifts this above Material's `[dir=ltr] .md-typeset ul li` margin. */
+.md-typeset ul.ev-orgs-track > li {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  margin: 0;
+  padding: 0 1.5rem;
+}
+
+.md-typeset .ev-orgs-track img {
+  display: block;
+  height: var(--h, 1.6rem);
+  width: auto;
+  max-width: none;
+  opacity: .55;
+  transition: opacity .15s ease;
+}
+
+.md-typeset .ev-orgs-track img:hover {
+  opacity: .9;
+}
+
+[data-md-color-scheme="slate"] .ev-orgs-track img {
+  filter: invert(1);
+  opacity: .62;
+}
+
+[data-md-color-scheme="slate"] .ev-orgs-track img:hover {
+  opacity: .95;
+}
+
+@keyframes ev-orgs-scroll {
+  to { transform: translateX(-50%); }
+}
+
+.md-typeset .ev-orgs-note {
+  margin: .5rem auto 0;
+  max-width: 40rem;
+  font-size: .62rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ev-muted);
+}
+
+/* No motion wanted: show one copy of the list as a static, wrapped grid. */
+@media (prefers-reduced-motion: reduce) {
+  .ev-orgs-viewport {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .md-typeset ul.ev-orgs-track {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+    row-gap: .3rem;
+    animation: none;
+  }
+
+  .md-typeset ul.ev-orgs-track > li[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13. Responsive
    -------------------------------------------------------------------------- */
 
 @media screen and (max-width: 76.1875em) {
@@ -979,6 +1088,15 @@
 
   .md-typeset .ev-builtwith img.is-wordmark {
     height: 1.3rem;
+  }
+
+  .md-typeset ul.ev-orgs-track > li {
+    height: 2.6rem;
+    padding: 0 1.1rem;
+  }
+
+  .md-typeset .ev-orgs-track img {
+    height: calc(var(--h, 1.6rem) * .82);
   }
 
   .ev-step {
