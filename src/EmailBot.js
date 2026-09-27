@@ -680,6 +680,9 @@ bot.on("guildDelete", guild => {
 })
 
 bot.on("guildMemberAdd", async member => {
+    // Other bots can't verify by email. Without this they got the unverified role, which
+    // can lock them out of channels, and an auto-verify DM they can never read.
+    if (member.user.bot) return
     await database.getServerSettings(member.guild.id, async serverSettings => {
         analytics.capture({
             event: 'member_joined',
