@@ -19,6 +19,8 @@ const {getLocale, defaultLanguage} = require('./Language')
 require("./database/ServerSettings");
 const ServerStatsAPI = require("./api/ServerStatsAPI");
 const topggAPI = require("./api/TopGG")
+const discordBotList = require("./api/DiscordBotList")
+const { startBotListStats } = require("./api/BotListStats")
 const MailSender = require("./mail/MailSender")
 const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
@@ -552,13 +554,15 @@ bot.once('clientReady', async () => {
             }
         })
     }
-    // Only in unsharded mode, post TopGG stats from client
+    // Only in unsharded mode, post bot-list stats from the client (the sharding
+    // manager does it otherwise)
     if (!bot.shard) {
         try {
             topggAPI(bot);
         } catch (e) {
             console.error('Failed to start TopGG API:', e);
         }
+        startBotListStats(bot);
     }
 
     // Publish the command set once, then retire the guild-scoped copies this shard's
@@ -566,6 +570,10 @@ bot.once('clientReady', async () => {
     // before the global ones are live.
     const published = await registerGlobalCommands();
     if (published) {
+        // Mirror the same command set onto the discordbotlist.com page. Every shard
+        // publishes to Discord, but one listing update per boot is enough, so only the
+        // primary shard sends it. Not awaited: it must never delay the cleanup below.
+        if (!bot.shard || bot.shard.ids.includes(0)) discordBotList.postCommands(commands);
         await clearStaleGuildCommands(bot);
     } else {
         console.warn('[Commands] Global registration failed — leaving existing guild commands in place');

@@ -307,6 +307,8 @@ npm start
 | `smtpHost` | Your SMTP server (e.g., `smtp.gmail.com`) |
 | `isGoogle` | Set to `true` if using Gmail |
 | `topggToken` | *(Optional)* Your Top.gg API token |
+| `discordbotlistToken` | *(Optional)* Your discordbotlist.com API token; posts the server count and command list |
+| `discordbotsggToken` | *(Optional)* Your discord.bots.gg API token; posts the server count |
 
 > 💡 **Gmail Users:** You need to create an [App Password](https://support.google.com/accounts/answer/185833) and use that instead of your regular password.
 

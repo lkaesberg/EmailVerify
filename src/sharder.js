@@ -11,6 +11,7 @@ const { ShardingManager } = require('discord.js');
 const path = require('path');
 const { token, topggToken } = require('../config/config.json');
 const { AutoPoster } = require('topgg-autoposter');
+const { startBotListStats } = require('./api/BotListStats');
 
 const manager = new ShardingManager(path.join(__dirname, 'EmailBot.js'), {
   token,
@@ -32,6 +33,7 @@ manager.on('shardCreate', (shard) => {
     } else {
       console.log('No topGG token!');
     }
+    startBotListStats(manager);
   } catch (error) {
     console.error('Failed to spawn shards:', error);
     process.exit(1);

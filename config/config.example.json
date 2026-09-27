@@ -9,6 +9,8 @@
     "isSecure": false,
     "isGoogle": false,
     "topggToken": "",
+    "discordbotlistToken": "",
+    "discordbotsggToken": "",
     "operatorWebhookUrl": "",
     "websiteUrl": "",
     "apiBaseUrl": "https://stats.example.com/api/v1",
