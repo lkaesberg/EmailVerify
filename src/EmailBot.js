@@ -30,11 +30,12 @@ const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
-const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed, createMailLimitReachedEmbed } = require('./utils/embeds');
+const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { getWebsiteUrl, describeSku, getCurrency } = require('./utils/premiumButtons');
+const { describeSku, getCurrency } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
+const voting = require('./utils/voting');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 const analytics = require('./utils/Analytics');
 const permissions = require('./utils/permissions');
@@ -232,7 +233,7 @@ async function handleResendCode(interaction, guildId) {
                     resend: true
                 }
             })
-            await interaction.editReply({ embeds: [createMailLimitReachedEmbed(language, getWebsiteUrl())] }).catch(() => {})
+            await interaction.editReply(await voting.limitReachedMessage(language, guildId)).catch(() => {})
             premiumManager.notifyMailDenied(userGuild, language).catch(() => {})
             autoDelete(15000)
             return
@@ -1126,6 +1127,10 @@ bot.on('interactionCreate', async interaction => {
             await handleResendCode(interaction, guildId)
             return
         }
+        if (action === 'vote') {
+            await voting.showVotePrompt(interaction, guildId, 'button')
+            return
+        }
         if (action === 'verifyButton' || action === 'openEmailModal') {
             // showModal is the ack and can't be deferred, so never REST-fetch here.
             // Pass the cached guild for role-name display when this shard owns it; for a
@@ -1316,8 +1321,8 @@ bot.on('interactionCreate', async interaction => {
                             free_limit: premiumCheck.freeLimit ?? null
                         }
                     })
-                    const limitEmbed = createMailLimitReachedEmbed(serverSettings.language, getWebsiteUrl())
-                    await interaction.followUp({ embeds: [limitEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
+                    const limitMessage = await voting.limitReachedMessage(serverSettings.language, userGuild.id)
+                    await interaction.followUp({ ...limitMessage, flags: MessageFlags.Ephemeral }).catch(() => {})
                     // Record the denial and fire the escalating admin upsell (1st/5th/20th
                     // blocked member per month) — this is lost demand admins can't see otherwise.
                     premiumManager.notifyMailDenied(userGuild, serverSettings.language).catch(() => {})
@@ -1576,10 +1581,10 @@ bot.on('interactionCreate', async interaction => {
         } catch {
             language = defaultLanguage
         }
-        // Allow all users to use /verify and /data (delete-user subcommand is user-accessible)
-        // and /premium (buy/redeem). Everything else is admin-gated.
+        // Allow all users to use /verify and /data (delete-user subcommand is user-accessible),
+        // /premium (buy/redeem) and /vote. Everything else is admin-gated.
         const isAdmin = interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)
-        const allowed = isAdmin || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "premium"
+        const allowed = isAdmin || interaction.commandName === "data" || interaction.commandName === "verify" || interaction.commandName === "premium" || interaction.commandName === "vote"
         let subcommand = null
         try { subcommand = interaction.options.getSubcommand(false) } catch { subcommand = null }
         analytics.capture({

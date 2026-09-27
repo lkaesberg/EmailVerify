@@ -17,8 +17,9 @@ const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
 const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
-const { createMailLimitReachedEmbed, createInvalidEmailEmbed } = require('../utils/embeds')
+const { createInvalidEmailEmbed } = require('../utils/embeds')
 const analytics = require('../utils/Analytics')
+const voting = require('../utils/voting')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
 // operator-webhook notification to one ping per 24h globally. The console.warn
@@ -221,8 +222,10 @@ module.exports = class MailSender {
             })
 
             try {
-                const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
-                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings, ctxGuild)
+                // This month's limit includes any vote bonus, so warnings track the real quota.
+                const freeLimit = premiumSource === 'free' ? await premiumManager.getFreeLimit(serverId) : this.freeMonthlyLimit
+                const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, freeLimit)
+                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings, ctxGuild, freeLimit)
                 if (premiumSource === 'credits-zepto' && crossings.creditsRemaining !== null && crossings.creditsRemaining <= 0) {
                     this.#maybeAutoDisableZeptoMode(interaction, language, ctxGuild)
                 }
@@ -359,7 +362,7 @@ module.exports = class MailSender {
         }
     }
 
-    async #fireQuotaWarnings(interaction, language, serverSettings, crossings, guild = null) {
+    async #fireQuotaWarnings(interaction, language, serverSettings, crossings, guild = null, freeLimit = this.freeMonthlyLimit) {
         guild = guild || interaction?.guild
         if (!guild || !crossings) return
 
@@ -385,8 +388,18 @@ module.exports = class MailSender {
             console.warn('[MailSender] Could not build premium buttons for quota warning:', e.message)
         }
 
-        const websiteUrl = getWebsiteUrl()
-        const footer = this.#buildQuotaFooter(language, websiteUrl)
+        let footer = this.#buildQuotaFooter(language, getWebsiteUrl())
+
+        // Voting is the free way to more emails: offer it next to the paid plans on the
+        // free-quota warnings. A single send crosses either free-quota or credit
+        // thresholds, never both, and credit warnings go to servers that already pay.
+        if (crossings.crossed80 || crossings.crossed95 || crossings.crossed100) {
+            const vote = await voting.quotaWarningExtras(language, guild.id)
+            if (vote) {
+                footer = `${vote.line}\n\n${footer}`
+                components = [...(components || []), vote.row].slice(0, 5)
+            }
+        }
 
         const fire = (titleKey, msgKey, extraLine, ...vars) => {
             let baseMessage = getLocale(language, msgKey, ...vars)
@@ -402,16 +415,16 @@ module.exports = class MailSender {
 
         // Deadline framing beats percentage framing: append "on pace to run out
         // around <date>" to the advisory warnings when the pace supports it.
-        const forecast = premiumManager.forecastLine(language, crossings.mailsSentMonth)
+        const forecast = premiumManager.forecastLine(language, crossings.mailsSentMonth, freeLimit)
 
         if (crossings.crossed80) {
-            fire('quotaWarn80Title', 'quotaWarn80Message', forecast, String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+            fire('quotaWarn80Title', 'quotaWarn80Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
         }
         if (crossings.crossed95) {
-            fire('quotaWarn95Title', 'quotaWarn95Message', forecast, String(crossings.mailsSentMonth ?? ''), String(this.freeMonthlyLimit))
+            fire('quotaWarn95Title', 'quotaWarn95Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
         }
         if (crossings.crossed100) {
-            fire('quotaWarn100Title', 'quotaWarn100Message', null, String(this.freeMonthlyLimit))
+            fire('quotaWarn100Title', 'quotaWarn100Message', null, String(freeLimit))
         }
         if (crossings.crossedCreditsLow) {
             fire('quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', null, String(crossings.creditsRemaining ?? 0))
@@ -424,7 +437,7 @@ module.exports = class MailSender {
         // (100% or zero credits), not advisory crossings. This is what regular members
         // see so they can explain to themselves why verification stopped working.
         if (crossings.crossed100 || crossings.crossedCreditsZero) {
-            this.#postPublicLimitNotice(interaction, language).catch(() => {})
+            this.#postPublicLimitNotice(interaction, language, guild.id).catch(() => {})
         }
     }
 
@@ -440,7 +453,7 @@ module.exports = class MailSender {
         return lines.join('\n')
     }
 
-    async #postPublicLimitNotice(interaction, language) {
+    async #postPublicLimitNotice(interaction, language, guildId) {
         // Post into the channel the user was actively verifying in — that's necessarily
         // the verify channel (or wherever the admin placed the verify button), and the
         // bot just used permissions there for the email modal, so the send should work.
@@ -452,8 +465,8 @@ module.exports = class MailSender {
         // notice is for the guild's verify channel, so skip it there.
         if (channel.isDMBased?.()) return
         try {
-            const embed = createMailLimitReachedEmbed(language, getWebsiteUrl())
-            await channel.send({ embeds: [embed] })
+            // Carries the vote button, so any member in the channel can add emails back.
+            await channel.send(await voting.limitReachedMessage(language, guildId))
         } catch (e) {
             // Missing send permission is fine — the admin DM path still fires.
         }

@@ -12,6 +12,7 @@ These commands can be used by any user.
 | Command | Description |
 |---------|-------------|
 | `/verify` | Start the email verification process to get access to the server |
+| `/vote` | Vote for EmailVerify on top.gg or discordbotlist.com; each vote gives this server +5 free verification emails this month (up to +25) |
 | `/data delete-user` | Delete your personal verification data and remove your verified status |
 | `/help` | Show your commands, how verification works, and the bot's source code & license (AGPL-3.0) |
 

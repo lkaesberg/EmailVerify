@@ -326,5 +326,18 @@
   "statusIssueChannelOverrides": "A channel override blocks the bot — see **Bot Permissions & Role Order** below.",
   "permRoleAssignSuppressed": "⚠️ **%VAR% further verification(s) failed the same way in the last hour** and were not reported separately. They will all work once the above is fixed.",
   "permReportTruncated": "*…list truncated. Run `/status` for the full picture.*",
-  "commandGuildOnly": "This command only works inside a server, not in DMs."
+  "commandGuildOnly": "This command only works inside a server, not in DMs.",
+  "voteCommandTitle": "🗳️ Vote for EmailVerify",
+  "voteCommandDescription": "Every vote gives **%VAR%** **+%VAR%** free verification emails this month, up to **+%VAR%**. You can vote every 12 hours on each site.\n\nEarned this month: **+%VAR%** / +%VAR%",
+  "voteCommandCapped": "**%VAR%** has already earned the maximum of **+%VAR%** bonus emails this month. Votes still help other communities find EmailVerify, thank you!",
+  "voteCommandTargetNote": "*Your votes now count for this server. Run `/vote` in another server to switch.*",
+  "voteNotAvailable": "Vote rewards aren't available on this bot.",
+  "voteButtonLabel": "Vote for +%VAR% free emails",
+  "voteLinkLabel": "Vote on %VAR%",
+  "voteLimitHint": "🗳️ **Want to help?** Vote for EmailVerify and this server gets **+%VAR%** verification emails right away.",
+  "voteQuotaHint": "🗳️ **Free option:** members can run `/vote` to add **+%VAR%** emails per vote, up to **+%VAR%** a month.",
+  "voteThanksRewarded": "🎉 Thanks for voting on %VAR%! **%VAR%** just got **+%VAR%** free verification emails this month (**+%VAR%** / +%VAR% earned). You can vote again in 12 hours.",
+  "voteThanksCapped": "🎉 Thanks for voting on %VAR%! **%VAR%** has already earned the full **+%VAR%** bonus this month, but your vote still helps other communities find EmailVerify.",
+  "voteThanksUnattributed": "🎉 Thanks for voting on %VAR%! Tip: run `/vote` in your server, and your future votes will add free verification emails there.",
+  "premiumVoteBonusLine": "🗳️ Vote bonus this month: **+%VAR%** / +%VAR% (`/vote`)"
 }

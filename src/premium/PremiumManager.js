@@ -27,6 +27,21 @@ class PremiumManager {
         return monetization.freeMonthlyLimit ?? 25
     }
 
+    /** Bonus mails per vote and the most a server can earn from votes in one month. */
+    get voteReward() {
+        const cfg = monetization.voteReward || {}
+        return { perVote: cfg.mails ?? 5, monthlyCap: cfg.monthlyCap ?? 25 }
+    }
+
+    /**
+     * This month's free allowance for one guild: the base quota plus whatever its members
+     * have earned by voting. Every quota check and warning goes through this, so a vote
+     * takes effect on the very next send.
+     */
+    async getFreeLimit(guildID) {
+        return this.freeMonthlyLimit + await database.getVoteBonus(guildID)
+    }
+
     /** Whether the operator has configured the ZeptoMail provider. Required for
      *  guilds to opt into the 'zeptomail' mail mode. */
     get zeptoConfigured() {
@@ -67,8 +82,8 @@ class PremiumManager {
      * given usage, or null. The date renders as a Discord timestamp so it localizes
      * itself to each reader's locale/timezone.
      */
-    forecastLine(language, mailsSentMonth) {
-        const runOut = this.computeRunOutForecast(mailsSentMonth, this.freeMonthlyLimit)
+    forecastLine(language, mailsSentMonth, freeLimit = this.freeMonthlyLimit) {
+        const runOut = this.computeRunOutForecast(mailsSentMonth, freeLimit)
         if (!runOut) return null
         const unix = Math.floor(runOut.getTime() / 1000)
         return getLocale(language || 'english', 'premiumForecastRunOut', `<t:${unix}:D>`)
@@ -104,7 +119,13 @@ class PremiumManager {
             // Buttons are a bonus — proceed without them if SKUs aren't fetchable.
         }
 
+        // Required here, not at the top: voting.js itself requires this module.
+        const voting = require('../utils/voting')
+        const vote = await voting.quotaWarningExtras(lang, guild.id)
+        if (vote) components = [...(components || []), vote.row].slice(0, 5)
+
         let message = getLocale(lang, 'mailDeniedWarnMessage', String(crossings.deniedMonth ?? 1))
+        if (vote) message += '\n\n' + vote.line
         message += '\n\n' + getLocale(lang, 'quotaWarnRedeemHint')
         const mobileHint = mobileHintLine(lang)
         if (mobileHint) {
@@ -150,7 +171,8 @@ class PremiumManager {
 
             const autoDisabled = await database.tryAutoDisableZeptoMode(guildID)
             const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
-            if (stats.mailsSentMonth < this.freeMonthlyLimit) {
+            const freeLimit = await this.getFreeLimit(guildID)
+            if (stats.mailsSentMonth < freeLimit) {
                 return { allowed: true, source: 'free', autoDisabled, autoDisabledReason: 'credits_exhausted' }
             }
             const consumedFallback = await database.consumeGuildCredit(guildID)
@@ -159,7 +181,7 @@ class PremiumManager {
                 allowed: false,
                 reason: 'limit_reached',
                 mailsSentMonth: stats.mailsSentMonth,
-                freeLimit: this.freeMonthlyLimit,
+                freeLimit,
                 autoDisabled,
                 autoDisabledReason: 'credits_exhausted'
             }
@@ -167,7 +189,8 @@ class PremiumManager {
 
         // 3. Default 'free' mode: free monthly allowance → credits → denied.
         const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
-        if (stats.mailsSentMonth < this.freeMonthlyLimit) {
+        const freeLimit = await this.getFreeLimit(guildID)
+        if (stats.mailsSentMonth < freeLimit) {
             return { allowed: true, source: 'free' }
         }
         const consumed = await database.consumeGuildCredit(guildID)
@@ -176,7 +199,7 @@ class PremiumManager {
             allowed: false,
             reason: 'limit_reached',
             mailsSentMonth: stats.mailsSentMonth,
-            freeLimit: this.freeMonthlyLimit
+            freeLimit
         }
     }
 
@@ -359,14 +382,18 @@ class PremiumManager {
         const stats = await new Promise(resolve => {
             database.getGuildStats(guildID, resolve)
         })
+        const voteBonus = await database.getVoteBonus(guildID)
+        const freeLimit = this.freeMonthlyLimit + voteBonus
 
         return {
             enabled: this.enabled,
             subscriptionTier: tier,
-            freeLimit: this.freeMonthlyLimit,
+            freeLimit,
+            voteBonus,
+            voteBonusCap: this.voteReward.monthlyCap,
             mailsSentMonth: stats.mailsSentMonth,
             mailsDeniedMonth: stats.mailsDeniedMonth || 0,
-            freeRemaining: Math.max(0, this.freeMonthlyLimit - stats.mailsSentMonth),
+            freeRemaining: Math.max(0, freeLimit - stats.mailsSentMonth),
             bonusCredits: premium.bonusCredits,
             csvUnlocked: premium.csvUnlocked,
             mailMode: premium.mailMode || 'free',

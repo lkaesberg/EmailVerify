@@ -326,5 +326,18 @@
   "statusIssueChannelOverrides": "채널 권한 설정이 봇을 막고 있습니다 — 아래 **봇 권한 및 역할 순서**를 확인하세요.",
   "permRoleAssignSuppressed": "⚠️ **지난 1시간 동안 %VAR%건의 인증이 같은 이유로 실패했으며** 개별적으로 알리지 않았습니다. 위 문제를 해결하면 모두 정상 작동합니다.",
   "permReportTruncated": "*…목록이 잘렸습니다. 전체 내용은 `/status`로 확인하세요.*",
-  "commandGuildOnly": "이 명령어는 서버 안에서만 사용할 수 있으며 DM에서는 작동하지 않습니다."
+  "commandGuildOnly": "이 명령어는 서버 안에서만 사용할 수 있으며 DM에서는 작동하지 않습니다.",
+  "voteCommandTitle": "🗳️ EmailVerify에 투표하기",
+  "voteCommandDescription": "투표할 때마다 **%VAR%** 서버가 이번 달 무료 인증 이메일 **+%VAR%**개를 받습니다 (최대 **+%VAR%**개). 각 사이트에서 12시간마다 투표할 수 있습니다.\n\n이번 달 획득: **+%VAR%** / +%VAR%",
+  "voteCommandCapped": "**%VAR%** 서버는 이번 달 최대치인 보너스 이메일 **+%VAR%**개를 이미 받았습니다. 투표는 다른 커뮤니티가 EmailVerify를 찾는 데 계속 도움이 됩니다. 감사합니다!",
+  "voteCommandTargetNote": "*이제 투표가 이 서버에 적용됩니다. 다른 서버로 바꾸려면 그 서버에서 `/vote` 를 실행하세요.*",
+  "voteNotAvailable": "이 봇에서는 투표 보상을 사용할 수 없습니다.",
+  "voteButtonLabel": "투표하고 무료 이메일 +%VAR%개 받기",
+  "voteLinkLabel": "%VAR%에서 투표하기",
+  "voteLimitHint": "🗳️ **도와주고 싶으신가요?** EmailVerify에 투표하면 이 서버가 바로 인증 이메일 **+%VAR%**개를 받습니다.",
+  "voteQuotaHint": "🗳️ **무료 옵션:** 멤버가 `/vote` 로 투표할 때마다 이메일 **+%VAR%**개가 추가됩니다 (한 달 최대 **+%VAR%**개).",
+  "voteThanksRewarded": "🎉 %VAR%에서 투표해 주셔서 감사합니다! **%VAR%** 서버가 이번 달 무료 인증 이메일 **+%VAR%**개를 받았습니다 (**+%VAR%** / +%VAR% 획득). 12시간 후에 다시 투표할 수 있습니다.",
+  "voteThanksCapped": "🎉 %VAR%에서 투표해 주셔서 감사합니다! **%VAR%** 서버는 이번 달 보너스 **+%VAR%**개를 이미 모두 받았지만, 투표는 다른 커뮤니티가 EmailVerify를 찾는 데 도움이 됩니다.",
+  "voteThanksUnattributed": "🎉 %VAR%에서 투표해 주셔서 감사합니다! 팁: 서버에서 `/vote` 를 실행하면 다음 투표부터 그 서버에 무료 인증 이메일이 추가됩니다.",
+  "premiumVoteBonusLine": "🗳️ 이번 달 투표 보너스: **+%VAR%** / +%VAR% (`/vote`)"
 }

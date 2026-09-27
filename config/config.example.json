@@ -11,12 +11,18 @@
     "topggToken": "",
     "discordbotlistToken": "",
     "discordbotsggToken": "",
+    "topggWebhookSecret": "",
+    "discordbotlistWebhookSecret": "",
     "operatorWebhookUrl": "",
     "websiteUrl": "",
     "apiBaseUrl": "https://stats.example.com/api/v1",
     "monetization": {
         "enabled": false,
         "freeMonthlyLimit": 25,
+        "voteReward": {
+            "mails": 5,
+            "monthlyCap": 25
+        },
         "currency": "EUR",
         "skus": {
             "subscriptionTier1": "",

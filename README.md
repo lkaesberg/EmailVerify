@@ -309,6 +309,7 @@ npm start
 | `topggToken` | *(Optional)* Your Top.gg API token |
 | `discordbotlistToken` | *(Optional)* Your discordbotlist.com API token; posts the server count and command list |
 | `discordbotsggToken` | *(Optional)* Your discord.bots.gg API token; posts the server count |
+| `topggWebhookSecret` / `discordbotlistWebhookSecret` | *(Optional)* Webhook secrets for vote rewards; the endpoints are `/webhooks/topgg` and `/webhooks/discordbotlist` on the stats server (port 8181) |
 
 > 💡 **Gmail Users:** You need to create an [App Password](https://support.google.com/accounts/answer/185833) and use that instead of your regular password.
 

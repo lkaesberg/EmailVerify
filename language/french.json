@@ -326,5 +326,18 @@
   "statusIssueChannelOverrides": "Une permission de salon bloque le bot — voir **Permissions du bot & ordre des rôles** ci-dessous.",
   "permRoleAssignSuppressed": "⚠️ **%VAR% autre(s) vérification(s) ont échoué de la même façon dans la dernière heure** et n'ont pas été signalées séparément. Elles fonctionneront toutes une fois le point ci-dessus corrigé.",
   "permReportTruncated": "*…liste tronquée. Lancez `/status` pour la vue complète.*",
-  "commandGuildOnly": "Cette commande ne fonctionne que dans un serveur, pas en MP."
+  "commandGuildOnly": "Cette commande ne fonctionne que dans un serveur, pas en MP.",
+  "voteCommandTitle": "🗳️ Votez pour EmailVerify",
+  "voteCommandDescription": "Chaque vote offre à **%VAR%** **+%VAR%** emails de vérification gratuits ce mois-ci, jusqu'à **+%VAR%**. Vous pouvez voter toutes les 12 heures sur chaque site.\n\nObtenus ce mois-ci : **+%VAR%** / +%VAR%",
+  "voteCommandCapped": "**%VAR%** a déjà obtenu le maximum de **+%VAR%** emails bonus ce mois-ci. Les votes aident quand même d'autres communautés à découvrir EmailVerify, merci !",
+  "voteCommandTargetNote": "*Vos votes comptent désormais pour ce serveur. Exécutez `/vote` dans un autre serveur pour changer.*",
+  "voteNotAvailable": "Les récompenses de vote ne sont pas disponibles sur ce bot.",
+  "voteButtonLabel": "Voter pour +%VAR% emails gratuits",
+  "voteLinkLabel": "Voter sur %VAR%",
+  "voteLimitHint": "🗳️ **Envie d'aider ?** Votez pour EmailVerify et ce serveur reçoit immédiatement **+%VAR%** emails de vérification.",
+  "voteQuotaHint": "🗳️ **Option gratuite :** les membres peuvent utiliser `/vote` pour ajouter **+%VAR%** emails par vote, jusqu'à **+%VAR%** par mois.",
+  "voteThanksRewarded": "🎉 Merci d'avoir voté sur %VAR% ! **%VAR%** vient de recevoir **+%VAR%** emails de vérification gratuits ce mois-ci (**+%VAR%** / +%VAR% obtenus). Vous pourrez voter à nouveau dans 12 heures.",
+  "voteThanksCapped": "🎉 Merci d'avoir voté sur %VAR% ! **%VAR%** a déjà obtenu le bonus complet de **+%VAR%** ce mois-ci, mais votre vote aide quand même d'autres communautés à découvrir EmailVerify.",
+  "voteThanksUnattributed": "🎉 Merci d'avoir voté sur %VAR% ! Astuce : exécutez `/vote` dans votre serveur, et vos prochains votes y ajouteront des emails de vérification gratuits.",
+  "premiumVoteBonusLine": "🗳️ Bonus de vote ce mois-ci : **+%VAR%** / +%VAR% (`/vote`)"
 }

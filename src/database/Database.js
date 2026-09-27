@@ -231,6 +231,32 @@ class Database {
                 clearedAt INTEGER NOT NULL
             );`)
         })
+        this.runMigration(23, () => {
+            // Vote rewards. A vote on top.gg or discordbotlist.com raises the free quota
+            // of one server for the calendar month it was cast in. The bonus is summed
+            // from this log rather than kept as a counter, so it expires with the month
+            // by construction and needs no reset logic. guildID is null when a vote
+            // could not be attributed to any server; it is still logged for dedupe.
+            this.db.run(`CREATE TABLE IF NOT EXISTS votes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT NOT NULL,
+                userID TEXT NOT NULL,
+                guildID TEXT,
+                month TEXT NOT NULL,
+                votedAt INTEGER NOT NULL,
+                bonusGranted INTEGER NOT NULL DEFAULT 0
+            );`)
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_guild_month ON votes(guildID, month)")
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_source_user ON votes(source, userID, votedAt)")
+            // Votes arrive from the lists with a user id only. This remembers which server
+            // each user last ran /vote (or pressed a vote button) in, so the reward lands
+            // there — discordbotlist.com passes no custom data through its webhook.
+            this.db.run(`CREATE TABLE IF NOT EXISTS vote_targets(
+                userID TEXT PRIMARY KEY,
+                guildID TEXT NOT NULL,
+                updatedAt INTEGER NOT NULL
+            );`)
+        })
     }
 
     /**
@@ -1165,6 +1191,100 @@ class Database {
                     resolve(0)
                 }
             })
+        })
+    }
+
+    /** Remember the server a user's future votes should reward. */
+    setVoteTarget(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT INTO vote_targets (userID, guildID, updatedAt) VALUES (?, ?, ?) ON CONFLICT(userID) DO UPDATE SET guildID = excluded.guildID, updatedAt = excluded.updatedAt",
+                [userID, guildID, Date.now()],
+                (err) => {
+                    if (err) console.error('Error setting vote target:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /** @returns {Promise<?string>} the guild id, or null when the user never picked one */
+    getVoteTarget(userID) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT guildID FROM vote_targets WHERE userID = ?", [userID], (err, row) => {
+                if (err) console.error('Error reading vote target:', err)
+                resolve(row?.guildID ?? null)
+            })
+        })
+    }
+
+    /** Bonus mails a guild has earned from votes in the current month. */
+    getVoteBonus(guildID) {
+        return new Promise((resolve) => {
+            this.db.get(
+                "SELECT COALESCE(SUM(bonusGranted), 0) AS bonus FROM votes WHERE guildID = ? AND month = ?",
+                [guildID, this.getCurrentMonth()],
+                (err, row) => {
+                    if (err) console.error('Error reading vote bonus:', err)
+                    resolve(row?.bonus ?? 0)
+                }
+            )
+        })
+    }
+
+    /**
+     * Log one vote and grant its bonus, capped per guild per month.
+     *
+     * Dedupe and cap are enforced inside a single INSERT ... SELECT, so a webhook retry
+     * or two votes landing at once can neither double-grant nor overshoot the cap. A
+     * vote from the same user on the same list inside `dedupeWindowMs` is a retry (both
+     * lists allow one vote per 12 hours) and is dropped.
+     *
+     * @returns {Promise<{duplicate: boolean, bonusGranted: number, monthTotal: number}>}
+     */
+    recordVote({ source, userID, guildID, perVote, monthlyCap, dedupeWindowMs }) {
+        const now = Date.now()
+        const month = this.getCurrentMonth()
+        const db = this.db
+        return new Promise((resolve, reject) => {
+            db.run(
+                `INSERT INTO votes (source, userID, guildID, month, votedAt, bonusGranted)
+                 SELECT $source, $userID, $guildID, $month, $now,
+                        CASE WHEN $guildID IS NULL THEN 0
+                             ELSE MAX(0, MIN($perVote, $cap - COALESCE(
+                                 (SELECT SUM(bonusGranted) FROM votes WHERE guildID = $guildID AND month = $month), 0)))
+                        END
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM votes WHERE source = $source AND userID = $userID AND votedAt > $since
+                 )`,
+                {
+                    $source: source, $userID: userID, $guildID: guildID ?? null, $month: month,
+                    $now: now, $perVote: perVote, $cap: monthlyCap, $since: now - dedupeWindowMs
+                },
+                function (err) {
+                    if (err) return reject(err)
+                    if (this.changes === 0) return resolve({ duplicate: true, bonusGranted: 0, monthTotal: null })
+                    const voteId = this.lastID
+                    db.get("SELECT bonusGranted FROM votes WHERE id = ?", [voteId], (e1, row) => {
+                        if (e1) return reject(e1)
+                        const bonusGranted = row?.bonusGranted ?? 0
+                        if (!guildID) return resolve({ duplicate: false, bonusGranted, monthTotal: null })
+                        db.get(
+                            "SELECT COALESCE(SUM(bonusGranted), 0) AS total FROM votes WHERE guildID = ? AND month = ?",
+                            [guildID, month],
+                            (e2, sum) => {
+                                if (e2) return reject(e2)
+                                // A raised limit re-arms the "quota used up" warning, so admins
+                                // hear about it again once the bonus is spent too.
+                                if (bonusGranted > 0) {
+                                    db.run("UPDATE guild_stats SET warned100 = 0 WHERE guildID = ? AND statsMonth = ?", [guildID, month])
+                                }
+                                resolve({ duplicate: false, bonusGranted, monthTotal: sum?.total ?? 0 })
+                            }
+                        )
+                    })
+                }
+            )
         })
     }
 }

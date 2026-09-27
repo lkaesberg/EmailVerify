@@ -326,5 +326,18 @@
   "statusIssueChannelOverrides": "Un permiso de canal bloquea al bot — consulta **Permisos del bot y orden de roles** más abajo.",
   "permRoleAssignSuppressed": "⚠️ **%VAR% verificación(es) más fallaron igual en la última hora** y no se notificaron por separado. Todas funcionarán en cuanto se corrija lo anterior.",
   "permReportTruncated": "*…lista recortada. Ejecuta `/status` para verlo todo.*",
-  "commandGuildOnly": "Este comando solo funciona dentro de un servidor, no por MD."
+  "commandGuildOnly": "Este comando solo funciona dentro de un servidor, no por MD.",
+  "voteCommandTitle": "🗳️ Vota por EmailVerify",
+  "voteCommandDescription": "Cada voto le da a **%VAR%** **+%VAR%** emails de verificación gratis este mes, hasta **+%VAR%**. Puedes votar cada 12 horas en cada sitio.\n\nConseguidos este mes: **+%VAR%** / +%VAR%",
+  "voteCommandCapped": "**%VAR%** ya consiguió el máximo de **+%VAR%** emails bonus este mes. Los votos siguen ayudando a otras comunidades a encontrar EmailVerify, ¡gracias!",
+  "voteCommandTargetNote": "*Tus votos ahora cuentan para este servidor. Ejecuta `/vote` en otro servidor para cambiar.*",
+  "voteNotAvailable": "Las recompensas por votar no están disponibles en este bot.",
+  "voteButtonLabel": "Votar por +%VAR% emails gratis",
+  "voteLinkLabel": "Votar en %VAR%",
+  "voteLimitHint": "🗳️ **¿Quieres ayudar?** Vota por EmailVerify y este servidor recibe al instante **+%VAR%** emails de verificación.",
+  "voteQuotaHint": "🗳️ **Opción gratuita:** los miembros pueden usar `/vote` para añadir **+%VAR%** emails por voto, hasta **+%VAR%** al mes.",
+  "voteThanksRewarded": "🎉 ¡Gracias por votar en %VAR%! **%VAR%** acaba de recibir **+%VAR%** emails de verificación gratis este mes (**+%VAR%** / +%VAR% conseguidos). Puedes volver a votar en 12 horas.",
+  "voteThanksCapped": "🎉 ¡Gracias por votar en %VAR%! **%VAR%** ya consiguió el bonus completo de **+%VAR%** este mes, pero tu voto sigue ayudando a otras comunidades a encontrar EmailVerify.",
+  "voteThanksUnattributed": "🎉 ¡Gracias por votar en %VAR%! Consejo: ejecuta `/vote` en tu servidor y tus próximos votos añadirán emails de verificación gratis allí.",
+  "premiumVoteBonusLine": "🗳️ Bonus por votos este mes: **+%VAR%** / +%VAR% (`/vote`)"
 }

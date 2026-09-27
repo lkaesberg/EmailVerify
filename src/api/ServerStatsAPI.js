@@ -12,6 +12,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const { createRestrictionListRouter } = require("./RestrictionListAPI");
+const { createVoteWebhookRouter } = require("./VoteWebhooks");
 
 class ServerStatsAPI {
     constructor(bot, startServer = true) {
@@ -85,6 +86,10 @@ class ServerStatsAPI {
                 serverCount: serverCount
             })
         });
+
+        // Vote webhooks from top.gg and discordbotlist.com, each authenticated by its
+        // list's secret. Server-to-server, so the CORS allowlist above doesn't apply.
+        this.app.use('/webhooks', createVoteWebhookRouter(this.bot));
 
         // Tier 2 restriction-list API. Mounted last so it cannot shadow any stats
         // route, and behind its own bearer auth -- everything above is public.

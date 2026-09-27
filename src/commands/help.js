@@ -40,6 +40,7 @@ function buildMemberEmbed() {
                 name: '👤 Your Commands',
                 value:
                     '`/verify` - Start the email verification process\n' +
+                    '`/vote` - Vote for the bot and give this server free bonus emails\n' +
                     '`/data delete-user` - Delete your verification data'
             },
             {
@@ -158,6 +159,7 @@ module.exports = {
                     value:
                         '`/premium status` - View your plan, available upgrades, and buy buttons\n' +
                         '`/premium redeem` - Apply purchased credits or CSV unlock to this server\n' +
+                        '`/vote` - Free: each member vote adds bonus emails to this month\'s quota\n' +
                         '**Standard** - Unlimited verifications + premium ZeptoMail delivery\n' +
                         '**Pro** - Standard + CSV import & export\n' +
                         '**Credit packs** - One-time top-up of 100 / 500 / 2000 verifications\n' +

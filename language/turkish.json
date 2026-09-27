@@ -326,5 +326,18 @@
   "statusIssueChannelOverrides": "Bir kanal izni botu engelliyor — aşağıdaki **Bot İzinleri ve Rol Sırası** bölümüne bakın.",
   "permRoleAssignSuppressed": "⚠️ **Son bir saatte %VAR% doğrulama daha aynı şekilde başarısız oldu** ve ayrı ayrı bildirilmedi. Yukarıdaki sorun giderildiğinde hepsi çalışacak.",
   "permReportTruncated": "*…liste kısaltıldı. Tamamı için `/status` komutunu çalıştırın.*",
-  "commandGuildOnly": "Bu komut yalnızca bir sunucu içinde çalışır, DM'de çalışmaz."
+  "commandGuildOnly": "Bu komut yalnızca bir sunucu içinde çalışır, DM'de çalışmaz.",
+  "voteCommandTitle": "🗳️ EmailVerify için oy verin",
+  "voteCommandDescription": "Her oy **%VAR%** sunucusuna bu ay **+%VAR%** ücretsiz doğrulama e-postası kazandırır, en fazla **+%VAR%**. Her sitede 12 saatte bir oy verebilirsiniz.\n\nBu ay kazanılan: **+%VAR%** / +%VAR%",
+  "voteCommandCapped": "**%VAR%** bu ay en fazla **+%VAR%** bonus e-postanın tamamını zaten kazandı. Oylar yine de diğer toplulukların EmailVerify'ı bulmasına yardımcı oluyor, teşekkürler!",
+  "voteCommandTargetNote": "*Oylarınız artık bu sunucu için sayılıyor. Değiştirmek için başka bir sunucuda `/vote` komutunu çalıştırın.*",
+  "voteNotAvailable": "Bu botta oy ödülleri kullanılamıyor.",
+  "voteButtonLabel": "+%VAR% ücretsiz e-posta için oy verin",
+  "voteLinkLabel": "%VAR% üzerinde oy verin",
+  "voteLimitHint": "🗳️ **Yardım etmek ister misiniz?** EmailVerify için oy verin, bu sunucu hemen **+%VAR%** doğrulama e-postası kazansın.",
+  "voteQuotaHint": "🗳️ **Ücretsiz seçenek:** üyeler `/vote` ile oy başına **+%VAR%** e-posta ekleyebilir, ayda en fazla **+%VAR%**.",
+  "voteThanksRewarded": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! **%VAR%** bu ay **+%VAR%** ücretsiz doğrulama e-postası kazandı (**+%VAR%** / +%VAR% kazanıldı). 12 saat sonra tekrar oy verebilirsiniz.",
+  "voteThanksCapped": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! **%VAR%** bu ay **+%VAR%** bonusun tamamını zaten kazandı, ancak oyunuz diğer toplulukların EmailVerify'ı bulmasına yine de yardımcı oluyor.",
+  "voteThanksUnattributed": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! İpucu: sunucunuzda `/vote` komutunu çalıştırın, sonraki oylarınız orada ücretsiz doğrulama e-postası eklesin.",
+  "premiumVoteBonusLine": "🗳️ Bu ayki oy bonusu: **+%VAR%** / +%VAR% (`/vote`)"
 }

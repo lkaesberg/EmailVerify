@@ -16,6 +16,7 @@ All purchases run through Discord's native subscription system. Discord handles 
 | | :material-account: **Free** | :material-star: **Standard** | :material-diamond: **Pro** |
 |---|---|---|---|
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
+| **Vote bonus** | +5 per vote, up to +25 / month | n/a | n/a |
 | **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
 | **Allowed-email API** | — | — | ✓ |
@@ -50,6 +51,15 @@ You don't sign up. You don't add a payment method. You invite the bot, run `/rol
 - **No degradation when you stop using the bot.** No card on file means no surprise charges.
 
 If 25/month works for you, you can stop reading here.
+
+### Free bonus emails by voting
+
+Any member can run `/vote` and vote for EmailVerify on [top.gg](https://top.gg/bot/895056197789564969/vote) or [discordbotlist.com](https://discordbotlist.com/bots/emailverify/upvote). Each vote adds **+5 verification emails** to this server's free quota for the current month, up to **+25 a month**, so a busy free server can reach 50.
+
+- Votes count for the server where the member last ran `/vote` or pressed a vote button.
+- Each site allows one vote every 12 hours, so a member voting on both sites for three days fills the month's bonus.
+- The bonus resets on the 1st along with the free quota. It doesn't carry over and can't be saved up.
+- When a server runs out of free emails, the notice members see includes a vote button, so the member waiting to get in can fix it in half a minute.
 
 ---
 
