@@ -14,6 +14,7 @@
 // in one line and swallowed. Without a token (self-hosted installs, dev) nothing is sent.
 
 const { discordbotlistToken, clientId } = require('../../config/config.json')
+const analytics = require('../utils/Analytics')
 
 const REQUEST_TIMEOUT_MS = 15 * 1000
 
@@ -26,6 +27,11 @@ const REQUEST_TIMEOUT_MS = 15 * 1000
  */
 async function postCommands(commands, botId = clientId) {
     if (!discordbotlistToken) return false
+    let status = null
+    const report = (ok, error = null) => analytics.capture({
+        event: 'bot_list_commands_posted',
+        properties: { list: 'discordbotlist', ok, http_status: status, error, commands: commands.length }
+    })
     try {
         const res = await fetch(`https://discordbotlist.com/api/v1/bots/${botId}/commands`, {
             method: 'POST',
@@ -33,14 +39,17 @@ async function postCommands(commands, botId = clientId) {
             body: JSON.stringify(commands),
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
         })
+        status = res.status
         if (!res.ok) {
             const text = await res.text().catch(() => '')
             throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`)
         }
         console.log(`Posted ${commands.length} commands to discordbotlist`)
+        report(true)
         return true
     } catch (e) {
         console.warn('[discordbotlist] posting commands failed:', e?.message || e)
+        report(false, String(e?.message || e).slice(0, 300))
         return false
     }
 }

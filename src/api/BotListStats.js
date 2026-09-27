@@ -16,6 +16,7 @@
 
 const { ShardingManager } = require('discord.js')
 const config = require('../../config/config.json')
+const analytics = require('../utils/Analytics')
 
 const REQUEST_TIMEOUT_MS = 15 * 1000
 const FIRST_POST_MS = 60 * 1000
@@ -39,6 +40,15 @@ const LISTS = [
 
 const loggedFirst = new Set()
 
+// One event per list per round, so PostHog shows whether each listing is being kept
+// current without anyone reading the production logs.
+function report(list, { ok, status = null, error = null, servers = null }) {
+    analytics.capture({
+        event: 'bot_list_stats_posted',
+        properties: { list: list.name, ok, http_status: status, error, servers }
+    })
+}
+
 async function countStats(source) {
     const memberSum = client => client.guilds.cache.reduce((n, g) => n + (g.memberCount || 0), 0)
     if (source instanceof ShardingManager) {
@@ -61,6 +71,7 @@ async function countStats(source) {
  * @returns {Promise<boolean>} whether the list accepted it; never rejects
  */
 async function postToList(list, counts, botId = config.clientId) {
+    let status = null
     try {
         const res = await fetch(list.url(botId), {
             method: 'POST',
@@ -68,6 +79,7 @@ async function postToList(list, counts, botId = config.clientId) {
             body: JSON.stringify(list.body(counts)),
             signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
         })
+        status = res.status
         if (!res.ok) {
             const text = await res.text().catch(() => '')
             throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`)
@@ -76,9 +88,11 @@ async function postToList(list, counts, botId = config.clientId) {
             console.log(`Posted stats to ${list.name} (${counts.guilds} servers)`)
             loggedFirst.add(list.name)
         }
+        report(list, { ok: true, status, servers: counts.guilds })
         return true
     } catch (e) {
         console.warn(`[${list.name}] posting stats failed:`, e?.message || e)
+        report(list, { ok: false, status, error: String(e?.message || e).slice(0, 300), servers: counts.guilds })
         return false
     }
 }
@@ -95,6 +109,8 @@ async function postStats(source, lists = LISTS.filter(list => list.token), botId
         counts = await countStats(source)
     } catch (e) {
         console.warn('[BotLists] counting servers failed:', e?.message || e)
+        const error = `counting servers failed: ${String(e?.message || e).slice(0, 250)}`
+        for (const list of lists) report(list, { ok: false, error })
         return {}
     }
     const results = await Promise.all(lists.map(list => postToList(list, counts, botId)))

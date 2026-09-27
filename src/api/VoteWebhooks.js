@@ -21,12 +21,28 @@ const crypto = require('crypto')
 const express = require('express')
 const config = require('../../config/config.json')
 const voting = require('../utils/voting')
+const analytics = require('../utils/Analytics')
 
 // top.gg signs the send time into each delivery. Reject older ones so a captured
 // request can't be replayed later; generous, since retries back off for seconds.
 const SIGNATURE_TOLERANCE_S = 10 * 60
 const BODY_LIMIT = '16kb'
 const SNOWFLAKE = /^\d{17,20}$/
+
+// The endpoints are public, so anyone can hit them. A rejection is worth one event
+// (a mistyped secret shows up right away), but not one per probe.
+const REJECT_REPORT_INTERVAL_MS = 10 * 60 * 1000
+const lastRejectReport = new Map()
+
+function reject(res, source, status, reason) {
+    const key = `${source}:${reason}`
+    const now = Date.now()
+    if (now - (lastRejectReport.get(key) || 0) >= REJECT_REPORT_INTERVAL_MS) {
+        lastRejectReport.set(key, now)
+        analytics.capture({ event: 'vote_webhook_rejected', properties: { source, reason, http_status: status } })
+    }
+    return res.status(status).json({ error: reason.replace(/_/g, ' ') })
+}
 
 function safeEqual(a, b) {
     const x = Buffer.from(String(a))
@@ -76,6 +92,11 @@ async function credit(res, client, vote) {
         res.status(200).json({ ok: true, duplicate: result.duplicate, bonusGranted: result.bonusGranted })
     } catch (e) {
         console.error(`[Votes] Failed to record ${vote.source} vote:`, e?.message || e)
+        analytics.capture({
+            event: 'vote_webhook_failed',
+            userId: vote.userId,
+            properties: { source: vote.source, error: String(e?.message || e).slice(0, 300) }
+        })
         res.status(500).json({ error: 'internal error' })
     }
 }
@@ -88,7 +109,7 @@ function createVoteWebhookRouter(client) {
         // Raw body: the v1 signature covers the exact bytes sent.
         router.post('/topgg', express.raw({ type: () => true, limit: BODY_LIMIT }), async (req, res) => {
             const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : ''
-            if (!verifyTopgg(req, topggSecret, rawBody)) return res.status(401).json({ error: 'invalid signature' })
+            if (!verifyTopgg(req, topggSecret, rawBody)) return reject(res, 'topgg', 401, 'invalid_signature')
 
             let vote
             try {
@@ -96,9 +117,10 @@ function createVoteWebhookRouter(client) {
             } catch {
                 vote = null
             }
-            if (!vote || !SNOWFLAKE.test(String(vote.userId))) return res.status(400).json({ error: 'not a vote' })
+            if (!vote || !SNOWFLAKE.test(String(vote.userId))) return reject(res, 'topgg', 400, 'not_a_vote')
             if (vote.test) {
                 console.log(`[Votes] top.gg test webhook received (user ${vote.userId})`)
+                analytics.capture({ event: 'vote_webhook_test', userId: vote.userId, properties: { source: 'topgg' } })
                 return res.status(200).json({ ok: true, test: true })
             }
             await credit(res, client, { source: 'topgg', userId: vote.userId, queryGuildId: vote.guildId })
@@ -108,9 +130,9 @@ function createVoteWebhookRouter(client) {
     const dblSecret = config.discordbotlistWebhookSecret
     if (dblSecret) {
         router.post('/discordbotlist', express.json({ type: () => true, limit: BODY_LIMIT }), async (req, res) => {
-            if (!safeEqual(req.get('authorization') || '', dblSecret)) return res.status(401).json({ error: 'invalid secret' })
+            if (!safeEqual(req.get('authorization') || '', dblSecret)) return reject(res, 'discordbotlist', 401, 'invalid_secret')
             const userId = req.body?.id
-            if (!SNOWFLAKE.test(String(userId))) return res.status(400).json({ error: 'not a vote' })
+            if (!SNOWFLAKE.test(String(userId))) return reject(res, 'discordbotlist', 400, 'not_a_vote')
             await credit(res, client, { source: 'discordbotlist', userId: String(userId) })
         })
     }
