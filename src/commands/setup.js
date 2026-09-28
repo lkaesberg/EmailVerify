@@ -18,7 +18,7 @@ const database = require("../database/Database.js");
 const { parseDomains } = require("../utils/parseDomains");
 const { buildVerifyEmbed, buildVerifyButtons } = require("../bot/verifyMessage");
 const permissions = require("../utils/permissions");
-const { getLocale } = require("../Language");
+const { getLocale, defaultLanguage, discordLocalizations } = require("../Language");
 const { getWebsiteUrl } = require("../utils/premiumButtons");
 const analytics = require("../utils/Analytics");
 
@@ -92,7 +92,7 @@ function roleCreateFailedReply(result, language) {
         };
     }
     return {
-        content: `❌ Creating the role failed: ${result.error}\nYou can create it yourself and pick it from the menu instead.`,
+        content: getLocale(language, 'setupRoleCreateFailed', result.error),
         flags: MessageFlags.Ephemeral
     };
 }
@@ -106,31 +106,30 @@ function trackRole(interaction, kind, result) {
     });
 }
 
-function roleMention(role, created) {
-    return `<@&${role.id}>` + (created ? ' *(created)*' : '');
+function roleMention(role, created, language) {
+    return `<@&${role.id}>` + (created ? ' ' + getLocale(language, 'setupCreatedSuffix') : '');
+}
+
+function yesNo(value, language) {
+    return getLocale(language, value ? 'setupYes' : 'setupNo');
 }
 
 function step1Message(language) {
     const embed = new EmbedBuilder()
-        .setTitle('🧭 Setup — Step 1 of 4: Verified role')
-        .setDescription(
-            'Which role should every verified member receive?\n\n' +
-            `• **Create one for me** — a new **${roleName('verified', language)}** role. The bot can always hand out a role it created, so there is nothing to fix in the role order.\n` +
-            '• **Or pick existing roles** from the menu (1–5).\n\n' +
-            '*You can refine this later with `/role` and `/domainrole` (per-domain roles).*'
-        )
+        .setTitle(getLocale(language, 'setupStep1Title'))
+        .setDescription(getLocale(language, 'setupStep1Body', roleName('verified', language)))
         .setColor(WIZARD_COLOR);
     const buttons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('setupCreateVerified')
-            .setLabel(`Create a "${roleName('verified', language)}" role for me`)
+            .setLabel(getLocale(language, 'setupCreateVerifiedButton', roleName('verified', language)))
             .setEmoji('✨')
             .setStyle(ButtonStyle.Primary)
     );
     const select = new ActionRowBuilder().addComponents(
         new RoleSelectMenuBuilder()
             .setCustomId('setupRoles')
-            .setPlaceholder('…or select 1–5 existing roles')
+            .setPlaceholder(getLocale(language, 'setupRolesPlaceholder'))
             .setMinValues(1)
             .setMaxValues(5)
     );
@@ -147,91 +146,79 @@ function step2Message(guild, serverSettings, savedRoleMentions, hierarchyWarning
         ? guild.roles.cache.get(serverSettings.unverifiedRoleName)
         : null;
 
-    let description = `Verified role(s): ${savedRoleMentions}\n\n`;
+    let description = getLocale(language, 'setupStep2Saved', savedRoleMentions) + '\n\n';
     // The warning arrives already prefixed and formatted (see utils/permissions).
     if (hierarchyWarning) description = `${hierarchyWarning}\n\n${description}`;
 
     const row = new ActionRowBuilder();
     if (current) {
-        description += `Unverified role already set: <@&${current.id}> ` +
-            `(given to new members on join: **${serverSettings.autoAddUnverified ? 'yes' : 'no'}**). ` +
-            'Change it later with `/role unverified` and `/settings auto-unverified`.';
+        description += getLocale(language, 'setupStep2Existing', `<@&${current.id}>`, yesNo(serverSettings.autoAddUnverified, language));
         row.addComponents(
-            new ButtonBuilder().setCustomId('setupSkipUnverified').setLabel('Continue').setStyle(ButtonStyle.Primary)
+            new ButtonBuilder().setCustomId('setupSkipUnverified').setLabel(getLocale(language, 'setupContinueButton')).setStyle(ButtonStyle.Primary)
         );
     } else {
-        description +=
-            `Should new members get an **${roleName('unverified', language)}** role until they verify? ` +
-            'You can then hide your channels from that role.\n\n' +
-            '*Optional — most servers skip it: hiding channels from @everyone and showing them to the verified role does the same, ' +
-            'and also covers members who joined before today. The unverified role only reaches members who join from now on.*';
+        description += getLocale(language, 'setupStep2Offer', roleName('unverified', language));
         row.addComponents(
             new ButtonBuilder()
                 .setCustomId('setupCreateUnverified')
-                .setLabel(`Create "${roleName('unverified', language)}" & give it to new members`)
+                .setLabel(getLocale(language, 'setupCreateUnverifiedButton', roleName('unverified', language)))
                 .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('setupSkipUnverified').setLabel('Skip').setStyle(ButtonStyle.Primary)
+            new ButtonBuilder().setCustomId('setupSkipUnverified').setLabel(getLocale(language, 'setupSkipButton')).setStyle(ButtonStyle.Primary)
         );
     }
 
     const embed = new EmbedBuilder()
-        .setTitle('🧭 Setup — Step 2 of 4: Unverified role (optional)')
+        .setTitle(getLocale(language, 'setupStep2Title'))
         .setDescription(description)
         .setColor(WIZARD_COLOR);
     return { embeds: [embed], components: [row] };
 }
 
-function step3Message(note) {
-    const description = (note ? `${note}\n\n` : '') +
-        'Should verification be limited to specific email domains?\n' +
-        '• **Restrict domains** — e.g. only `@company.com` or `@*.edu` addresses\n' +
-        '• **Allow any email** — every valid address can verify';
+function step3Message(language, note) {
+    const description = (note ? `${note}\n\n` : '') + getLocale(language, 'setupStep3Body');
     const embed = new EmbedBuilder()
-        .setTitle('🧭 Setup — Step 3 of 4: Email domains')
+        .setTitle(getLocale(language, 'setupStep3Title'))
         .setDescription(description)
         .setColor(WIZARD_COLOR);
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('setupDomainsRestrict')
-            .setLabel('Restrict domains')
+            .setLabel(getLocale(language, 'setupRestrictButton'))
             .setEmoji('📧')
             .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
             .setCustomId('setupDomainsAny')
-            .setLabel('Allow any email')
+            .setLabel(getLocale(language, 'setupAnyButton'))
             .setStyle(ButtonStyle.Secondary)
     );
     return { embeds: [embed], components: [row] };
 }
 
-function step4Message(domainsNote) {
+function step4Message(language, domainsNote) {
     const embed = new EmbedBuilder()
-        .setTitle('🧭 Setup — Step 4 of 4: Verification channel')
-        .setDescription(
-            `${domainsNote}\n\n` +
-            'Pick the channel where the verification message (with the **Verify** button) should be posted. ' +
-            'Members click it to start verifying.'
-        )
+        .setTitle(getLocale(language, 'setupStep4Title'))
+        .setDescription(`${domainsNote}\n\n` + getLocale(language, 'setupStep4Body'))
         .setColor(WIZARD_COLOR);
     const row = new ActionRowBuilder().addComponents(
         new ChannelSelectMenuBuilder()
             .setCustomId('setupChannel')
-            .setPlaceholder('Select the verification channel')
+            .setPlaceholder(getLocale(language, 'setupChannelPlaceholder'))
             .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
     );
     return { embeds: [embed], components: [row] };
 }
 
 async function buildSummaryMessage(guild, serverSettings, channel) {
+    const language = serverSettings.language;
     const roleMentions = (serverSettings.defaultRoles || [])
         .map(id => guild.roles.cache.get(id))
         .filter(Boolean)
         .map(r => `<@&${r.id}>`)
-        .join(', ') || '*none*';
+        .join(', ') || getLocale(language, 'setupNone');
     const domains = (serverSettings.domains || []);
     const domainsDisplay = domains.length > 0
         ? domains.map(d => `\`${d.replaceAll('*', '✱')}\``).join(', ')
-        : '*any email address*';
+        : getLocale(language, 'setupAnyEmailAddress');
     const unverified = serverSettings.unverifiedRoleName
         ? guild.roles.cache.get(serverSettings.unverifiedRoleName)
         : null;
@@ -242,27 +229,22 @@ async function buildSummaryMessage(guild, serverSettings, channel) {
     // role and see exactly what they saw before.
     const website = getWebsiteUrl();
     const lockSteps =
-        '**🔒 One thing left: hide your channels until members verify.**\n' +
-        'A role doesn\'t hide anything by itself. For each members-only category or channel: **Edit → Permissions**, ' +
-        `turn **View Channel** off for \`@everyone\` and on for ${firstRole ? `<@&${firstRole.id}>` : 'your verified role'}. ` +
-        `Keep <#${channel.id}> visible to everyone.` +
-        (unverified ? ` (Or deny **View Channel** to <@&${unverified.id}> instead.)` : '') +
-        (website ? `\n[Step-by-step guide](${website.replace(/\/$/, '')}/setup/#lock-the-server-down-until-someone-verifies)` : '');
+        getLocale(language, 'setupLockTitle') + '\n' +
+        getLocale(language, 'setupLockBody',
+            firstRole ? `<@&${firstRole.id}>` : getLocale(language, 'setupLockYourRole'),
+            `<#${channel.id}>`) +
+        (unverified ? ' ' + getLocale(language, 'setupLockUnverified', `<@&${unverified.id}>`) : '') +
+        (website ? '\n' + getLocale(language, 'setupLockGuide', `${website.replace(/\/$/, '')}/setup/#lock-the-server-down-until-someone-verifies`) : '');
 
     const embed = new EmbedBuilder()
-        .setTitle('✅ Setup complete!')
+        .setTitle(getLocale(language, 'setupSummaryTitle'))
         .setDescription(
-            `**Verified roles:** ${roleMentions}\n` +
-            (unverified ? `**Unverified role:** <@&${unverified.id}> (given to new members: ${serverSettings.autoAddUnverified ? 'yes' : 'no'})\n` : '') +
-            `**Allowed domains:** ${domainsDisplay}\n` +
-            `**Verification message:** posted in <#${channel.id}>\n\n` +
+            getLocale(language, 'setupSummaryRoles', roleMentions) + '\n' +
+            (unverified ? getLocale(language, 'setupSummaryUnverified', `<@&${unverified.id}>`, yesNo(serverSettings.autoAddUnverified, language)) + '\n' : '') +
+            getLocale(language, 'setupSummaryDomains', domainsDisplay) + '\n' +
+            getLocale(language, 'setupSummaryChannel', `<#${channel.id}>`) + '\n\n' +
             `${lockSteps}\n\n` +
-            '**Recommended next steps:**\n' +
-            '• `/status` — check the full configuration\n' +
-            '• `/testmail` — send yourself a test email to confirm delivery\n' +
-            '• `/settings auto-verify` — DM new members a verification prompt\n' +
-            '• `/settings log-channel` — log verifications for your mods\n' +
-            '• `/blacklist add` — block disposable-email patterns'
+            getLocale(language, 'setupNextSteps')
         )
         .setColor(0x57F287);
     return { embeds: [embed], components: [] };
@@ -272,7 +254,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setDefaultPermission(true)
         .setName('setup')
-        .setDescription('Guided setup: verified role (can create it for you), email domains, and the verification channel')
+        .setDescription(getLocale(defaultLanguage, 'setupCommandDescription'))
+        .setDescriptionLocalizations(discordLocalizations('setupCommandDescription'))
         .setDefaultMemberPermissions(0),
 
     async execute(interaction) {
@@ -282,8 +265,12 @@ module.exports = {
 
     /** Buttons and select menus with a `setup*` customId are routed here. */
     async handleComponent(interaction) {
+        // One read per click: the language for every reply below, and the settings the
+        // role steps change and save.
+        const serverSettings = interaction.guild ? await getSettings(interaction.guildId) : null;
+        const language = serverSettings?.language || defaultLanguage;
         if (!interaction.guild || !interaction.member?.permissions?.has(PermissionsBitField.Flags.Administrator)) {
-            await interaction.reply({ content: 'Administrator permission required.', flags: MessageFlags.Ephemeral }).catch(() => {});
+            await interaction.reply({ content: getLocale(language, 'setupAdminRequired'), flags: MessageFlags.Ephemeral }).catch(() => {});
             return;
         }
 
@@ -295,13 +282,12 @@ module.exports = {
 
             if (selected.length === 0) {
                 await interaction.reply({
-                    content: '❌ None of the selected roles can be used (@everyone and bot-managed roles are not assignable). Please pick different roles.',
+                    content: getLocale(language, 'setupNoUsableRoles'),
                     flags: MessageFlags.Ephemeral
                 }).catch(() => {});
                 return;
             }
 
-            const serverSettings = await getSettings(interaction.guildId);
             for (const role of selected) {
                 if (!serverSettings.defaultRoles.includes(role.id)) {
                     serverSettings.defaultRoles.push(role.id);
@@ -316,9 +302,7 @@ module.exports = {
             // Pre-empt the most common failure: a role the bot cannot hand out (above its
             // own role, or owned by another integration) can never be assigned. Shares the
             // wording and the step-by-step fix with /role, /domainrole and the failure path.
-            const warning = await permissions.buildRoleWarning(
-                interaction.guild, selected, serverSettings.language
-            );
+            const warning = await permissions.buildRoleWarning(interaction.guild, selected, language);
 
             const mentions = selected.map(r => `<@&${r.id}>`).join(', ');
             await interaction.update(step2Message(interaction.guild, serverSettings, mentions, warning)).catch(() => {});
@@ -327,8 +311,6 @@ module.exports = {
 
         // Step 1 (alternative) → create or reuse the verified role, show step 2
         if (interaction.customId === 'setupCreateVerified') {
-            const serverSettings = await getSettings(interaction.guildId);
-            const language = serverSettings.language;
             const result = await ensureRole(interaction.guild, 'verified', language);
             trackRole(interaction, 'verified', result);
             if (!result.role) {
@@ -345,14 +327,12 @@ module.exports = {
             // A reused role may sit above the bot; a created one never does, but checking
             // both costs nothing and also catches a missing Manage Roles.
             const warning = await permissions.buildRoleWarning(interaction.guild, [result.role], language);
-            await interaction.update(step2Message(interaction.guild, serverSettings, roleMention(result.role, result.created), warning)).catch(() => {});
+            await interaction.update(step2Message(interaction.guild, serverSettings, roleMention(result.role, result.created, language), warning)).catch(() => {});
             return;
         }
 
         // Step 2a → create or reuse the unverified role, hand it out on join, show step 3
         if (interaction.customId === 'setupCreateUnverified') {
-            const serverSettings = await getSettings(interaction.guildId);
-            const language = serverSettings.language;
             const result = await ensureRole(interaction.guild, 'unverified', language);
             trackRole(interaction, 'unverified', result);
             if (!result.role) {
@@ -362,7 +342,7 @@ module.exports = {
             // The same role can't be both: verifying would add it and remove it again.
             if (serverSettings.defaultRoles.includes(result.role.id)) {
                 await interaction.reply({
-                    content: `❌ <@&${result.role.id}> is already a verified role, so it can't also be the unverified role. Skip this step or set one later with \`/role unverified\`.`,
+                    content: getLocale(language, 'setupRoleBothKinds', `<@&${result.role.id}>`),
                     flags: MessageFlags.Ephemeral
                 }).catch(() => {});
                 return;
@@ -373,15 +353,15 @@ module.exports = {
             database.updateServerSettings(interaction.guildId, serverSettings);
 
             const warning = await permissions.buildRoleWarning(interaction.guild, [result.role], language);
-            const note = `Unverified role: ${roleMention(result.role, result.created)}, given to new members when they join.` +
+            const note = getLocale(language, 'setupUnverifiedSaved', roleMention(result.role, result.created, language)) +
                 (warning ? `\n\n${warning}` : '');
-            await interaction.update(step3Message(note)).catch(() => {});
+            await interaction.update(step3Message(language, note)).catch(() => {});
             return;
         }
 
         // Step 2b → no unverified role (or keep the current one), show step 3
         if (interaction.customId === 'setupSkipUnverified') {
-            await interaction.update(step3Message(null)).catch(() => {});
+            await interaction.update(step3Message(language, null)).catch(() => {});
             return;
         }
 
@@ -393,14 +373,12 @@ module.exports = {
                 .setPlaceholder('@company.com, @*.edu')
                 .setRequired(true);
             const label = new LabelBuilder()
-                .setLabel('Allowed domains (comma-separated)')
+                .setLabel(getLocale(language, 'setupDomainsModalLabel'))
                 .setTextInputComponent(domainsInput);
-            const header = new TextDisplayBuilder().setContent(
-                '**Which email domains may verify?**\nUse `*` as a wildcard — `@*.edu` matches any .edu address.'
-            );
+            const header = new TextDisplayBuilder().setContent(getLocale(language, 'setupDomainsModalHeader'));
             const modal = new ModalBuilder()
                 .setCustomId('setupDomainsModal')
-                .setTitle('📧 Allowed email domains')
+                .setTitle(getLocale(language, 'setupDomainsModalTitle'))
                 .addTextDisplayComponents(header)
                 .addLabelComponents(label);
             await interaction.showModal(modal).catch(() => {});
@@ -409,7 +387,7 @@ module.exports = {
 
         // Step 3b → allow any email, straight to step 4
         if (interaction.customId === 'setupDomainsAny') {
-            await interaction.update(step4Message('Allowing **any email address** to verify (you can restrict later with `/domain add`).')).catch(() => {});
+            await interaction.update(step4Message(language, getLocale(language, 'setupAnyEmailNote'))).catch(() => {});
             return;
         }
 
@@ -419,19 +397,17 @@ module.exports = {
             const me = interaction.guild.members.me;
             const perms = channel && me ? channel.permissionsFor(me) : null;
             if (!perms || !perms.has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages])) {
-                const retry = step4Message(`⚠️ I can't send messages in <#${channel?.id}>. Give me **View Channel** and **Send Messages** there, or pick another channel.`);
+                const retry = step4Message(language, getLocale(language, 'setupChannelNoPerms', `<#${channel?.id}>`));
                 await interaction.update(retry).catch(() => {});
                 return;
             }
 
-            const serverSettings = await getSettings(interaction.guildId);
-            const language = serverSettings.language;
             const sent = await channel.send({
                 embeds: [buildVerifyEmbed(interaction.guild, language)],
                 components: [buildVerifyButtons(language)]
             }).catch(() => null);
             if (!sent) {
-                const retry = step4Message(`⚠️ Posting in <#${channel.id}> failed. Check my permissions there or pick another channel.`);
+                const retry = step4Message(language, getLocale(language, 'setupChannelPostFailed', `<#${channel.id}>`));
                 await interaction.update(retry).catch(() => {});
                 return;
             }
@@ -443,8 +419,10 @@ module.exports = {
 
     /** The setupDomainsModal submit is routed here. */
     async handleModal(interaction) {
+        const serverSettings = interaction.guild ? await getSettings(interaction.guildId) : null;
+        const language = serverSettings?.language || defaultLanguage;
         if (!interaction.guild || !interaction.member?.permissions?.has(PermissionsBitField.Flags.Administrator)) {
-            await interaction.reply({ content: 'Administrator permission required.', flags: MessageFlags.Ephemeral }).catch(() => {});
+            await interaction.reply({ content: getLocale(language, 'setupAdminRequired'), flags: MessageFlags.Ephemeral }).catch(() => {});
             return;
         }
 
@@ -452,13 +430,12 @@ module.exports = {
         if (domains.length === 0) {
             // Keep the wizard message (still on step 3) intact and just tell the admin.
             await interaction.reply({
-                content: '❌ No valid domains found. Formats: `@gmail.com`, `gmail.com`, or wildcards like `@*.edu` — comma-separated. Click **Restrict domains** to try again.',
+                content: getLocale(language, 'setupNoValidDomains'),
                 flags: MessageFlags.Ephemeral
             }).catch(() => {});
             return;
         }
 
-        const serverSettings = await getSettings(interaction.guildId);
         for (const domain of domains) {
             if (!serverSettings.domains.includes(domain)) {
                 serverSettings.domains.push(domain);
@@ -467,7 +444,7 @@ module.exports = {
         database.updateServerSettings(interaction.guildId, serverSettings);
 
         const display = domains.map(d => `\`${d.replaceAll('*', '✱')}\``).join(', ');
-        const next = step4Message(`Allowed domains saved: ${display}`);
+        const next = step4Message(language, getLocale(language, 'setupDomainsSaved', display));
         if (interaction.isFromMessage()) {
             await interaction.update(next).catch(() => {});
         } else {

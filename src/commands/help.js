@@ -10,6 +10,8 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { appStoreUrl } = require("../utils/premiumButtons");
+const database = require("../database/Database");
+const { getLocale, defaultLanguage, discordLocalizations } = require("../Language");
 
 // AGPL-3.0 §13 requires that everyone interacting with this bot over the network
 // is offered the corresponding source code, so /help is open to every member and
@@ -17,173 +19,94 @@ const { appStoreUrl } = require("../utils/premiumButtons");
 const SOURCE_URL = 'https://github.com/lkaesberg/EmailVerify';
 const LICENSE_URL = 'https://www.gnu.org/licenses/agpl-3.0.html';
 
-const sourceField = {
-    name: '📜 Source Code & License',
-    value:
-        'This bot is free software under the ' +
-        `[GNU AGPL v3.0 or later](${LICENSE_URL}). The complete corresponding ` +
-        `source code is available at ${SOURCE_URL}\n` +
-        '*If you run a modified version as a service, you must offer its source to your users.*'
-};
+// Discord rejects a field value over 1024 characters and an embed over 6000.
+const FIELD_LIMIT = 1024;
+
+function sourceField(language) {
+    return {
+        name: getLocale(language, 'helpSourceTitle'),
+        value: getLocale(language, 'helpSourceBody', LICENSE_URL, SOURCE_URL)
+    };
+}
+
+function field(language, key) {
+    return { name: getLocale(language, `help${key}Title`), value: getLocale(language, `help${key}Body`) };
+}
 
 /**
  * Help shown to members without Administrator permission: what they can do plus
  * the AGPL source offer. Setup instructions are admin-only.
  */
-function buildMemberEmbed() {
+function buildMemberEmbed(language) {
     return new EmbedBuilder()
-        .setTitle('📚 Email Verification Bot')
-        .setDescription('This server uses email verification to grant access. Here is what you can do.')
+        .setTitle(getLocale(language, 'helpMemberTitle'))
+        .setDescription(getLocale(language, 'helpMemberDescription'))
         .setColor(0x5865F2)
         .addFields(
-            {
-                name: '👤 Your Commands',
-                value:
-                    '`/verify` - Start the email verification process\n' +
-                    '`/vote` - Vote for the bot and give this server free bonus emails\n' +
-                    '`/data delete-user` - Delete your verification data'
-            },
-            {
-                name: '🔐 How Verification Works',
-                value:
-                    '**1.** Start with `/verify` or the verification button\n' +
-                    '**2.** Enter your email address in the popup\n' +
-                    '**3.** Check your inbox (and spam folder) for the code\n' +
-                    '**4.** Enter the code to receive your roles'
-            },
-            sourceField
+            { name: getLocale(language, 'helpMemberCommandsTitle'), value: getLocale(language, 'helpMemberCommandsBody') },
+            field(language, 'How'),
+            sourceField(language)
         )
-        .setFooter({ text: 'Server admins see setup instructions here • getemailverified.com' });
+        .setFooter({ text: getLocale(language, 'helpMemberFooter') });
+}
+
+/** The full setup guide for admins. */
+function buildAdminEmbed(language) {
+    // The store link joins the premium field while it fits; a long translation gets
+    // it as a field of its own rather than being cut off by Discord.
+    const premium = field(language, 'Premium');
+    const storeLink = appStoreUrl();
+    const storeLine = storeLink ? getLocale(language, 'helpStoreLine', storeLink) : null;
+    const premiumFields = [premium];
+    if (storeLine && premium.value.length + 1 + storeLine.length <= FIELD_LIMIT) {
+        premium.value += '\n' + storeLine;
+    } else if (storeLine) {
+        premiumFields.push({ name: '​', value: storeLine });
+    }
+
+    return new EmbedBuilder()
+        .setTitle(getLocale(language, 'helpAdminTitle'))
+        .setDescription(getLocale(language, 'helpAdminDescription'))
+        .setColor(0x5865F2)
+        .addFields(
+            field(language, 'New'),
+            field(language, 'Manual'),
+            field(language, 'Roles'),
+            field(language, 'DomainRoles'),
+            field(language, 'Domains'),
+            field(language, 'Blacklist'),
+            field(language, 'Settings'),
+            field(language, 'Moderation'),
+            field(language, 'Info'),
+            ...premiumFields,
+            field(language, 'User'),
+            field(language, 'Danger'),
+            sourceField(language)
+        )
+        .setFooter({ text: getLocale(language, 'helpAdminFooter') });
+}
+
+function getLanguage(guildId) {
+    return new Promise(resolve => database.getServerSettings(guildId, s => resolve(s?.language || defaultLanguage)));
 }
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setDefaultPermission(true)
         .setName('help')
-        .setDescription('Learn how to set up and use the email verification bot')
+        .setDescription(getLocale(defaultLanguage, 'helpCommandDescription'))
+        .setDescriptionLocalizations(discordLocalizations('helpCommandDescription'))
         .setDefaultMemberPermissions(null),
+
+    buildMemberEmbed,
+    buildAdminEmbed,
 
     async execute(interaction) {
         const isAdmin = interaction.member?.permissions?.has(PermissionsBitField.Flags.Administrator) ?? false
-
-        if (!isAdmin) {
-            await interaction.reply({
-                embeds: [buildMemberEmbed()],
-                flags: MessageFlags.Ephemeral
-            });
-            return
-        }
-
-        const storeLink = appStoreUrl()
-        const storeLine = storeLink
-            ? `\n[Browse plans on Discord](${storeLink})\n📱 *On mobile? Purchases only work on desktop/browser — open the store link there.*`
-            : ''
-        const helpEmbed = new EmbedBuilder()
-            .setTitle('📚 Email Verification Bot - Setup Guide')
-            .setDescription('Follow these steps to set up email verification for your server.')
-            .setColor(0x5865F2)
-            .addFields(
-                {
-                    name: '✨ New here?',
-                    value:
-                        'Run **`/setup`** — a guided wizard that creates (or picks) the verified role, sets the email domains, ' +
-                        'and posts the verification message for you. Then `/testmail` to confirm delivery.'
-                },
-                {
-                    name: '🚀 Manual Setup (4 Steps)',
-                    value:
-                        '**1.** `/role add <role>` - Add a default role for verified users\n' +
-                        '**2.** `/domain add <domains>` - Add allowed email domains\n' +
-                        '**3.** `/button <channel>` - Create verification embed\n' +
-                        '**4.** `/status` - Verify everything is configured'
-                },
-                {
-                    name: '👥 Role Configuration',
-                    value:
-                        '`/role add` - Add a default role (given to all verified users)\n' +
-                        '`/role remove` - Remove a default role\n' +
-                        '`/role list` - View all default roles\n' +
-                        '`/role unverified` - Set/view optional role for unverified members'
-                },
-                {
-                    name: '🎭 Domain-Specific Roles',
-                    value:
-                        '`/domainrole add` - Assign roles for specific email domains\n' +
-                        '`/domainrole remove` - Remove a role from a domain\n' +
-                        '`/domainrole list` - View all domain-role mappings\n' +
-                        '`/domainrole clear` - Remove all roles for a domain\n' +
-                        '*Users get domain roles + default roles on verification*'
-                },
-                {
-                    name: '📧 Domain Management',
-                    value:
-                        '`/domain add` - Add allowed domains (use `*` wildcard, e.g. `@*.edu`)\n' +
-                        '`/domain remove` - Remove allowed domains\n' +
-                        '`/domain list` - View all allowed domains\n' +
-                        '`/domain clear` - Remove all allowed domains'
-                },
-                {
-                    name: '🚫 Blacklist Management',
-                    value:
-                        '`/blacklist add` - Block patterns (use `*` wildcard, e.g. `*@tempmail.*`)\n' +
-                        '`/blacklist remove` - Unblock patterns\n' +
-                        '`/blacklist list` - View all blacklisted entries\n' +
-                        '`/blacklist clear` - Remove all blacklist entries'
-                },
-                {
-                    name: '⚙️ Settings',
-                    value:
-                        '`/settings language` - Change bot language\n' +
-                        '`/settings log-channel` - Set verification log channel\n' +
-                        '`/settings verify-message` - Custom message in emails\n' +
-                        '`/settings auto-verify` - Auto-prompt new members\n' +
-                        '`/settings auto-unverified` - Auto-assign unverified role\n' +
-                        '`/settings email-style` - Plain text (default) or HTML rendering\n' +
-                        '`/settings mail-mode` - `free` (25/month, self-SMTP) or `zeptomail` (credit-funded ZeptoMail)'
-                },
-                {
-                    name: '🛡️ Moderation',
-                    value:
-                        '`/manualverify` - Manually verify a user without email\n' +
-                        '`/testmail` - Send a test email to check delivery & spam placement\n' +
-                        '`/set_error_notify` - Configure error notifications'
-                },
-                {
-                    name: '📊 Information',
-                    value:
-                        '`/status` - View configuration & statistics\n' +
-                        '`/help` - Show this help message'
-                },
-                {
-                    name: '💎 Premium',
-                    value:
-                        '`/premium status` - View your plan, available upgrades, and buy buttons\n' +
-                        '`/premium redeem` - Apply purchased credits or CSV unlock to this server\n' +
-                        '`/vote` - Free: each member vote adds bonus emails to this month\'s quota\n' +
-                        '**Standard** - Unlimited verifications + premium ZeptoMail delivery\n' +
-                        '**Pro** - Standard + CSV import & export\n' +
-                        '**Credit packs** - One-time top-up of 100 / 500 / 2000 verifications\n' +
-                        '**CSV unlock** - One-time CSV features without a subscription\n' +
-                        '**Pay-per-send ZeptoMail** - `/settings mail-mode zeptomail` routes every mail through ZeptoMail at 1 credit each; auto-disables when credits hit 0' +
-                        storeLine
-                },
-                {
-                    name: '👤 User Commands',
-                    value:
-                        '`/verify` - Start email verification process\n' +
-                        '`/data delete-user` - Delete your verification data'
-                },
-                {
-                    name: '⚠️ Danger Zone',
-                    value:
-                        '`/data delete-server` - Delete all data & remove bot'
-                },
-                sourceField
-            )
-            .setFooter({ text: 'Need more help? Visit getemailverified.com' });
+        const language = await getLanguage(interaction.guildId)
 
         await interaction.reply({
-            embeds: [helpEmbed],
+            embeds: [isAdmin ? buildAdminEmbed(language) : buildMemberEmbed(language)],
             flags: MessageFlags.Ephemeral
         });
     }

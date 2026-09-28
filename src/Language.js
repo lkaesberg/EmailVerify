@@ -65,4 +65,27 @@ function languageForLocale(locale) {
     return language && languages.has(language) ? language : defaultLanguage
 }
 
-module.exports = {getLocale, languages, defaultLanguage, languageForLocale}
+// The reverse: each of our languages → the Discord locales it serves.
+const LANGUAGE_LOCALES = {}
+for (const [locale, language] of Object.entries(DISCORD_LOCALES)) {
+    (LANGUAGE_LOCALES[language] = LANGUAGE_LOCALES[language] || []).push(locale)
+}
+
+/**
+ * `{discordLocale: text}` for a string key, for a slash command's
+ * setDescriptionLocalizations, so Discord's own command picker shows the admin's
+ * language. Languages still carrying the English text are left out (Discord falls
+ * back to the default description), and Discord's 100-character limit is enforced.
+ */
+function discordLocalizations(key) {
+    const english = languages.get(defaultLanguage)?.[key]
+    const out = {}
+    for (const [language, locales] of Object.entries(LANGUAGE_LOCALES)) {
+        const text = languages.get(language)?.[key]
+        if (typeof text !== 'string' || !text || text === english) continue
+        for (const locale of locales) out[locale] = text.slice(0, 100)
+    }
+    return out
+}
+
+module.exports = {getLocale, languages, defaultLanguage, languageForLocale, discordLocalizations}
