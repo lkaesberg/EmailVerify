@@ -86,7 +86,7 @@ module.exports = {
                 {
                     name: '✨ New here?',
                     value:
-                        'Run **`/setup`** — a guided 3-step wizard that configures roles, email domains, ' +
+                        'Run **`/setup`** — a guided wizard that creates (or picks) the verified role, sets the email domains, ' +
                         'and posts the verification message for you. Then `/testmail` to confirm delivery.'
                 },
                 {

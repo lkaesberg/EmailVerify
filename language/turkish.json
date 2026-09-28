@@ -339,5 +339,7 @@
   "voteThanksRewarded": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! **%VAR%** bu ay **+%VAR%** ücretsiz doğrulama e-postası kazandı (**+%VAR%** / +%VAR% kazanıldı). 12 saat sonra tekrar oy verebilirsiniz.",
   "voteThanksCapped": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! **%VAR%** bu ay **+%VAR%** bonusun tamamını zaten kazandı, ancak oyunuz diğer toplulukların EmailVerify'ı bulmasına yine de yardımcı oluyor.",
   "voteThanksUnattributed": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! İpucu: sunucunuzda `/vote` komutunu çalıştırın, sonraki oylarınız orada ücretsiz doğrulama e-postası eklesin.",
-  "premiumVoteBonusLine": "🗳️ Bu ayki oy bonusu: **+%VAR%** / +%VAR% (`/vote`)"
+  "premiumVoteBonusLine": "🗳️ Bu ayki oy bonusu: **+%VAR%** / +%VAR% (`/vote`)",
+  "setupRoleVerifiedName": "Doğrulanmış",
+  "setupRoleUnverifiedName": "Doğrulanmamış"
 }

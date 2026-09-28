@@ -339,5 +339,7 @@
   "voteThanksRewarded": "🎉 תודה שהצבעת ב-%VAR%! **%VAR%** קיבל עכשיו **+%VAR%** אימיילי אימות בחינם לחודש הזה (נצבר **+%VAR%** / +%VAR%). אפשר להצביע שוב בעוד 12 שעות.",
   "voteThanksCapped": "🎉 תודה שהצבעת ב-%VAR%! **%VAR%** כבר צבר החודש את הבונוס המלא של **+%VAR%**, אבל ההצבעה שלך עדיין עוזרת לקהילות אחרות למצוא את EmailVerify.",
   "voteThanksUnattributed": "🎉 תודה שהצבעת ב-%VAR%! טיפ: הרץ `/vote` בשרת שלך, וההצבעות הבאות שלך יוסיפו שם אימיילי אימות בחינם.",
-  "premiumVoteBonusLine": "🗳️ בונוס הצבעות החודש: **+%VAR%** / +%VAR% (`/vote`)"
+  "premiumVoteBonusLine": "🗳️ בונוס הצבעות החודש: **+%VAR%** / +%VAR% (`/vote`)",
+  "setupRoleVerifiedName": "מאומת",
+  "setupRoleUnverifiedName": "לא מאומת"
 }

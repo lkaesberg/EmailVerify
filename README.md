@@ -74,7 +74,7 @@ Use this link to invite the bot to your server:
 
 ### Quick Setup
 
-The fastest way: run **`/setup`** — a guided 3-step wizard that configures your verified roles, email domains, and posts the verification message for you. Then run `/testmail` to confirm email delivery.
+The fastest way: run **`/setup`** — a guided wizard that creates the verified role for you (or uses your existing roles), configures email domains, and posts the verification message. Then run `/testmail` to confirm email delivery.
 
 Prefer manual setup?
 
@@ -164,7 +164,7 @@ Assign different roles based on email domain:
 
 | Command | Description |
 |---------|-------------|
-| `/setup` | Guided 3-step setup wizard (roles → domains → verification channel) |
+| `/setup` | Guided setup wizard (verified role, created for you if you like → optional unverified role → domains → verification channel) |
 | `/button <channel> <buttontext>` | Create a verification button embed in a channel |
 | `/testmail <email>` | Send a test verification email to check delivery & spam placement |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |

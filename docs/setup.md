@@ -35,10 +35,10 @@ Setting up email verification on a Discord server takes about three minutes. Wat
 
 ## Before you start
 
-You need **Manage Server** permission on the Discord server, and a role you want verified members to receive. If you don't have one yet, create it first — `/setup` can point at it but can't invent it for you.
+You need **Administrator** permission on the Discord server. You don't need a role yet: `/setup` can create a **Verified** role for you, and an optional **Unverified** role for new members.
 
-!!! warning "Put the bot's role above the roles it hands out"
-    Discord refuses to let a bot assign a role that sits above its own. Open **Server Settings → Roles** and drag **EmailVerify** above your verified and unverified roles. Skipping this is the single most common cause of the `Can't find roles. Please contact the admin!` error.
+!!! warning "Using roles you already have? Put the bot's role above them"
+    Discord refuses to let a bot assign a role that sits above its own. Open **Server Settings → Roles** and drag **EmailVerify** above your verified and unverified roles. Skipping this is the single most common cause of the `Can't find roles. Please contact the admin!` error. Roles that `/setup` creates are placed below the bot's role automatically, so they never have this problem.
 
 ---
 
@@ -53,7 +53,7 @@ Use the [invite link](https://discord.com/api/oauth2/authorize?client_id=8950561
 
 <div class="ev-step" markdown>
 **Run `/setup`.**
-A three-step wizard: choose the role verified members get, add the email domains you accept, and pick the channel the verification button goes in. It writes the configuration and posts the button for you.
+A short wizard: let it create the role verified members get (or pick your own), optionally create an Unverified role for new members, add the email domains you accept, and pick the channel the verification button goes in. It writes the configuration and posts the button for you.
 </div>
 
 <div class="ev-step" markdown>
@@ -96,9 +96,18 @@ Map a domain to its own role and members receive it in addition to your default 
 
 ### Lock the server down until someone verifies
 
-Two options, and they combine:
+A role on its own doesn't hide anything. Verification only keeps people out once your channels are visible to verified members and hidden from everyone else. The bot can't change channel permissions for you, so do this once, per category:
 
-- **`/settings auto-unverified enable`** — every new member is given an "Unverified" role automatically. Deny that role access to your channels and verification becomes mandatory.
+1. Right-click a members-only **category** (or channel) → **Edit Category** → **Permissions**.
+2. On **`@everyone`**, turn **View Channel** off (✕).
+3. Add your verified role (for example **Verified**) and turn **View Channel** on (✓).
+4. Keep the channel with the verification button visible to `@everyone`, or nobody can start verifying.
+
+Channels inside a category follow it unless they have their own overrides, so a handful of categories usually covers the whole server. This works for members who joined before you set it up, too.
+
+Two options make it stricter, and they combine:
+
+- **An Unverified role** — `/setup` can create one and give it to every new member (or use `/role unverified` with `/settings auto-unverified enable`). Deny that role **View Channel** where you want it kept out. It only reaches members who join after you turn it on.
 - **`/settings auto-verify enable`** — new members are prompted to verify the moment they join, instead of having to find the button themselves.
 
 ### Block throwaway addresses

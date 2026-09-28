@@ -339,5 +339,7 @@
   "voteThanksRewarded": "🎉 ¡Gracias por votar en %VAR%! **%VAR%** acaba de recibir **+%VAR%** emails de verificación gratis este mes (**+%VAR%** / +%VAR% conseguidos). Puedes volver a votar en 12 horas.",
   "voteThanksCapped": "🎉 ¡Gracias por votar en %VAR%! **%VAR%** ya consiguió el bonus completo de **+%VAR%** este mes, pero tu voto sigue ayudando a otras comunidades a encontrar EmailVerify.",
   "voteThanksUnattributed": "🎉 ¡Gracias por votar en %VAR%! Consejo: ejecuta `/vote` en tu servidor y tus próximos votos añadirán emails de verificación gratis allí.",
-  "premiumVoteBonusLine": "🗳️ Bonus por votos este mes: **+%VAR%** / +%VAR% (`/vote`)"
+  "premiumVoteBonusLine": "🗳️ Bonus por votos este mes: **+%VAR%** / +%VAR% (`/vote`)",
+  "setupRoleVerifiedName": "Verificado",
+  "setupRoleUnverifiedName": "Sin verificar"
 }

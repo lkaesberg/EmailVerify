@@ -235,7 +235,7 @@ Prefer to read? The [quick start guide](setup.md) covers the same three steps.
 
 <div class="ev-step" markdown>
 **Invite the bot and run `/setup`.**
-A three-step wizard walks you through the verified role, the allowed domains, and the channel the verification button lives in.
+A short wizard creates the verified role for you (or uses yours), sets the allowed domains, and posts the verification button in the channel you pick.
 </div>
 
 <div class="ev-step" markdown>

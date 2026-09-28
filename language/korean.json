@@ -339,5 +339,7 @@
   "voteThanksRewarded": "🎉 %VAR%에서 투표해 주셔서 감사합니다! **%VAR%** 서버가 이번 달 무료 인증 이메일 **+%VAR%**개를 받았습니다 (**+%VAR%** / +%VAR% 획득). 12시간 후에 다시 투표할 수 있습니다.",
   "voteThanksCapped": "🎉 %VAR%에서 투표해 주셔서 감사합니다! **%VAR%** 서버는 이번 달 보너스 **+%VAR%**개를 이미 모두 받았지만, 투표는 다른 커뮤니티가 EmailVerify를 찾는 데 도움이 됩니다.",
   "voteThanksUnattributed": "🎉 %VAR%에서 투표해 주셔서 감사합니다! 팁: 서버에서 `/vote` 를 실행하면 다음 투표부터 그 서버에 무료 인증 이메일이 추가됩니다.",
-  "premiumVoteBonusLine": "🗳️ 이번 달 투표 보너스: **+%VAR%** / +%VAR% (`/vote`)"
+  "premiumVoteBonusLine": "🗳️ 이번 달 투표 보너스: **+%VAR%** / +%VAR% (`/vote`)",
+  "setupRoleVerifiedName": "인증됨",
+  "setupRoleUnverifiedName": "미인증"
 }

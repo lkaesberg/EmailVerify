@@ -339,5 +339,7 @@
   "voteThanksRewarded": "🎉 Thanks for voting on %VAR%! **%VAR%** just got **+%VAR%** free verification emails this month (**+%VAR%** / +%VAR% earned). You can vote again in 12 hours.",
   "voteThanksCapped": "🎉 Thanks for voting on %VAR%! **%VAR%** has already earned the full **+%VAR%** bonus this month, but your vote still helps other communities find EmailVerify.",
   "voteThanksUnattributed": "🎉 Thanks for voting on %VAR%! Tip: run `/vote` in your server, and your future votes will add free verification emails there.",
-  "premiumVoteBonusLine": "🗳️ Vote bonus this month: **+%VAR%** / +%VAR% (`/vote`)"
+  "premiumVoteBonusLine": "🗳️ Vote bonus this month: **+%VAR%** / +%VAR% (`/vote`)",
+  "setupRoleVerifiedName": "Verified",
+  "setupRoleUnverifiedName": "Unverified"
 }
