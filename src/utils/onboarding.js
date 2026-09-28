@@ -17,8 +17,9 @@
 // what the bot does and the three steps that make it work.
 
 const Discord = require('discord.js')
-const { getLocale } = require('../Language')
+const { getLocale, defaultLanguage, languageForLocale } = require('../Language')
 const { getWebsiteUrl } = require('./premiumButtons')
+const database = require('../database/Database')
 
 /**
  * The user who actually added the bot, or null.
@@ -94,7 +95,9 @@ function buildOnboardingEmbed(language, guildName = null) {
  * the admin has DMs closed. Neither failure is worth surfacing to the server, so every
  * send is swallowed; the returned flags exist so the caller can measure delivery.
  *
- * @returns {Promise<{channelSent: boolean, dmSent: boolean, inviterResolved: boolean}>}
+ * `inviterId` is for storing (setup follow-ups DM the same person), never for analytics.
+ *
+ * @returns {Promise<{channelSent: boolean, dmSent: boolean, inviterResolved: boolean, inviterId: ?string}>}
  */
 async function sendOnboarding(guild, language = 'english') {
     let channelSent = false
@@ -129,10 +132,47 @@ async function sendOnboarding(guild, language = 'english') {
         }
     }
 
-    return { channelSent, dmSent, inviterResolved: !!inviter }
+    return { channelSent, dmSent, inviterResolved: !!inviter, inviterId: inviter?.id ?? null }
+}
+
+/**
+ * The language to greet a guild in, saved as its setting when it has none yet.
+ *
+ * A fresh join has no saved settings (leaving deletes them), so the server's Discord
+ * locale becomes its language before the first message goes out. A server that
+ * already has settings keeps the language it chose.
+ */
+async function resolveGuildLanguage(guild) {
+    if (await database.hasServerSettings(guild.id)) {
+        return new Promise(resolve => database.getServerSettings(guild.id, s => resolve(s.language || defaultLanguage)))
+    }
+    const language = languageForLocale(guild.preferredLocale)
+    if (language !== defaultLanguage) {
+        await new Promise(resolve => database.getServerSettings(guild.id, settings => {
+            settings.language = language
+            database.updateServerSettings(guild.id, settings)
+            resolve()
+        }))
+    }
+    return language
+}
+
+/**
+ * First contact with a new guild: pick its language, greet it, and queue the setup
+ * follow-ups (see setupNudges). The inviter id goes to the database only.
+ *
+ * @returns {Promise<{language: string, delivery: {channelSent: boolean, dmSent: boolean, inviterResolved: boolean}}>}
+ */
+async function welcomeGuild(guild) {
+    const language = await resolveGuildLanguage(guild)
+    const { inviterId, ...delivery } = await sendOnboarding(guild, language)
+    await database.addGuildOnboarding(guild.id, inviterId)
+    return { language, delivery }
 }
 
 module.exports = {
+    welcomeGuild,
+    resolveGuildLanguage,
     sendOnboarding,
     pickWelcomeChannel,
     resolveInviter,

@@ -341,5 +341,12 @@
   "voteThanksUnattributed": "🎉 תודה שהצבעת ב-%VAR%! טיפ: הרץ `/vote` בשרת שלך, וההצבעות הבאות שלך יוסיפו שם אימיילי אימות בחינם.",
   "premiumVoteBonusLine": "🗳️ בונוס הצבעות החודש: **+%VAR%** / +%VAR% (`/vote`)",
   "setupRoleVerifiedName": "מאומת",
-  "setupRoleUnverifiedName": "לא מאומת"
+  "setupRoleUnverifiedName": "לא מאומת",
+  "nudgeTitle": "👋 בדיקה קצרה: EmailVerify בשרת %VAR%",
+  "nudgeNoRoles": "EmailVerify נוסף לשרת **%VAR%**, אבל הוא עדיין לא מוגדר, ולכן חברים לא יכולים להתאמת.\n\nזה לוקח בערך דקה: הרץ **`/setup`** בשרת. הוא יכול ליצור עבורך את התפקיד מאומת, שואל אילו דומיינים של אימייל לקבל ומפרסם את כפתור האימות.",
+  "nudgeNoVerifications": "EmailVerify מוגדר בשרת **%VAR%**, אבל אף אחד עוד לא התאמת.\n\n• האם כפתור האימות מפורסם במקום שבו החברים רואים אותו? (**`/button`**, או הרץ שוב **`/setup`**)\n• שלח לעצמך בדיקה עם **`/testmail`**\n• **`/status`** מראה מה עוד חסר",
+  "nudgeLast": "*זו התזכורת האחרונה; לא נכתוב לך על כך שוב.*",
+  "nudgeGuideButton": "מדריך הגדרה",
+  "nudgeSupportButton": "שרת תמיכה",
+  "verifySuccessGetBot": "EmailVerify לשרת שלך"
 }

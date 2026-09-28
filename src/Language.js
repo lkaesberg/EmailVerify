@@ -45,4 +45,24 @@ function getLocale(language, string, ...vars) {
     return locale;
 }
 
-module.exports = {getLocale, languages, defaultLanguage}
+// Discord's locale codes (guild.preferredLocale) mapped to our language files. Discord
+// has no Hebrew locale, so Hebrew servers keep choosing it with /settings language.
+const DISCORD_LOCALES = {
+    'de': 'german',
+    'fr': 'french',
+    'es-ES': 'spanish',
+    'es-419': 'spanish',
+    'pt-BR': 'brazilianPortuguese',
+    'pl': 'polish',
+    'tr': 'turkish',
+    'ko': 'korean',
+    'th': 'thai'
+}
+
+/** Our language for a Discord locale code, or the default when we don't speak it. */
+function languageForLocale(locale) {
+    const language = DISCORD_LOCALES[locale]
+    return language && languages.has(language) ? language : defaultLanguage
+}
+
+module.exports = {getLocale, languages, defaultLanguage, languageForLocale}

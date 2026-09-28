@@ -16,6 +16,9 @@ const prices = config.monetization?.prices || {}
 const currency = config.monetization?.currency || 'EUR'
 const appId = config.clientId
 const websiteUrl = (config.websiteUrl || '').trim()
+// Where people get help. Defaults to the project's own support server, which also serves
+// self-hosters; set "supportUrl": "" in config to hide every support link.
+const supportUrl = (config.supportUrl ?? 'https://discord.gg/fEBSHUQXu2').trim()
 
 // Reverse map: Discord SKU snowflake → operator-facing product metadata. Built
 // once from config so logs and notifications can show "⭐ Standard subscription"
@@ -43,6 +46,37 @@ function describeSku(skuId) {
 
 function getWebsiteUrl() {
     return websiteUrl || null
+}
+
+function getSupportUrl() {
+    return supportUrl || null
+}
+
+/**
+ * A link on the website, tagged with where in the bot it was clicked, so site analytics
+ * can tell the bot's own traffic apart. Null when no website is configured.
+ */
+function websiteLink(path, medium) {
+    if (!websiteUrl) return null
+    const base = websiteUrl.replace(/\/$/, '')
+    return `${base}/${path.replace(/^\//, '')}?utm_source=bot&utm_medium=${encodeURIComponent(medium)}`
+}
+
+/**
+ * "Get EmailVerify for your server" on a member's verification success message. Every
+ * verification shows the bot to someone who may run a community of their own; paying
+ * servers don't carry the link.
+ */
+function buildGetBotRow(language) {
+    const url = websiteLink('', 'verify_success')
+    if (!url) return null
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setLabel(getLocale(language, 'verifySuccessGetBot'))
+            .setEmoji('✉️')
+            .setURL(url)
+    )
 }
 
 /** Configured billing currency (ISO code, e.g. 'EUR'). Used to label revenue analytics. */
@@ -143,6 +177,9 @@ module.exports = {
     appStoreUrl,
     mobileHintLine,
     getWebsiteUrl,
+    getSupportUrl,
+    websiteLink,
+    buildGetBotRow,
     getCurrency,
     describeSku
 }

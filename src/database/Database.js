@@ -257,6 +257,20 @@ class Database {
                 updatedAt INTEGER NOT NULL
             );`)
         })
+        this.runMigration(24, () => {
+            // Setup follow-ups. Half of all new servers never verify anyone, most of them
+            // because setup stalls after the welcome message. A row is written only when
+            // the bot joins a server, so servers that were already in before this
+            // shipped can never be nudged (no mass DMs). It is removed once the server
+            // verifies someone, after the last nudge, or when the bot leaves.
+            this.db.run(`CREATE TABLE IF NOT EXISTS guild_onboarding(
+                guildID TEXT PRIMARY KEY,
+                joinedAt INTEGER NOT NULL,
+                inviterID TEXT,
+                nudgesSent INTEGER NOT NULL DEFAULT 0,
+                lastNudgeAt INTEGER
+            );`)
+        })
     }
 
     /**
@@ -305,11 +319,27 @@ class Database {
 
     deleteUserData(userID) {
         this.db.run("DELETE FROM userEmails WHERE userID = ?;", [userID])
+        this.db.run("DELETE FROM vote_targets WHERE userID = ?;", [userID])
+        // Votes stay, so a server keeps the bonus it earned, but no longer name the voter.
+        this.db.run("UPDATE votes SET userID = 'deleted' WHERE userID = ?;", [userID])
     }
 
     deleteServerData(guildID) {
         this.db.run("DELETE FROM guilds WHERE guildid = ?;", [guildID])
         this.db.run("DELETE FROM userEmails WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM votes WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM vote_targets WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM guild_onboarding WHERE guildID = ?;", [guildID])
+    }
+
+    /** Whether the guild has saved settings at all (a fresh join has none). */
+    hasServerSettings(guildID) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT 1 AS found FROM guilds WHERE guildid = ?", [guildID], (err, row) => {
+                if (err) console.error('Error checking server settings:', err)
+                resolve(!!row)
+            })
+        })
     }
 
 
@@ -717,7 +747,8 @@ class Database {
      * signal under a huge zero bucket. A guild sitting at 0 here HAS bought before and
      * is the strongest repurchase candidate, which is the point of the breakdown.
      *
-     * The 1-10 boundary matches the `warnedCreditsLow` threshold used in getMailMode(),
+     * The 1-10 boundary matches the `warnedCreditsLow` threshold used in
+     * recordMailSentAndCheckThresholds(),
      * so "critical" here means the same thing it does in the admin warnings.
      */
     getCreditBuckets() {
@@ -1191,6 +1222,58 @@ class Database {
                     resolve(0)
                 }
             })
+        })
+    }
+
+    /** Start tracking a freshly joined guild for setup follow-ups. */
+    addGuildOnboarding(guildID, inviterID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO guild_onboarding (guildID, joinedAt, inviterID, nudgesSent, lastNudgeAt) VALUES (?, ?, ?, 0, NULL)",
+                [guildID, Date.now(), inviterID ?? null],
+                (err) => {
+                    if (err) console.error('Error adding guild onboarding:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /** Every guild still awaiting a follow-up. Small by construction (new joins only). */
+    getPendingOnboarding() {
+        return new Promise((resolve) => {
+            this.db.all("SELECT * FROM guild_onboarding", [], (err, rows) => {
+                if (err) console.error('Error reading guild onboarding:', err)
+                resolve(rows || [])
+            })
+        })
+    }
+
+    /**
+     * Claim the next follow-up for a guild. Only succeeds while nudgesSent still equals
+     * `expected`, so a restart or an overlapping check can never send the same nudge twice.
+     *
+     * @returns {Promise<boolean>} whether this caller owns the send
+     */
+    claimOnboardingNudge(guildID, expected) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "UPDATE guild_onboarding SET nudgesSent = nudgesSent + 1, lastNudgeAt = ? WHERE guildID = ? AND nudgesSent = ?",
+                [Date.now(), guildID, expected],
+                function (err) {
+                    if (err) {
+                        console.error('Error claiming onboarding nudge:', err)
+                        return resolve(false)
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    deleteGuildOnboarding(guildID) {
+        return new Promise((resolve) => {
+            this.db.run("DELETE FROM guild_onboarding WHERE guildID = ?", [guildID], () => resolve())
         })
     }
 

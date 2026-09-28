@@ -17,6 +17,7 @@ All purchases run through Discord's native subscription system. Discord handles 
 |---|---|---|---|
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
 | **Vote bonus** | +5 per vote, up to +25 / month | n/a | n/a |
+| **"Get EmailVerify" link on the member's success message** | Shown | Hidden | Hidden |
 | **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
 | **Allowed-email API** | — | — | ✓ |

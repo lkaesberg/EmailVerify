@@ -341,5 +341,12 @@
   "voteThanksUnattributed": "🎉 Thanks for voting on %VAR%! Tip: run `/vote` in your server, and your future votes will add free verification emails there.",
   "premiumVoteBonusLine": "🗳️ Vote bonus this month: **+%VAR%** / +%VAR% (`/vote`)",
   "setupRoleVerifiedName": "Verified",
-  "setupRoleUnverifiedName": "Unverified"
+  "setupRoleUnverifiedName": "Unverified",
+  "nudgeTitle": "👋 Quick check-in: EmailVerify on %VAR%",
+  "nudgeNoRoles": "EmailVerify was added to **%VAR%**, but it isn't set up yet, so members can't verify.\n\nIt takes about a minute: run **`/setup`** in the server. It can create the Verified role for you, asks which email domains to accept, and posts the verify button.",
+  "nudgeNoVerifications": "EmailVerify is set up on **%VAR%**, but nobody has verified yet.\n\n• Is the verify button posted where members can see it? (**`/button`**, or run **`/setup`** again)\n• Send yourself a test with **`/testmail`**\n• **`/status`** shows anything that's still missing",
+  "nudgeLast": "*This is the last reminder; we won't message you about this again.*",
+  "nudgeGuideButton": "Setup guide",
+  "nudgeSupportButton": "Support server",
+  "verifySuccessGetBot": "Get EmailVerify for your server"
 }

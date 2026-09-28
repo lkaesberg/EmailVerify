@@ -341,5 +341,12 @@
   "voteThanksUnattributed": "🎉 %VAR% üzerinde oy verdiğiniz için teşekkürler! İpucu: sunucunuzda `/vote` komutunu çalıştırın, sonraki oylarınız orada ücretsiz doğrulama e-postası eklesin.",
   "premiumVoteBonusLine": "🗳️ Bu ayki oy bonusu: **+%VAR%** / +%VAR% (`/vote`)",
   "setupRoleVerifiedName": "Doğrulanmış",
-  "setupRoleUnverifiedName": "Doğrulanmamış"
+  "setupRoleUnverifiedName": "Doğrulanmamış",
+  "nudgeTitle": "👋 Kısa bir hatırlatma: %VAR% sunucusunda EmailVerify",
+  "nudgeNoRoles": "EmailVerify **%VAR%** sunucusuna eklendi ancak henüz kurulmadı, bu yüzden üyeler doğrulama yapamıyor.\n\nYaklaşık bir dakika sürer: sunucuda **`/setup`** komutunu çalıştırın. Doğrulanmış rolünü sizin için oluşturabilir, hangi e-posta alan adlarının kabul edileceğini sorar ve doğrulama düğmesini paylaşır.",
+  "nudgeNoVerifications": "EmailVerify **%VAR%** sunucusunda kurulu ama henüz kimse doğrulama yapmadı.\n\n• Doğrulama düğmesi üyelerin görebileceği bir yerde paylaşıldı mı? (**`/button`** veya **`/setup`** komutunu tekrar çalıştırın)\n• **`/testmail`** ile kendinize bir test gönderin\n• **`/status`** eksik olanları gösterir",
+  "nudgeLast": "*Bu son hatırlatmadır; bu konuda size tekrar yazmayacağız.*",
+  "nudgeGuideButton": "Kurulum rehberi",
+  "nudgeSupportButton": "Destek sunucusu",
+  "verifySuccessGetBot": "Sunucunuz için EmailVerify"
 }

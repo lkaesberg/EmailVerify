@@ -341,5 +341,12 @@
   "voteThanksUnattributed": "🎉 %VAR%에서 투표해 주셔서 감사합니다! 팁: 서버에서 `/vote` 를 실행하면 다음 투표부터 그 서버에 무료 인증 이메일이 추가됩니다.",
   "premiumVoteBonusLine": "🗳️ 이번 달 투표 보너스: **+%VAR%** / +%VAR% (`/vote`)",
   "setupRoleVerifiedName": "인증됨",
-  "setupRoleUnverifiedName": "미인증"
+  "setupRoleUnverifiedName": "미인증",
+  "nudgeTitle": "👋 확인차 연락드려요: %VAR%의 EmailVerify",
+  "nudgeNoRoles": "EmailVerify가 **%VAR%** 서버에 추가되었지만 아직 설정되지 않아 멤버가 인증할 수 없습니다.\n\n1분 정도면 됩니다: 서버에서 **`/setup`** 을 실행하세요. 인증됨 역할을 대신 만들 수 있고, 허용할 이메일 도메인을 묻고, 인증 버튼을 게시합니다.",
+  "nudgeNoVerifications": "EmailVerify가 **%VAR%** 서버에 설정되었지만 아직 인증한 사람이 없습니다.\n\n• 인증 버튼이 멤버가 볼 수 있는 곳에 게시되어 있나요? (**`/button`** 또는 **`/setup`** 을 다시 실행)\n• **`/testmail`** 로 테스트 메일을 보내 보세요\n• **`/status`** 에서 빠진 항목을 확인할 수 있습니다",
+  "nudgeLast": "*마지막 안내입니다. 이 건으로 다시 연락드리지 않습니다.*",
+  "nudgeGuideButton": "설정 가이드",
+  "nudgeSupportButton": "지원 서버",
+  "verifySuccessGetBot": "내 서버에 EmailVerify 추가"
 }

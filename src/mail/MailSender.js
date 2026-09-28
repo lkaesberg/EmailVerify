@@ -521,7 +521,7 @@ module.exports = class MailSender {
                   </p>
                   <p style="margin:0 0 16px 0; color:#57606a;">${ignoreNote}<br />${noReply}</p>
                   <hr style="border:none; border-top:1px solid #d8dee4; margin:24px 0;" />
-                  <p style="margin:0; color:#57606a; font-size:12px;">${moreInfo} <a href="https://getemailverified.com/" style="color:#0969da; text-decoration:none;">https://getemailverified.com/</a></p>
+                  <p style="margin:0; color:#57606a; font-size:12px;">${moreInfo} <a href="https://getemailverified.com/?utm_source=email&amp;utm_medium=verification" style="color:#0969da; text-decoration:none;">https://getemailverified.com/</a></p>
                 </div>
               </td>
             </tr>

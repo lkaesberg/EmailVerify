@@ -33,8 +33,9 @@ const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
 const ErrorNotifier = require('./utils/ErrorNotifier');
-const { describeSku, getCurrency } = require('./utils/premiumButtons');
+const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
+const { startSetupNudges } = require('./utils/setupNudges');
 const voting = require('./utils/voting');
 const OperatorWebhook = require('./utils/OperatorWebhook');
 const analytics = require('./utils/Analytics');
@@ -585,6 +586,10 @@ bot.once('clientReady', async () => {
     // PostHog group analytics have labels from the first boot onward.
     for (const g of bot.guilds.cache.values()) analytics.identifyGuild(g)
 
+    // Setup follow-ups for new servers that haven't verified anyone yet. Every shard runs
+    // its own check over the guilds it holds.
+    startSetupNudges(bot)
+
     // Prime the entitlement cache so updates arrive with a prior state to diff against
     // (a consumption or removal is otherwise indistinguishable from an opaque update),
     // and so a renewing subscription can be mapped back to its guild. Discord sends
@@ -729,12 +734,7 @@ bot.on('guildCreate', guild => {
     //
     // Fire-and-forget: onboarding must never delay or break command registration. The
     // delivery flags are captured so the effect on first-hour churn is measurable.
-    onboarding.sendOnboarding(guild)
-        .then(result => analytics.capture({
-            event: 'onboarding_sent',
-            guild,
-            properties: { ...result, member_count: guild.memberCount }
-        }))
+    welcomeGuild(guild)
         .catch(e => console.warn(`[Onboarding] failed for ${guild.id}:`, e?.message || e))
         // Permission self-check at the only moment the admin is guaranteed to be looking:
         // right after they added the bot. An invite that granted too little is otherwise
@@ -747,6 +747,16 @@ bot.on('guildCreate', guild => {
         // when the invite was correct.
         .finally(() => checkGuildPermissionHealth(guild, 'guild_joined'))
 })
+
+/** Greet a new guild in its own language and queue its setup follow-ups. */
+async function welcomeGuild(guild) {
+    const { language, delivery } = await onboarding.welcomeGuild(guild)
+    analytics.capture({
+        event: 'onboarding_sent',
+        guild,
+        properties: { ...delivery, member_count: guild.memberCount, language, locale: guild.preferredLocale ?? null }
+    })
+}
 
 /**
  * Audit a guild's permissions and role order and notify its admins if anything is wrong.
@@ -1521,7 +1531,14 @@ bot.on('interactionCreate', async interaction => {
                 } catch {}
 
                 const successEmbed = createVerificationSuccessEmbed(language, assignedRoleNames, userGuild.name, userGuild.iconURL({ dynamic: true }))
-                await interaction.editReply({ embeds: [successEmbed] }).catch(() => {})
+                // Free servers carry a "Get EmailVerify for your server" link: the member
+                // who just verified may run a community of their own. Subscribers don't.
+                const successComponents = []
+                if (premiumManager.enabled && !premiumManager.getSubscriptionTier(await getEntitlementsForGuild(userGuild.id, interaction))) {
+                    const getBotRow = buildGetBotRow(language)
+                    if (getBotRow) successComponents.push(getBotRow)
+                }
+                await interaction.editReply({ embeds: [successEmbed], components: successComponents }).catch(() => {})
 
                 // Track successful verification (global and per-guild) and clear the rate limiter
                 // so a returning user isn't stuck behind the escalating email-send backoff.

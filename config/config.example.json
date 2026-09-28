@@ -15,6 +15,10 @@
     "discordbotlistWebhookSecret": "",
     "operatorWebhookUrl": "",
     "websiteUrl": "",
+    "supportUrl": "https://discord.gg/fEBSHUQXu2",
+    "onboarding": {
+        "nudgeDelaysHours": [24, 72]
+    },
     "apiBaseUrl": "https://stats.example.com/api/v1",
     "monetization": {
         "enabled": false,
