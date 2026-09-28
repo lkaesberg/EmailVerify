@@ -122,8 +122,14 @@ jobs:
         with:
           python-version: 3.x
 
-      - run: pip install mkdocs-material
+      # MkDocs 2.0 drops the plugin and theme-override systems this site depends on
+      # (overrides/, hooks/), so stay on 1.x. Material >= 9.7.5 caps it too; the
+      # explicit pin keeps that true even if the cap is ever relaxed.
+      - run: pip install "mkdocs>=1.6,<2" "mkdocs-material>=9.7.5,<10"
       - run: mkdocs build
+        env:
+          # Silences Material's MkDocs 2.0 announcement banner in the build log.
+          NO_MKDOCS_2_WARNING: "1"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
