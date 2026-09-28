@@ -129,7 +129,7 @@ Die Website setzt **keine Cookies**.
 
 **Reichweitenmessung (PostHog, nur mit Einwilligung).** Beim ersten Besuch
 fragt ein Banner, ob Sie der Reichweitenmessung zustimmen. **Erst wenn Sie
-„Analyse erlauben" wählen**, wird PostHog (EU-Cloud) geladen. Erfasst werden
+„Allow analytics" wählen**, wird PostHog (EU-Cloud) geladen. Erfasst werden
 dann Seitenaufrufe, die verweisende Seite, UTM-Parameter aus der Adresszeile
 sowie Klicks auf die Links zum Hinzufügen des Bots, zum Discord-Store und zum
 Support-Server, damit wir verstehen, welche Seiten und Verweise zur Installation
@@ -144,7 +144,7 @@ Erfassung statt.
 Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO i. V. m.
 § 25 Abs. 1 TDDDG). Sie können sie jederzeit mit Wirkung für die Zukunft
 widerrufen, indem Sie unten auf jeder Seite **„Privacy settings"** öffnen und
-„Ablehnen" wählen. Ihre Auswahl selbst speichern wir im lokalen Speicher Ihres
+„Decline" wählen. Ihre Auswahl selbst speichern wir im lokalen Speicher Ihres
 Browsers (`ev-analytics-consent`), damit das Banner nicht bei jedem Seitenaufruf
 erscheint; das ist für die Beachtung Ihrer Entscheidung unbedingt erforderlich
 (§ 25 Abs. 2 Nr. 2 TDDDG). Lehnen Sie ab, wird PostHog nicht geladen.

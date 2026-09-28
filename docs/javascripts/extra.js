@@ -162,14 +162,8 @@
   }
 
   /* Consent banner. Non-modal, both choices equally prominent, nothing
-   * pre-selected. German for German-language browsers, English otherwise. */
-  var CONSENT_TEXT = /^de\b/i.test(navigator.language || '') ? {
-    title: 'Helfen Sie uns, EmailVerify zu verbessern',
-    body: 'Mit Ihrer Einwilligung messen wir mit PostHog (EU-Cloud), welche Seiten und Links dazu führen, dass EmailVerify hinzugefügt wird. Keine Cookies, keine Profile, für die Analyse wird nichts auf Ihrem Gerät gespeichert. Sie können die Einwilligung jederzeit über „Privacy settings“ am Seitenende widerrufen.',
-    policy: 'Datenschutzerklärung',
-    allow: 'Analyse erlauben',
-    deny: 'Ablehnen'
-  } : {
+   * pre-selected. English, like the rest of the site. */
+  var CONSENT_TEXT = {
     title: 'Help us improve EmailVerify',
     body: 'With your consent we measure which pages and links lead people to add EmailVerify, using PostHog (EU cloud). No cookies, no profiles, nothing stored on your device for analytics. You can withdraw any time via “Privacy settings” at the bottom of each page.',
     policy: 'Privacy policy',
