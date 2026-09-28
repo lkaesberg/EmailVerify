@@ -110,7 +110,7 @@ Configure bot behavior and preferences.
 |---------|-------------|
 | `/settings language <language>` | Change the bot's display language |
 | `/settings log-channel [channel]` | Set a channel for verification logs (leave empty to disable) |
-| `/settings verify-message [message]` | Set a custom message for verification emails (leave empty for default) |
+| `/settings verify-message [message]` | Set a custom message shown in the verification form (leave empty for default) |
 | `/settings auto-verify <enable>` | Automatically prompt new members to verify when they join |
 | `/settings auto-unverified <enable>` | Automatically assign the unverified role to new members |
 | `/settings email-style <plain\|styled> [confirm]` | Choose plain text (default) or HTML rendering for verification emails. Switching to `styled` requires `confirm:True` because HTML mail is more likely to be filtered as spam. |
@@ -124,9 +124,9 @@ Configure bot behavior and preferences.
 | `/button <channel> <buttontext> [title] [message] [color]` | Create a verification button embed in a channel |
 | `/testmail <email>` | Send a test verification email through the real delivery path — reports the provider used and latency, so you can check inbox vs. spam placement. Counts against the monthly quota, max 3 per day. |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |
-| `/set_error_notify owner` | Send error notifications to the server owner (default) |
-| `/set_error_notify channel <channel>` | Send error notifications to a specific channel |
-| `/set_error_notify user <user>` | Send error notifications to a specific user via DM |
+| `/set_error_notify channel <channel> [ping] [ping_role]` | Send error notifications to a channel, optionally pinging @everyone, @here or a role |
+| `/set_error_notify clear` | Remove the error channel (notifications fall back to the log channel) |
+| `/set_error_notify me <on\|off>` | Turn error DMs on or off for yourself (the server owner gets them by default) |
 | `/set_error_notify status` | View current error notification settings |
 
 ### 📋 Allowed Email List

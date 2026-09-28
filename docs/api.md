@@ -1,3 +1,8 @@
+---
+title: Allowed-email API — Sync Your Server's Member List
+description: Keep your Discord server's allowed-email list in sync from your own systems with the EmailVerify Pro API. Token auth, bulk upload, removal, rate limits and examples.
+---
+
 # Allowed-email API
 
 Keep your server's allowed-email list in sync from your own systems — a student

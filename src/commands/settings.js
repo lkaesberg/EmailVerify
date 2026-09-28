@@ -46,7 +46,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('verify-message')
-                .setDescription('Customize the message shown in verification emails')
+                .setDescription('Customize the message shown in the verification form')
                 .addStringOption(option =>
                     option
                         .setName('message')
@@ -158,14 +158,14 @@ module.exports = {
                     serverSettings.verifyMessage = "";
                     database.updateServerSettings(interaction.guildId, serverSettings);
                     await interaction.reply({
-                        content: "✉️ **Custom verify message removed.**\n\nVerification emails will now use the default message.",
+                        content: "✉️ **Custom verify message removed.**\n\nThe verification form will show the default text again.",
                         flags: MessageFlags.Ephemeral
                     });
                 } else {
                     serverSettings.verifyMessage = verifyMessage;
                     database.updateServerSettings(interaction.guildId, serverSettings);
                     await interaction.reply({
-                        content: `✉️ **Custom verify message set:**\n"${verifyMessage}"\n\nThis message will be included in verification emails sent to users.`,
+                        content: `✉️ **Custom verify message set:**\n"${verifyMessage}"\n\nMembers see this message in the verification form when they enter their email.`,
                         flags: MessageFlags.Ephemeral
                     });
                 }

@@ -15,9 +15,9 @@
   <a href="https://github.com/lkaesberg/EmailVerify/stargazers"><img src="https://img.shields.io/github/stars/lkaesberg/EmailVerify?style=social" alt="GitHub stars"></a>
 </p>
     <p>
-    <a href="https://github.com/lkaesberg/EmailBot/issues">Report Bug</a>
+    <a href="https://github.com/lkaesberg/EmailVerify/issues">Report Bug</a>
     ·
-    <a href="https://github.com/lkaesberg/EmailBot/issues">Request Feature</a>
+    <a href="https://github.com/lkaesberg/EmailVerify/issues">Request Feature</a>
     </p>
     <a href="https://getemailverified.com/">🌐 Website</a>
   </p>
@@ -379,7 +379,7 @@ The upstream source is always available at
 
 If you're self-hosting this bot and find it useful, please consider supporting the development! Your contribution helps keep the project maintained and improved.
 
-![Buy Me A Pizza](https://img.buymeacoffee.com/button-api/?text=Support%20this%20project!&emoji=%F0%9F%8D%95&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)
+[![Buy Me A Pizza](https://img.buymeacoffee.com/button-api/?text=Support%20this%20project!&emoji=%F0%9F%8D%95&slug=sral12486&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/sral12486)
 
 ---
 
