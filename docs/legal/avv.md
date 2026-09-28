@@ -5,7 +5,7 @@ description: Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Server-Betreib
 
 # Auftragsverarbeitungsvertrag (AVV)
 
-**gemäß Art. 28 DSGVO** — **Stand:** August 2026
+**gemäß Art. 28 DSGVO** — **Stand:** September 2026
 
 Dieser Auftragsverarbeitungsvertrag (im Folgenden "AVV") gilt für Betreiber von
 Discord-Servern (z. B. Unternehmen, Hochschulen, Organisationen), die den
@@ -59,10 +59,33 @@ unterzeichnete PDF-Fassung bereit.
 - Mitglieder und Beitrittskandidaten des Discord-Servers des Auftraggebers
   (z. B. Kunden, Mitarbeitende, Studierende, Community-Mitglieder).
 
+**Nicht Gegenstand dieses AVV (Verarbeitung in eigener Verantwortung des
+Auftragnehmers):**
+
+- **Nutzungsanalyse:** Zum Betrieb, zur Fehleranalyse und zur Verbesserung des
+  Bots erfasst der Auftragnehmer Nutzungsereignisse (z. B. „Verifizierung
+  gestartet", „Befehl verwendet", „E-Mail versendet") mit Server-ID und
+  Servername. Discord-Nutzer-IDs werden dabei ausschließlich als gesalzener
+  SHA-256-Hash (Pseudonym) übertragen, **E-Mail-Adressen nie**. Diese
+  Verarbeitung erfolgt in eigener Verantwortung des Auftragnehmers auf
+  Grundlage seines berechtigten Interesses (Art. 6 Abs. 1 lit. f DSGVO) und ist
+  in der [Datenschutzerklärung](datenschutz.md) (Abschnitt 2.5) beschrieben.
+  Eingesetzt wird **PostHog Inc.** (San Francisco, USA) als Auftragsverarbeiter
+  des Auftragnehmers, mit Datenhaltung in Rechenzentren in der EU; eine
+  Verarbeitung in den USA ist möglich und durch die Zertifizierung von PostHog
+  nach dem EU-US Data Privacy Framework sowie zusätzlich durch
+  EU-Standardvertragsklauseln (Modul 2) abgesichert. Die Ereignisse werden bis
+  zu sieben Jahre gespeichert und sind von der Löschung nach § 9 ausgenommen;
+  auf Anfrage einer betroffenen Person löscht der Auftragnehmer deren Ereignisse.
+- **Abstimmungen und Einrichtungs-Erinnerungen:** Stimmen von Mitgliedern auf
+  Bot-Listen (top.gg, discordbotlist.com) sowie Erinnerungen an die Person, die
+  den Bot hinzugefügt hat, verarbeitet der Auftragnehmer ebenfalls in eigener
+  Verantwortung (Datenschutzerklärung, Abschnitte 2.2 und 2.6).
+
 ## § 3 Ort der Verarbeitung, Drittlandsübermittlung
 
-1. Die Verarbeitung findet ausschließlich in Mitgliedstaaten der Europäischen
-   Union statt: Hosting und eigener SMTP-Server im Hetzner-Rechenzentrum
+1. Die Verarbeitung im Auftrag findet ausschließlich in Mitgliedstaaten der
+   Europäischen Union statt: Hosting und eigener SMTP-Server im Hetzner-Rechenzentrum
    Helsinki, Finnland; optionaler E-Mail-Versand über den EU-Endpunkt von Zoho
    ZeptoMail (`api.zeptomail.eu`, Datenresidenz EU).
 2. Eine Verlagerung in ein Drittland erfolgt nur mit vorheriger Zustimmung des
@@ -72,6 +95,8 @@ unterzeichnete PDF-Fassung bereit.
    gewählte Plattform, auf der der Server betrieben wird. Für die
    Datenverarbeitung durch Discord gelten die Vereinbarungen zwischen dem
    Auftraggeber und Discord.
+4. Für die Nutzungsanalyse in eigener Verantwortung des Auftragnehmers
+   (PostHog, mögliche Verarbeitung in den USA) gilt § 2 letzter Absatz.
 
 ## § 4 Weisungsrecht des Auftraggebers
 
@@ -104,8 +129,8 @@ Der Auftragnehmer trifft insbesondere folgende Maßnahmen nach Art. 32 DSGVO:
   Gesellschafter über SSH mit Schlüssel-Authentifizierung; Zugriff auf
   Verwaltungsoberflächen mit Zwei-Faktor-Authentifizierung.
 - **Löschkonzept:** Technische Logs werden nach spätestens 30 Tagen gelöscht;
-  Betroffene können ihre Daten per `/data delete`, der Auftraggeber alle
-  Server-Daten per `/delete_server_data` jederzeit selbst löschen.
+  Betroffene können ihre Daten per `/data delete-user`, der Auftraggeber alle
+  Server-Daten per `/data delete-server` jederzeit selbst löschen.
 - **Verfügbarkeit:** Betrieb in einem ISO-27001-zertifizierten
   Hetzner-Rechenzentrum (Helsinki, Finnland).
 - Die jeweils aktuellen technischen und organisatorischen Maßnahmen der
@@ -156,8 +181,11 @@ Aufbewahrungspflicht entgegensteht:
 - Beim Entfernen des Bots vom Server werden die Server-Daten automatisch
   gelöscht.
 - Der Auftraggeber kann die Löschung jederzeit selbst per
-  `/delete_server_data` auslösen.
+  `/data delete-server` auslösen.
 - Technische Logs werden spätestens nach 30 Tagen gelöscht.
+
+Ausgenommen sind die pseudonymisierten Nutzungsereignisse, die der
+Auftragnehmer in eigener Verantwortung verarbeitet (§ 2 letzter Absatz).
 
 ## § 10 Nachweise und Kontrollrechte
 
@@ -194,16 +222,30 @@ sending verification emails and storing verification records (Discord user
 IDs, guild ID, hashed email addresses, aggregate statistics, technical logs
 deleted after 30 days at the latest).
 
-**Processing location:** exclusively in the EU — Hetzner data center in
+**Processing location:** processing on your behalf happens exclusively in the EU — Hetzner data center in
 Helsinki, Finland (hosting and self-hosted SMTP; DPA with Hetzner in place)
 and, for subscription customers, Zoho ZeptoMail via its EU endpoint
 (`api.zeptomail.eu`, EU data residency). Discord itself is the controller's
 own platform choice, not a sub-processor.
 
+**Not covered by this DPA (WKSolutions' own responsibility):** to run, debug and
+improve the bot, WKSolutions records usage events (e.g. verification started,
+command used, email sent) with the server ID and name. Discord user IDs are sent
+only as a salted SHA-256 hash; email addresses never. This is WKSolutions' own
+processing under legitimate interest (GDPR Art. 6(1)(f)), described in the
+[privacy policy](datenschutz.md) (section 2.5). It uses PostHog Inc. (San
+Francisco, USA) as WKSolutions' processor, with data held in EU data centres;
+US processing is possible and covered by PostHog's EU-US Data Privacy Framework
+certification plus the EU Standard Contractual Clauses (module 2). Events are
+kept for up to seven years and are excluded from deletion at the end of the
+contract; a data subject's own events are deleted on request. Votes on bot
+lists and setup reminders to the person who added the bot are also WKSolutions'
+own processing.
+
 **Security measures (Art. 32 GDPR):** TLS/STARTTLS for all email and API
 traffic, email addresses stored only as cryptographic hashes, SSH-key and
 2FA-protected access, 30-day log retention, self-service deletion via
-`/data delete` and `/delete_server_data`, ISO 27001-certified data center.
+`/data delete-user` and `/data delete-server`, ISO 27001-certified data center.
 
 **Sub-processors:** Hetzner Online GmbH (Germany; data center Helsinki,
 Finland) and Zoho Corporation Pvt. Ltd. (ZeptoMail EU). Changes are announced
