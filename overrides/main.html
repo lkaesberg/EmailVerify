@@ -22,6 +22,10 @@
 {% endblock %}
 
 {% block extrahead %}
+  {#- Website analytics settings for docs/javascripts/extra.js (see mkdocs.yml). #}
+  {%- if config.extra.posthog_key %}
+  <script id="ev-analytics" type="application/json">{{ {"key": config.extra.posthog_key, "host": config.extra.posthog_host, "privacy": config.site_url ~ "legal/datenschutz/#41-diese-website"} | tojson }}</script>
+  {%- endif %}
   {#- Favicons. Google Search fills transparent pixels with white and shrinks
       any icon that has transparency onto a white disc — that is the white ring
       seen around the earlier round and rounded-square icons. The PNGs are

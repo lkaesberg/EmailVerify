@@ -1123,3 +1123,93 @@
   .laurel-title { font-size: .62rem; }
   .laurel-sub { font-size: .46rem; }
 }
+
+/* --------------------------------------------------------------------------
+   Consent banner (docs/javascripts/extra.js)
+
+   Non-modal: pages stay usable while it is open. Both buttons share one style
+   on purpose — declining must be exactly as easy and as prominent as allowing.
+   -------------------------------------------------------------------------- */
+
+.ev-consent {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 10;
+  box-sizing: border-box;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: .9rem 1rem;
+  background: var(--ev-surface-raised);
+  color: var(--ev-text);
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius-sm);
+  box-shadow: var(--ev-shadow-hover);
+  font-size: .7rem;
+  line-height: 1.5;
+}
+
+.ev-consent__title {
+  margin: 0 0 .35rem;
+  font-weight: 700;
+  font-size: .75rem;
+}
+
+.ev-consent__body {
+  margin: 0 0 .75rem;
+  color: var(--ev-muted);
+}
+
+.ev-consent__body a {
+  color: var(--ev-blue);
+  text-decoration: underline;
+}
+
+.ev-consent__actions {
+  display: flex;
+  gap: .5rem;
+}
+
+.ev-consent__button {
+  flex: 1;
+  padding: .45rem .75rem;
+  border: 1px solid var(--ev-border-strong);
+  border-radius: var(--ev-radius-sm);
+  background: var(--ev-surface);
+  color: var(--ev-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ev-consent__button:hover {
+  background: var(--ev-surface-hover);
+}
+
+.ev-consent__button:focus-visible {
+  outline: 2px solid var(--ev-blue);
+  outline-offset: 2px;
+}
+
+/* Footer "Privacy settings": a button (it opens the banner, it doesn't
+   navigate) dressed as the footer's links. */
+.ev-consent-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ev-consent-open:hover,
+.ev-consent-open:focus-visible {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 30em) {
+  .ev-consent {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+}

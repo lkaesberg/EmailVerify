@@ -6,6 +6,7 @@ repo_url: https://github.com/lkaesberg/EmailVerify
 copyright: >
   © WKSolutions GbR — EmailVerify is free software under
   <a href="https://github.com/lkaesberg/EmailVerify/blob/main/LICENSE">AGPL-3.0-or-later</a>.
+  · <button type="button" class="ev-consent-open" data-ev-consent-open>Privacy settings</button>
 theme:
   name: material
   custom_dir: overrides
@@ -122,6 +123,22 @@ extra:
   # in overrides/main.html). Keep it short — it renders as a single small line.
   discord_embed_tagline: Discord app · Set up in 60 seconds · Open source since 2021
   invite_url: https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands
+  # Website analytics: PostHog EU cloud, the same project as the bot (229311), loaded
+  # by docs/javascripts/extra.js only after the visitor allows it in the consent
+  # banner ("Privacy settings" in the footer reopens it). Cookieless: the library
+  # keeps its state in memory only; the stored consent choice is the one thing kept
+  # on the device. It records page views and clicks on invite, store and support
+  # links. Delete posthog_key to switch analytics and the banner off entirely.
+  # Described in docs/legal/datenschutz.md section 4.1 — keep them in step.
+  # The key is PostHog's public project token, meant to be embedded in web pages.
+  posthog_key: phc_q4bpaACna8GqogvGLX2jPdryvKrbvaAxvDqmxKB6m2kb
+  posthog_host: https://eu.i.posthog.com
+  # UTM convention for links that point at this site, so the analytics can tell
+  # where visitors came from:
+  #   utm_source   where the link lives: bot | email | topgg | discordbotlist |
+  #                discordbotsgg | reddit | youtube | blog
+  #   utm_medium   the placement: listing | verify_success | nudge | verification | post
+  #   utm_campaign optional, for a time-boxed push (e.g. intake-2026-10)
 nav:
   - Home: 'index.md'
   - Get started:

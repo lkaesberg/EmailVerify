@@ -5,7 +5,7 @@ description: Wie EmailVerify personenbezogene Daten verarbeitet, von gehashten E
 
 # Datenschutzerklärung
 
-**Stand:** August 2026
+**Stand:** September 2026
 
 Diese Datenschutzerklärung informiert über die Verarbeitung personenbezogener
 Daten bei der Nutzung des Discord-Bots **EmailVerify** sowie der zugehörigen
@@ -47,6 +47,13 @@ Server-Administratoren konfigurieren den Bot u. a. mit folgenden Angaben (siehe
 [Befehle](../commands.md)): Verifizierungs-Domains, Rollen-IDs, Sprache,
 Log-Channel-ID, optional Allowlist von E-Mail-Adressen (gehasht gespeichert).
 
+Wird der Bot einem Server hinzugefügt, speichern wir die **Discord-Nutzer-ID der
+Person, die ihn hinzugefügt hat** (sofern Discord sie uns mitteilt), um ihr bis
+zu zwei Erinnerungen per Direktnachricht zu senden, falls die Einrichtung
+nicht abgeschlossen wird. Die Angabe wird gelöscht, sobald sich auf dem Server
+jemand verifiziert, nach der letzten Erinnerung oder wenn der Bot den Server
+verlässt.
+
 ### 2.3 Bei der Nutzung von Premium-Funktionen
 
 - **Server-ID**, gekaufte Guthaben (Anzahl), Status der CSV-Freischaltung,
@@ -59,17 +66,42 @@ Beim technischen Betrieb fallen Server- und Mail-Server-Logs an (z. B. SMTP-
 Verbindung, IP-Adresse des Mail-Servers, Zeitpunkte). Diese Logs werden zur
 Fehleranalyse verwendet und nach maximal 30 Tagen gelöscht.
 
+### 2.5 Nutzungsanalyse des Bots (PostHog)
+
+Um den Bot zu verbessern, erfassen wir Nutzungsereignisse (z. B. „Verifizierung
+gestartet", „Befehl verwendet", „E-Mail versendet") mit **PostHog** (EU-Cloud).
+Discord-Nutzer-IDs werden dabei **nicht im Klartext** übertragen, sondern als
+gesalzener SHA-256-Hash (Pseudonym). **E-Mail-Adressen werden nie übertragen.**
+Erfasst werden außerdem Server-ID und Servername sowie technische Angaben zum
+Ereignis.
+
+### 2.6 Abstimmungen auf Bot-Listen (top.gg, discordbotlist.com)
+
+Stimmen Sie auf top.gg oder discordbotlist.com für EmailVerify ab, übermittelt
+uns die jeweilige Plattform Ihre **Discord-Nutzer-ID** (und ggf. Ihren
+Nutzernamen). Wir speichern Nutzer-ID, Zeitpunkt, Plattform und den Server, dem
+die Stimme gutgeschrieben wird, um die Bonus-E-Mails zu vergeben und doppelte
+Zählungen zu verhindern. Mit `/vote` legen Sie fest, welcher Server Ihre
+Stimmen erhält; auch diese Zuordnung wird gespeichert. Anschließend senden wir
+Ihnen eine Bestätigung per Direktnachricht. Für die Abstimmung selbst gelten
+die Datenschutzbestimmungen der jeweiligen Plattform, die insoweit eigenständig
+verantwortlich ist.
+
 ## 3. Rechtsgrundlagen (Art. 6 DSGVO)
 
 - **Art. 6 Abs. 1 lit. b DSGVO** (Vertragserfüllung): Verifizierung,
   Bereitstellung gekaufter Premium-Funktionen.
 - **Art. 6 Abs. 1 lit. f DSGVO** (berechtigtes Interesse): Schutz vor Missbrauch
   und Mehrfach-Verifizierungen, Sicherstellung des stabilen Bot-Betriebs,
-  technische Logs.
+  technische Logs, Einrichtungs-Erinnerungen, die Vergabe von Abstimmungs-Boni
+  sowie die pseudonyme Nutzungsanalyse des Bots.
 - **Art. 6 Abs. 1 lit. a DSGVO** (Einwilligung): Soweit Sie eine E-Mail-Adresse
   zur Verifizierung eingeben, willigen Sie in deren Verarbeitung im hier
   beschriebenen Rahmen ein. Die Einwilligung kann jederzeit widerrufen werden,
-  z. B. durch den Bot-Befehl `/data delete`.
+  z. B. durch den Bot-Befehl `/data delete-user`.
+- **Art. 6 Abs. 1 lit. a DSGVO i. V. m. § 25 Abs. 1 TDDDG** (Einwilligung): die
+  Reichweitenmessung dieser Website (Abschnitt 4.1), nur wenn Sie im
+  Einwilligungsbanner zustimmen.
 
 ## 4. Empfänger / Auftragsverarbeiter
 
@@ -81,6 +113,7 @@ notwendigen Verarbeitungen durch Dienstleister:
 | **Discord, Inc.** | Bereitstellung der Bot-Plattform; Discord verarbeitet alle Befehle und Server-IDs | USA (Drittland; SCCs / Data Privacy Framework) |
 | **Hetzner Online GmbH** | Hosting des Bots und des eigenen SMTP-Servers (mail.larskaesberg.de) für den Versand der Verifizierungs-E-Mails (kostenlose Stufe und Bonus-Guthaben) | Rechenzentrum Helsinki, Finnland (EU); AV-Vertrag geschlossen |
 | **Zoho Corporation Pvt. Ltd. (ZeptoMail, EU-Endpunkt)** | Versand der Verifizierungs-E-Mails für Abonnement-Kunden (sofern aktiviert); EU-Endpunkt `api.zeptomail.eu` | EU (Datenresidenz EU; Auftragsverarbeitung) |
+| **PostHog Inc.** (2261 Market St. #4008, San Francisco, CA 94114, USA), EU-Cloud | Pseudonyme Nutzungsanalyse des Bots (Abschnitt 2.5) und, nach Einwilligung, Reichweitenmessung dieser Website (Abschnitt 4.1); Endpunkt `eu.i.posthog.com` | Datenhaltung in Rechenzentren in der EU; Verarbeitung durch PostHog und seine Unterauftragsverarbeiter auch in den USA möglich. PostHog ist nach dem EU-US Data Privacy Framework zertifiziert; zusätzlich gelten die EU-Standardvertragsklauseln (Modul 2). AV-Vertrag nach Art. 28 DSGVO geschlossen |
 
 Discord ist kein klassischer Auftragsverarbeiter im Sinne der DSGVO, sondern
 eine Plattform, ohne die der Bot nicht funktionieren kann; die Datenverarbeitung
@@ -92,7 +125,29 @@ Diese Website (`getemailverified.com`) wird über **GitHub Pages**
 (GitHub, Inc., USA) ausgeliefert. Beim Abruf verarbeitet GitHub technisch
 notwendige Verbindungsdaten einschließlich Ihrer IP-Adresse; Einzelheiten in der
 [GitHub-Datenschutzerklärung](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
-Die Website setzt **keine Cookies** und bindet **kein Tracking** ein.
+Die Website setzt **keine Cookies**.
+
+**Reichweitenmessung (PostHog, nur mit Einwilligung).** Beim ersten Besuch
+fragt ein Banner, ob Sie der Reichweitenmessung zustimmen. **Erst wenn Sie
+„Analyse erlauben" wählen**, wird PostHog (EU-Cloud) geladen. Erfasst werden
+dann Seitenaufrufe, die verweisende Seite, UTM-Parameter aus der Adresszeile
+sowie Klicks auf die Links zum Hinzufügen des Bots, zum Discord-Store und zum
+Support-Server, damit wir verstehen, welche Seiten und Verweise zur Installation
+des Bots führen. Auch dann werden **keine Cookies gesetzt**, und für die Analyse
+wird nichts auf Ihrem Endgerät gespeichert: Die Zuordnung eines Besuchs besteht
+nur im Arbeitsspeicher der geöffneten Seite und endet mit dem Neuladen. Es
+werden keine Nutzerprofile gebildet, keine Sitzungen aufgezeichnet und keine
+Klicks außer den genannten erfasst; IP-Adressen werden von PostHog nicht
+gespeichert. Ist in Ihrem Browser „Do Not Track" aktiviert, findet keine
+Erfassung statt.
+
+Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO i. V. m.
+§ 25 Abs. 1 TDDDG). Sie können sie jederzeit mit Wirkung für die Zukunft
+widerrufen, indem Sie unten auf jeder Seite **„Privacy settings"** öffnen und
+„Ablehnen" wählen. Ihre Auswahl selbst speichern wir im lokalen Speicher Ihres
+Browsers (`ev-analytics-consent`), damit das Banner nicht bei jedem Seitenaufruf
+erscheint; das ist für die Beachtung Ihrer Entscheidung unbedingt erforderlich
+(§ 25 Abs. 2 Nr. 2 TDDDG). Lehnen Sie ab, wird PostHog nicht geladen.
 
 Die auf der Startseite und den Statistikseiten angezeigten Zahlen werden von
 `stats.getemailverified.com` (eigener Server, Hetzner-Rechenzentrum
@@ -116,13 +171,20 @@ Seite widerrufen können. Einzelheiten in der
 ## 5. Speicherdauer
 
 - **Hashes der E-Mail-Adressen** und Verifizierungszuordnungen: bis zur Löschung
-  durch den Nutzer (`/data delete`) oder durch den Server-Admin
-  (`/delete_server_data`); spätestens beim Entfernen des Bots vom Server.
+  durch den Nutzer (`/data delete-user`) oder durch den Server-Admin
+  (`/data delete-server`); spätestens beim Entfernen des Bots vom Server.
 - **Server-Konfiguration**: bis zur Löschung durch den Server-Admin oder
   Entfernen des Bots.
 - **Aggregierte Statistiken**: Monatszähler werden monatsweise zurückgesetzt,
   Gesamtzähler bleiben bis zur Löschung der Server-Daten erhalten.
 - **Technische Logs**: maximal 30 Tage.
+- **Abstimmungen**: bis zur Löschung Ihrer Daten über `/data delete-user`
+  (danach ohne Nutzer-ID); Einträge zu einem Server werden gelöscht, wenn der
+  Bot den Server verlässt.
+- **Einrichtungs-Erinnerungen**: die ID der hinzufügenden Person höchstens bis
+  zur letzten Erinnerung (wenige Tage), siehe Abschnitt 2.2.
+- **PostHog-Ereignisse** (Bot und Website): bis zu sieben Jahre (Aufbewahrungsfrist
+  unseres PostHog-Tarifs), sofern sie nicht vorher gelöscht werden.
 
 ## 6. Ihre Rechte
 
@@ -142,8 +204,8 @@ Zur Wahrnehmung dieser Rechte genügt eine formlose E-Mail an
 
 ## 7. Löschung
 
-- Eigene Daten: `/data delete` direkt im Bot.
-- Server-Daten: `/delete_server_data` durch den Server-Admin oder Entfernen
+- Eigene Daten: `/data delete-user` direkt im Bot.
+- Server-Daten: `/data delete-server` durch den Server-Admin oder Entfernen
   des Bots vom Server (automatische Löschung).
 
 ## 8. Beschwerderecht
@@ -185,9 +247,24 @@ address, aggregate per-server statistics, server configuration set by admins.
 Plain-text email addresses are used only to send the verification message; they
 are not retained.
 
+- **Setup reminders:** when the bot is added, we store the Discord ID of the person
+  who added it (when Discord provides it), to send up to two reminder DMs if setup
+  isn't finished. It is deleted once someone verifies, after the last reminder, or
+  when the bot leaves.
+- **Bot usage analytics:** usage events (e.g. verification started, command used)
+  go to PostHog (EU cloud) with Discord user IDs replaced by a salted SHA-256
+  pseudonym. Email addresses are never sent.
+- **Votes:** when you vote on top.gg or discordbotlist.com, the list sends us your
+  Discord user ID. We store it with the time, the list and the server credited, to
+  grant the bonus and prevent double counting, and DM you a confirmation. `/vote`
+  stores which server your votes go to. `/data delete-user` removes your ID from
+  these records.
+
 **Legal bases:** GDPR Art. 6(1)(b) (contract: verification, paid features),
-6(1)(f) (legitimate interest: anti-abuse, stability), 6(1)(a) (consent for the
-verification email entered by the user — revocable any time via `/data delete`).
+6(1)(f) (legitimate interest: anti-abuse, stability, setup reminders, vote
+bonuses and pseudonymous bot usage analytics), 6(1)(a) (consent: the verification
+email entered by the user — revocable any time via `/data delete-user` — and the
+website analytics).
 
 **Sub-processors:**
 - Discord, Inc. (US; SCC/DPF) — platform.
@@ -196,8 +273,25 @@ verification email entered by the user — revocable any time via `/data delete`
   used for email delivery for free tier and bonus credits.
 - Zoho ZeptoMail EU endpoint `api.zeptomail.eu` (EU) — email delivery for
   subscription customers (if enabled).
-- GitHub, Inc. (US) — hosting of this website via GitHub Pages. No cookies, no
-  tracking.
+- PostHog Inc. (San Francisco, USA; EU cloud, `eu.i.posthog.com`) — pseudonymous
+  bot usage analytics and, with consent, website analytics. Data is held in EU
+  data centres; PostHog and its sub-processors may also process it in the US.
+  PostHog is certified under the EU-US Data Privacy Framework, and the EU Standard
+  Contractual Clauses (module 2) apply in addition. A DPA under GDPR Art. 28 is in
+  place. Events are kept for up to seven years.
+- GitHub, Inc. (US) — hosting of this website via GitHub Pages. No cookies.
+
+**Website analytics (only with consent):** a banner asks on your first visit, and
+PostHog is loaded **only if you choose "Allow analytics"**. It then records page
+views, the referring page, UTM tags and clicks on the add-to-Discord, store and
+support links. It sets no cookies and stores nothing on your device for analytics:
+a visit is recognised only in the open page's memory and ends on reload. No
+profiles, no session recording, no IP addresses stored; with "Do Not Track"
+enabled nothing is recorded. Legal basis: your consent (GDPR Art. 6(1)(a) with
+§ 25(1) TDDDG). Withdraw it any time via **"Privacy settings"** at the bottom of
+every page. Your choice itself is kept in your browser's local storage
+(`ev-analytics-consent`) so the banner doesn't reappear on every page, which is
+strictly necessary to honour it (§ 25(2) no. 2 TDDDG).
 
 **Embedded video:** the explainer video on the home and quick-start pages uses a
 click-to-load placeholder. The poster image is served from this site, and **no
