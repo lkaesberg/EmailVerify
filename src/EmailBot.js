@@ -416,10 +416,19 @@ async function primeGuilds(bot) {
  * consumption or removal be told apart from an opaque update; and it's how a renewing
  * subscription is mapped back to a guild (see subscriptionGuildId). Entitlements are few
  * and app-level, so unlike guilds this cache is cheap to hold.
+ *
+ * Pagination must not trust response order. Discord returns this list newest-first when
+ * no cursor is given but oldest-first once `after` is set, so paging on `lastKey()` from
+ * an uncursored first page asked for "everything newer than the oldest one I have" and
+ * got the first page back again. That went unnoticed until consumed credit packs (which
+ * never end) pushed the list past 100, and then every subscription was counted twice
+ * (2026-09-30: 64 reported for 32 live). So: start from `after: '0'` so every page is
+ * oldest-first, advance on the highest id actually seen, and key by id so an overlap can
+ * never double-count.
  */
 async function fetchActiveEntitlements() {
-    const out = []
-    let after
+    const byId = new Map()
+    let after = '0'
     for (let page = 0; page < 20; page++) {
         const batch = await bot.application.entitlements.fetch({
             limit: 100,
@@ -429,11 +438,15 @@ async function fetchActiveEntitlements() {
             cache: true
         })
         if (!batch || batch.size === 0) break
-        for (const [, e] of batch) out.push(e)
+        let maxId = BigInt(after)
+        for (const [id, e] of batch) {
+            byId.set(id, e)
+            if (BigInt(id) > maxId) maxId = BigInt(id)
+        }
         if (batch.size < 100) break
-        after = batch.lastKey()
+        after = maxId.toString()
     }
-    return out
+    return [...byId.values()]
 }
 
 /**
