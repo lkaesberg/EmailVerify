@@ -5,7 +5,7 @@ description: Anbieterkennzeichnung nach § 5 DDG für EmailVerify.
 
 # Impressum
 
-**Stand:** August 2026
+**Stand:** Oktober 2026
 
 ## Angaben gemäß § 5 DDG
 
@@ -21,6 +21,8 @@ Lars Benedikt Kaesberg
 ## Kontakt
 
 E-Mail: [contact@wksolutions.de](mailto:contact@wksolutions.de)
+
+Kontaktformular: [wksolutions.de/contact](https://wksolutions.de/contact)
 
 ## Umsatzsteuer
 
@@ -74,7 +76,7 @@ von Rechtsverletzungen werden wir derartige Links umgehend entfernen.
 
 # Imprint (English)
 
-**Last updated:** August 2026
+**Last updated:** October 2026
 
 ## Information pursuant to § 5 DDG
 
@@ -90,6 +92,8 @@ Lars Benedikt Kaesberg
 ## Contact
 
 Email: [contact@wksolutions.de](mailto:contact@wksolutions.de)
+
+Contact form: [wksolutions.de/contact](https://wksolutions.de/contact)
 
 ## VAT
 
