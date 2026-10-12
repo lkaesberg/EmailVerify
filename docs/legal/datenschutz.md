@@ -1,5 +1,5 @@
 ---
-title: Datenschutzerklärung
+title: Datenschutzerklärung / Privacy Policy — EmailVerify Bot
 description: Wie EmailVerify personenbezogene Daten verarbeitet, von gehashten E-Mail-Adressen über Speicherdauer und Auftragsverarbeiter bis zu den Betroffenenrechten nach DSGVO.
 ---
 

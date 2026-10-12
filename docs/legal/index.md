@@ -1,5 +1,5 @@
 ---
-title: Legal — EmailVerify Bot
+title: Legal Notices, Privacy Policy and Terms — EmailVerify Bot
 description: Impressum, Datenschutzerklärung, AGB, Widerrufsbelehrung, Terms of Service und Auftragsverarbeitungsvertrag für den EmailVerify Discord-Bot.
 ---
 

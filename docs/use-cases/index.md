@@ -1,5 +1,5 @@
 ---
-title: Discord Email Verification Use Cases
+title: Discord Email Verification Use Cases — EmailVerify Bot
 description: How universities, companies and paid communities use EmailVerify to let only the right people into a Discord server, with domain-based roles, wildcard domains and fixed allowlists.
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Impressum
+title: Impressum / Legal Notice — EmailVerify Bot
 description: Anbieterkennzeichnung nach § 5 DDG für EmailVerify.
 ---
 

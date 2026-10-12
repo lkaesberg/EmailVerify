@@ -1,5 +1,5 @@
 ---
-title: Service Status
+title: EmailVerify Service Status — Bot and Mail Server
 description: Live status of the EmailVerify Discord bot services, including the verification mail server and the statistics API.
 ---
 

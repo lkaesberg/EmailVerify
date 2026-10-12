@@ -1,5 +1,5 @@
 ---
-title: Widerrufsbelehrung
+title: Widerrufsbelehrung / Cancellation Policy — EmailVerify Bot
 description: Widerrufsrecht und Muster-Widerrufsformular für kostenpflichtige EmailVerify-Leistungen nach § 312g BGB.
 ---
 

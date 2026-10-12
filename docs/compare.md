@@ -1,5 +1,5 @@
 ---
-title: Discord Verification Methods Compared
+title: "Discord Verification Methods Compared: Captcha, Phone, Email"
 description: Captcha bots, alt-account detection, phone verification, manual vetting, SSO and email domain verification compared. What each one actually proves about a Discord member, and which problem each one solves.
 faq:
   - q: What is the difference between a captcha bot and an email verification bot on Discord?

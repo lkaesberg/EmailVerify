@@ -1,5 +1,5 @@
 ---
-title: Auftragsverarbeitungsvertrag (AVV)
+title: Auftragsverarbeitungsvertrag (AVV / DPA) — EmailVerify Bot
 description: Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Server-Betreiber, die EmailVerify zur Verifizierung ihrer Mitglieder einsetzen, inklusive Subunternehmer und technischer und organisatorischer Maßnahmen.
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Terms of Service
+title: Nutzungsbedingungen / Terms of Service — EmailVerify Bot
 description: Nutzungsbedingungen und Terms of Service for the EmailVerify Discord bot.
 ---
 
