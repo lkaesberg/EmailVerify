@@ -115,8 +115,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
+    outputs:
+      urls: ${{ steps.changed.outputs.urls }}
+      url_count: ${{ steps.changed.outputs.count }}
+
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Full history, so the push's previous head is there to diff against.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -130,6 +137,25 @@ jobs:
         env:
           # Silences Material's MkDocs 2.0 announcement banner in the build log.
           NO_MKDOCS_2_WARNING: "1"
+
+      # Pages this push changed, for the IndexNow job. A template or nav change
+      # (mkdocs.yml, overrides/) can alter every page, and so can a push whose
+      # previous head is unknown (first push, force-push): submit the whole sitemap.
+      - name: List changed pages
+        id: changed
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
+             && git diff --quiet "$BEFORE" HEAD -- mkdocs.yml overrides/; then
+            urls=$(git diff --no-renames --name-only "$BEFORE" HEAD -- 'docs/*.md' \
+              | sed -E 's#^docs/##; s#(^|/)index\.md$#\1#; s#\.md$#/#; s#^#https://getemailverified.com/#')
+          else
+            urls=$(grep -o '<loc>[^<]*' site/sitemap.xml | sed 's/<loc>//')
+          fi
+          count=$(printf '%s' "$urls" | grep -c . || true)
+          echo "$count changed page(s)"; printf '%s\n' "$urls"
+          { echo "count=$count"; echo 'urls<<EOF'; printf '%s\n' "$urls"; echo EOF; } >> "$GITHUB_OUTPUT"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -154,3 +180,28 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  indexnow:
+    name: Notify search engines (IndexNow)
+    needs: [pages-build, pages-deploy]
+    if: github.ref == 'refs/heads/main' && needs.pages-build.outputs.url_count != '0'
+    runs-on: ubuntu-latest
+
+    steps:
+      # IndexNow tells Bing (and through it DuckDuckGo and Yahoo), Yandex, Seznam
+      # and Naver which pages changed; Google ignores it and reads the sitemap.
+      # The key is public by design: docs/<key>.txt proves the site sent it.
+      - name: Submit changed pages
+        env:
+          KEY: 763fa7f44503dec39d6f905814942259
+          URLS: ${{ needs.pages-build.outputs.urls }}
+        run: |
+          jq -n --arg key "$KEY" --arg urls "$URLS" '{
+              host: "getemailverified.com",
+              key: $key,
+              keyLocation: "https://getemailverified.com/\($key).txt",
+              urlList: ($urls | split("\n") | map(select(length > 0)))
+            }' \
+          | curl --fail-with-body -sS -X POST https://api.indexnow.org/indexnow \
+              -H "Content-Type: application/json; charset=utf-8" -d @- \
+              -w 'HTTP %{http_code}\n'
