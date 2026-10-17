@@ -17,6 +17,7 @@ const premiumManager = require("../premium/PremiumManager");
 const md5hash = require("../crypto/Crypto");
 const { createCSVPremiumRequiredEmbed } = require("../utils/embeds");
 const { buildPlanButtons, appStoreUrl } = require("../utils/premiumButtons");
+const { isValidEmailAddress } = require("../utils/emailFormat");
 
 function downloadAttachment(rawUrl) {
     return new Promise((resolve, reject) => {
@@ -132,7 +133,7 @@ module.exports = {
                 }
 
                 const raw = interaction.options.getString('email', true).trim().toLowerCase();
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+                if (!isValidEmailAddress(raw)) {
                     await interaction.reply({
                         content: getLocale(language, "emaillistAddInvalid"),
                         flags: MessageFlags.Ephemeral
@@ -172,7 +173,7 @@ module.exports = {
                 // `clear` isn't: a server that has lost CSV access still needs a way to
                 // shrink or empty a list that is currently blocking all verification.
                 const raw = interaction.options.getString('email', true).trim().toLowerCase();
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+                if (!isValidEmailAddress(raw)) {
                     await interaction.reply({
                         content: getLocale(language, "emaillistRemoveInvalid"),
                         flags: MessageFlags.Ephemeral
@@ -242,13 +243,12 @@ module.exports = {
                     // Parse emails: one per row, handle CSV with commas, trim whitespace
                     const parsedEmails = [];
                     const lines = text.split(/\r?\n/);
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
                     for (const line of lines) {
                         const parts = line.split(',');
                         for (const part of parts) {
                             const trimmed = part.trim().toLowerCase().replace(/^["']|["']$/g, '');
-                            if (trimmed && emailRegex.test(trimmed)) {
+                            if (trimmed && isValidEmailAddress(trimmed)) {
                                 parsedEmails.push(trimmed);
                             }
                         }

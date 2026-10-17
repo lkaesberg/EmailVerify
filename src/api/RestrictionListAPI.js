@@ -27,10 +27,7 @@ const database = require('../database/Database')
 const md5hash = require('../crypto/Crypto')
 const premiumManager = require('../premium/PremiumManager')
 const { hashToken, extractBearer } = require('./ApiTokens')
-
-// Same shape the CSV importer accepts, so an address that works in an upload
-// works here and vice versa.
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const { isValidEmailAddress } = require('../utils/emailFormat')
 
 // Caps on a single request. The list lives in one JSON column, so an unbounded
 // batch would be both a slow transaction and a large row.
@@ -115,7 +112,7 @@ function parseEmailsPayload(body) {
             continue
         }
         const normalized = entry.trim().toLowerCase()
-        if (!EMAIL_REGEX.test(normalized)) {
+        if (!isValidEmailAddress(normalized)) {
             invalid.push(entry)
             continue
         }
@@ -285,7 +282,7 @@ function createRestrictionListRouter(bot) {
      */
     router.delete('/emails/:email', async (req, res) => {
         const normalized = String(req.params.email || '').trim().toLowerCase()
-        if (!EMAIL_REGEX.test(normalized)) {
+        if (!isValidEmailAddress(normalized)) {
             return fail(res, 400, 'invalid_address', `"${req.params.email}" is not a valid email address.`)
         }
 
@@ -343,4 +340,4 @@ function createRestrictionListRouter(bot) {
     return router
 }
 
-module.exports = { createRestrictionListRouter, EMAIL_REGEX, MAX_EMAILS_PER_REQUEST }
+module.exports = { createRestrictionListRouter, MAX_EMAILS_PER_REQUEST }

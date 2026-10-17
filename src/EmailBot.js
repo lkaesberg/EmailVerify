@@ -35,6 +35,7 @@ const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/re
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
+const { isValidEmailAddress } = require('./utils/emailFormat');
 const { startSetupNudges } = require('./utils/setupNudges');
 const voting = require('./utils/voting');
 const OperatorWebhook = require('./utils/OperatorWebhook');
@@ -1289,10 +1290,10 @@ bot.on('interactionCreate', async interaction => {
                 // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
                 // Also checks against uploaded email list. If neither domains nor an allowedEmails
                 // list is configured, all valid email addresses are accepted (subject to blacklist).
-                // Must be strict enough that the mail provider never sees an address it
-                // would reject: exactly one @, no whitespace, and a dotted domain. Same
-                // shape as the CSV import check in commands/emaillist.js.
-                const hasValidFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailText)
+                // Strict enough that the mail provider never sees an address it would
+                // reject or read differently from the domain check below — see
+                // utils/emailFormat.js. The CSV import and the API use the same check.
+                const hasValidFormat = isValidEmailAddress(emailText)
                 const allowedEmails = serverSettings.allowedEmails || []
                 const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
                 const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)

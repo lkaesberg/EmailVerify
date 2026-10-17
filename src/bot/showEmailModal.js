@@ -12,6 +12,7 @@ const database = require("../database/Database");
 const {getLocale, defaultLanguage} = require("../Language");
 const {createSessionExpiredEmbed} = require("../utils/embeds");
 const analytics = require("../utils/Analytics");
+const {MAX_EMAIL_LENGTH} = require("../utils/emailFormat");
 
 /**
  * Checks if a domain is a full wildcard (accepts all emails)
@@ -231,8 +232,9 @@ async function showEmailModal(interaction, guildId, guild = null) {
             .setCustomId('emailInput')
             .setStyle(TextInputStyle.Short)
             .setPlaceholder(placeholder)
+            .setMaxLength(MAX_EMAIL_LENGTH)
             .setRequired(true)
-        
+
         const emailLabel = new LabelBuilder()
             .setLabel(getLocale(language, "emailModalLabel"))
             .setTextInputComponent(emailInput)
