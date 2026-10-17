@@ -27,10 +27,23 @@ const voting = require('../utils/voting')
 // rate-limited so the operator isn't spammed during a long outage.
 const ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS = 24 * 60 * 60 * 1000
 
+// <html lang> for the styled email; language file names aren't language tags.
+const HTML_LANG = {
+    english: 'en', german: 'de', french: 'fr', spanish: 'es', brazilianPortuguese: 'pt-BR',
+    polish: 'pl', turkish: 'tr', hebrew: 'he', korean: 'ko', thai: 'th'
+}
+const RTL_LANGUAGES = new Set(['hebrew'])
+
 module.exports = class MailSender {
-    constructor(serverStatsAPI) {
+    /**
+     * @param {Object} serverStatsAPI
+     * @param {{codeTtlMs?: number}} [options] - codeTtlMs: how long a code stays valid,
+     *   shown in the styled email; the line is left out when not given.
+     */
+    constructor(serverStatsAPI, { codeTtlMs } = {}) {
         this.serverStatsAPI = serverStatsAPI
         this.zeptoFallbackLastWebhookAt = 0
+        this.codeTtlMinutes = codeTtlMs ? Math.round(codeTtlMs / 60000) : null
 
         const username = typeof config.username === 'undefined' ? config.email : config.username
         this.username = username
@@ -490,46 +503,91 @@ module.exports = class MailSender {
         const safeServerName = this.#escapeHtml(serverName || '')
         const safeCode = this.#escapeHtml(code || '')
 
-        const greeting = this.#escapeHtml(getLocale(language, 'emailHtmlGreeting'))
+        const title = this.#escapeHtml(getLocale(language, 'emailHtmlTitle'))
         const serverIntro = this.#escapeHtml(getLocale(language, 'emailHtmlServerIntro'))
         const codeIntro = this.#escapeHtml(getLocale(language, 'emailHtmlCodeIntro'))
         const ignoreNote = this.#escapeHtml(getLocale(language, 'emailHtmlIgnoreNote'))
         const noReply = this.#escapeHtml(getLocale(language, 'emailHtmlNoReply'))
         const moreInfo = this.#escapeHtml(getLocale(language, 'emailHtmlMoreInfo'))
+        const expiry = this.codeTtlMinutes
+            ? this.#escapeHtml(getLocale(language, 'emailHtmlExpiry', String(this.codeTtlMinutes)))
+            : null
+        // Hidden preheader: the inbox preview shows the code instead of the heading, and
+        // code detectors get the keyword and the number in a single sentence.
+        const preheader = this.#escapeHtml(getLocale(language, 'emailSubject', code || ''))
+        const htmlLang = HTML_LANG[language] || 'en'
+        const dir = RTL_LANGUAGES.has(language) ? 'rtl' : 'ltr'
 
+        const font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        const mono = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace"
+        const siteUrl = 'https://getemailverified.com/?utm_source=email&amp;utm_medium=verification'
+
+        // Email HTML: layout tables and inline styles, since many clients drop <style>.
+        // The <style> block only adds what degrades gracefully without it: dark mode
+        // (Apple Mail; Gmail recolours on its own) and tighter spacing on phones. The
+        // code's right padding is smaller by the letter-spacing, which trails the last
+        // digit, so the digits sit centred.
         return `<!doctype html>
-<html lang="${this.#escapeHtml(language).slice(0, 5)}">
+<html lang="${htmlLang}" dir="${dir}">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="x-apple-disable-message-reformatting" />
-    <title>EmailVerify</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>${title}</title>
     <style>
       a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+      @media (prefers-color-scheme: dark) {
+        .ev-page { background-color: #0f1115 !important; }
+        .ev-card { background-color: #1a1d24 !important; border-color: #2a2f3a !important; }
+        .ev-text { color: #e6e8eb !important; }
+        .ev-muted { color: #a0a8b4 !important; }
+        .ev-code { background-color: #252a4a !important; border-color: #3d4590 !important; color: #ffffff !important; }
+        .ev-rule { border-color: #2a2f3a !important; }
+        .ev-link { color: #a5b4fc !important; }
+      }
+      @media (max-width: 600px) {
+        .ev-card { padding: 32px 20px 24px 20px !important; }
+        .ev-code { font-size: 28px !important; letter-spacing: 6px !important; padding: 12px 14px 12px 20px !important; }
+      }
     </style>
   </head>
-  <body style="margin:0; padding:0; background-color:#f6f6f6;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f6f6f6;">
+  <body class="ev-page" style="margin:0; padding:0; background-color:#f6f8fa;">
+    <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">${preheader}</div>
+    <table role="presentation" class="ev-page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f8fa" style="background-color:#f6f8fa;">
       <tr>
-        <td align="center" style="padding:40px 20px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px; background:#ffffff; border-radius:8px;">
+        <td align="center" style="padding:32px 16px 40px 16px;">
+          <!--[if mso]><table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
             <tr>
-              <td style="padding:32px 40px;">
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#24292f; font-size:14px; line-height:1.6;">
-                  <p style="margin:0 0 16px 0;">${greeting}</p>
-                  <p style="margin:0 0 16px 0;">${serverIntro}</p>
-                  <p style="margin:0 0 16px 0;"><strong>${safeServerName}</strong></p>
-                  <p style="margin:0 0 16px 0;">${codeIntro}</p>
-                  <p style="margin:0 0 24px 0;">
-                    <code style="display:inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:18px; letter-spacing:1px; padding:10px 16px; background:#f6f8fa; color:#24292f; border:1px solid #d0d7de; border-radius:6px;">${safeCode}</code>
-                  </p>
-                  <p style="margin:0 0 16px 0; color:#57606a;">${ignoreNote}<br />${noReply}</p>
-                  <hr style="border:none; border-top:1px solid #d8dee4; margin:24px 0;" />
-                  <p style="margin:0; color:#57606a; font-size:12px;">${moreInfo} <a href="https://getemailverified.com/?utm_source=email&amp;utm_medium=verification" style="color:#0969da; text-decoration:none;">https://getemailverified.com/</a></p>
-                </div>
+              <td align="center" style="padding:0 0 20px 0;">
+                <img src="https://getemailverified.com/assets/favicon-192x192.png" width="48" height="48" alt="EmailVerify" style="display:block; width:48px; height:48px; border:0; border-radius:12px;" />
+              </td>
+            </tr>
+            <tr>
+              <td class="ev-card" align="center" bgcolor="#ffffff" style="background-color:#ffffff; border:1px solid #e3e8ef; border-radius:16px; padding:40px 40px 32px 40px; font-family:${font}; text-align:center;">
+                <h1 class="ev-text" style="margin:0 0 16px 0; font-family:${font}; font-size:24px; line-height:32px; font-weight:700; color:#1f2937;">${title}</h1>
+                <p class="ev-muted" style="margin:0; font-size:15px; line-height:22px; color:#5b6472;">${serverIntro}</p>
+                <p class="ev-text" style="margin:4px 0 28px 0; font-size:17px; line-height:24px; font-weight:600; color:#1f2937;">${safeServerName}</p>
+                <p class="ev-text" style="margin:0 0 14px 0; font-size:15px; line-height:22px; color:#1f2937;">${codeIntro}</p>
+                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                  <tr>
+                    <td class="ev-code" dir="ltr" bgcolor="#eef0fe" style="background-color:#eef0fe; border:1px solid #d4d8fd; border-radius:12px; padding:14px 20px 14px 28px; font-family:${mono}; font-size:34px; line-height:44px; font-weight:700; letter-spacing:8px; color:#1f2937; -webkit-user-select:all; user-select:all;">${safeCode}</td>
+                  </tr>
+                </table>${expiry ? `
+                <p class="ev-muted" style="margin:14px 0 0 0; font-size:13px; line-height:20px; color:#5b6472;">${expiry}</p>` : ''}
+                <hr class="ev-rule" style="border:none; border-top:1px solid #e3e8ef; margin:32px 0 20px 0;" />
+                <p class="ev-muted" style="margin:0; font-size:13px; line-height:20px; color:#5b6472;">${ignoreNote} ${noReply}</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" class="ev-muted" style="padding:20px 16px 0 16px; font-family:${font}; font-size:12px; line-height:18px; color:#8a93a1;">
+                ${moreInfo} <a class="ev-link" href="${siteUrl}" style="color:#5865f2; text-decoration:none;">getemailverified.com</a>
               </td>
             </tr>
           </table>
+          <!--[if mso]></td></tr></table><![endif]-->
         </td>
       </tr>
     </table>

@@ -89,7 +89,7 @@ let emailNotify = true
 // lands on. Only the best-effort, same-shard email-send rate limiter stays in memory.
 let userTimeouts = new Map()
 
-const mailSender = new MailSender(serverStatsAPI)
+const mailSender = new MailSender(serverStatsAPI, { codeTtlMs: CODE_TTL_MS })
 // Exposed for commands that send mail outside the verification flow (/testmail)
 bot.mailSender = mailSender
 
