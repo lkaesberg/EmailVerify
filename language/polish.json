@@ -14,7 +14,7 @@
   "userBotError": "Bot nie został poprawnie skonfigurowany. Skontaktuj się z administratorem!",
   "userEnterEmail": "Wprowadź swój adres email by zweryfikować %VAR%.",
   "userCantFindRole": "Nie odnaleziono ról. Skontaktuj się z administratorem! Wskazówka: Upewnij się, że nazwa roli jest wciąż taka sama i rola bota jest wyżej w ustawieniach serwera niż rola zweryfikowana i niezweryfkowana.",
-  "emailSubject": "Powiadomienie o potwierdzeniu",
+  "emailSubject": "%VAR% to Twój kod weryfikacyjny",
   "emailSenderName": "Potwierdzenie",
   "emailText": "Cześć,\n\nTo jest automatyczna wiadomość potwierdzająca dla serwera:\n\n%VAR%\n\nTwój kod:\n\n%VAR%\n\nJeśli nie spodziewałeś się tej wiadomości, możesz ją zignorować.",
   "verifyEmbedTitle": "✉️ Weryfikacja Email",

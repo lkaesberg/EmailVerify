@@ -14,7 +14,7 @@
   "userBotError": "Bot not properly configured. Please contact admin!",
   "userEnterEmail": "Please enter your email address to verify %VAR%.",
   "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
-  "emailSubject": "Confirmation notice",
+  "emailSubject": "%VAR% is your verification code",
   "emailSenderName": "Confirmation",
   "emailText": "Hello,\n\nThis is an automated confirmation message for the server:\n\n%VAR%\n\nYour code:\n\n%VAR%\n\nIf you did not expect this message, you can ignore it.",
   "verifyEmbedTitle": "✉️ Email Verification",

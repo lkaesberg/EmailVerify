@@ -14,7 +14,7 @@
     "userBotError": "Le bot n'est pas configuré correctement. Contactez un admin !",
     "userEnterEmail": "Entrez votre adresse mail pour vous vérifier %VAR%.",
     "userCantFindRole": "Impossible de trouver ce rôle. Merci de contacter un admin ! Aide : Assurez-vous que le nom est toujours le même, et que le rôle du bot est plus haut que le rôle \"vérifié\" et \"non-vérifié\" dans le menu des rôles des paramètres de votre serveur.",
-    "emailSubject": "Avis de confirmation",
+    "emailSubject": "%VAR% est votre code de vérification",
     "emailSenderName": "Confirmation",
     "emailText": "Bonjour,\n\nCeci est un message de confirmation automatique pour le serveur :\n\n%VAR%\n\nVotre code :\n\n%VAR%\n\nSi vous n'attendiez pas ce message, vous pouvez l'ignorer.",
     "verifyEmbedTitle": "✉️ Vérification par Email",

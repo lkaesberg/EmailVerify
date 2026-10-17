@@ -92,7 +92,11 @@ module.exports = class MailSender {
         const proceed = async (serverSettings) => {
             const language = serverSettings.language || defaultLanguage
             const plainText = getLocale(language, "emailText", name, code)
-            const emailSubject = getLocale(language, "emailSubject")
+            // The code goes in the subject so mail clients can detect it: Gmail offers
+            // "Copy code", iOS/macOS Mail offers it in AutoFill, and it shows in
+            // notification previews. A distinct subject per code also stops Gmail from
+            // threading a resent code under an older, already-invalid one.
+            const emailSubject = getLocale(language, "emailSubject", code)
             const emailSenderName = getLocale(language, "emailSenderName")
             const html = emailStyle === 'styled'
                 ? this.#buildLocalizedHtmlEmail(language, name, code)
@@ -283,7 +287,7 @@ module.exports = class MailSender {
             fromName: getLocale(lang, 'emailSenderName'),
             from: this.fromAddress,
             to: toEmail,
-            subject: getLocale(lang, 'emailSubject'),
+            subject: getLocale(lang, 'emailSubject', code),
             text: getLocale(lang, 'emailText', guildName, code),
             html,
             headers: {
