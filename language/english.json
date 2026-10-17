@@ -15,7 +15,6 @@
   "userEnterEmail": "Please enter your email address to verify %VAR%.",
   "userCantFindRole": "Cant find roles. Please contact the admin! Help: Ensure that the name is still the same and that the bot role is higher in the serversettings role menu then the verified and unverified role.",
   "emailSubject": "%VAR% is your verification code",
-  "emailSenderName": "Confirmation",
   "emailText": "Hello,\n\nThis is an automated confirmation message for the server:\n\n%VAR%\n\nYour verification code:\n\n%VAR%\n\nIf you did not expect this message, you can ignore it.",
   "verifyEmbedTitle": "✉️ Email Verification",
   "verifyEmbedInstructions": "Click the button below to start the verification process. You will receive a code via email.\n\nAlready have a code? Use the **Enter Code** button.",

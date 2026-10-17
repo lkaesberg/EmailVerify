@@ -15,7 +15,6 @@
   "userEnterEmail": "Por favor, insira o seu endereço de email para verificar %VAR%.",
   "userCantFindRole": "Não foi possível encontrar as roles. Por favor contate o administrador! Ajuda: Confirme que o nome continua igual, e que a role do bot é maior que a role de verificado e não verificado no menu de configuração do servidor.",
   "emailSubject": "%VAR% é o seu código de verificação",
-  "emailSenderName": "Confirmação",
   "emailText": "Olá,\n\nEsta é uma mensagem de confirmação automática para o servidor:\n\n%VAR%\n\nSeu código de verificação:\n\n%VAR%\n\nSe você não esperava esta mensagem, pode ignorá-la.",
   "verifyEmbedTitle": "✉️ Verificação de Email",
   "verifyEmbedInstructions": "Clique no botão abaixo para iniciar o processo de verificação. Você receberá um código por email.\n\nJá tem um código? Use o botão **Inserir Código**.",

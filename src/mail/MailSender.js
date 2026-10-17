@@ -34,6 +34,10 @@ const HTML_LANG = {
 }
 const RTL_LANGUAGES = new Set(['hebrew'])
 
+// Display name on every verification email. A recognizable service name, the same
+// in every language, matching the logo and footer of the styled email.
+const SENDER_NAME = 'EmailVerify'
+
 module.exports = class MailSender {
     /**
      * @param {Object} serverStatsAPI
@@ -110,13 +114,12 @@ module.exports = class MailSender {
             // notification previews. A distinct subject per code also stops Gmail from
             // threading a resent code under an older, already-invalid one.
             const emailSubject = getLocale(language, "emailSubject", code)
-            const emailSenderName = getLocale(language, "emailSenderName")
             const html = emailStyle === 'styled'
                 ? this.#buildLocalizedHtmlEmail(language, name, code)
                 : null
 
             const sendOpts = {
-                fromName: emailSenderName,
+                fromName: SENDER_NAME,
                 from: this.fromAddress,
                 to: toEmail,
                 subject: emailSubject,
@@ -297,7 +300,7 @@ module.exports = class MailSender {
         const html = emailStyle === 'styled' ? this.#buildLocalizedHtmlEmail(lang, guildName, code) : null
 
         const sendOpts = {
-            fromName: getLocale(lang, 'emailSenderName'),
+            fromName: SENDER_NAME,
             from: this.fromAddress,
             to: toEmail,
             subject: getLocale(lang, 'emailSubject', code),

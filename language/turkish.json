@@ -15,7 +15,6 @@
   "userEnterEmail": "Hesabınızı doğrulamak için lütfen email adresinizi giriniz %VAR%.",
   "userCantFindRole": "Rolleri bulamıyorum. Lütfen adminle iletişime geçin! Yardım: Rol adının hala aynı olduğundan ve sunucu ayarları rol menüsünde bot rolünün doğrulanmış ve doğrulanmamış rolden daha yüksek olduğundan emin olun.",
   "emailSubject": "%VAR% doğrulama kodunuzdur",
-  "emailSenderName": "Onay",
   "emailText": "Merhaba,\n\nBu, sunucu için otomatik bir onay mesajıdır:\n\n%VAR%\n\nDoğrulama kodunuz:\n\n%VAR%\n\nBu mesajı beklemiyorsanız, görmezden gelebilirsiniz.",
   "verifyEmbedTitle": "✉️ E-posta Doğrulama",
   "verifyEmbedInstructions": "Doğrulama sürecini başlatmak için aşağıdaki butona tıklayın. E-posta ile bir kod alacaksınız.\n\nZaten bir kodunuz var mı? **Kod Gir** butonunu kullanın.",
