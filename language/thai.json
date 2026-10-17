@@ -205,8 +205,6 @@
   "statusMonthNov": "พฤศจิกายน",
   "statusMonthDec": "ธันวาคม",
   "statusFooterServer": "เซิร์ฟเวอร์: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ ยืนยัน: เปลี่ยนเป็นอีเมลรูปแบบ HTML?",
-  "emailStyleSpamWarning": "**อีเมลยืนยันแบบมีสไตล์ (HTML)** ดูสวยกว่า แต่ผู้ให้บริการอีเมล (Gmail, Outlook ฯลฯ) มักจัดประเภทเป็นการตลาดหรือสแปม อีเมล**ข้อความธรรมดา**เป็นค่าเริ่มต้นเพราะมีอัตราการส่งถึงดีกว่าอย่างเห็นได้ชัด\n\nหากผู้ใช้รายงานว่าไม่ได้รับรหัสยืนยัน ให้สลับกลับเป็น plain\n\nหากต้องการยืนยันและเปลี่ยนเป็น HTML ให้รัน:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ ตั้งค่าสไตล์อีเมลเป็น HTML",
   "emailStyleSetStyledDescription": "อีเมลยืนยันสำหรับเซิร์ฟเวอร์นี้จะถูกส่งในรูปแบบ HTML แล้ว หากการส่งถึงลดลง ให้สลับกลับด้วย `/settings email-style style:plain`",
   "emailStyleSetPlainTitle": "✅ ตั้งค่าสไตล์อีเมลเป็นข้อความธรรมดา",

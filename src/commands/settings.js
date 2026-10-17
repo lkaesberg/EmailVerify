@@ -79,22 +79,16 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('email-style')
-                .setDescription('Choose how verification emails are rendered (plain text or HTML)')
+                .setDescription('Choose how verification emails are rendered (HTML or plain text)')
                 .addStringOption(option =>
                     option
                         .setName('style')
-                        .setDescription('plain = deliverability-optimized text (default), styled = HTML (may trigger spam filters)')
+                        .setDescription('styled = HTML with a text fallback (default), plain = text only')
                         .setRequired(true)
                         .addChoices(
-                            { name: 'plain', value: 'plain' },
-                            { name: 'styled', value: 'styled' }
+                            { name: 'styled', value: 'styled' },
+                            { name: 'plain', value: 'plain' }
                         )
-                )
-                .addBooleanOption(option =>
-                    option
-                        .setName('confirm')
-                        .setDescription('Required when switching to styled - acknowledges the spam-filter risk')
-                        .setRequired(false)
                 )
         )
         .addSubcommand(subcommand =>
@@ -266,16 +260,6 @@ module.exports = {
             if (subcommand === 'email-style') {
                 const language = serverSettings.language || 'english';
                 const style = interaction.options.getString('style', true);
-                const confirm = interaction.options.getBoolean('confirm') || false;
-
-                if (style === 'styled' && !confirm) {
-                    const warningEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(language, 'emailStyleSpamWarningTitle'))
-                        .setDescription(getLocale(language, 'emailStyleSpamWarning'))
-                        .setColor(0xFFA500);
-                    await interaction.reply({ embeds: [warningEmbed], flags: MessageFlags.Ephemeral });
-                    return;
-                }
 
                 serverSettings.emailStyle = style;
                 database.updateServerSettings(interaction.guildId, serverSettings);
@@ -285,7 +269,7 @@ module.exports = {
                 const confirmEmbed = new EmbedBuilder()
                     .setTitle(getLocale(language, titleKey))
                     .setDescription(getLocale(language, descKey))
-                    .setColor(style === 'styled' ? 0xFFA500 : 0x57F287);
+                    .setColor(0x57F287);
                 await interaction.reply({ embeds: [confirmEmbed], flags: MessageFlags.Ephemeral });
             }
         });

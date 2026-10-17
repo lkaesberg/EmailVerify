@@ -37,8 +37,15 @@ class ServerSettings {
         this.domainRoles = {}
         // Allowed email addresses uploaded via CSV (array of lowercase email strings)
         this.allowedEmails = []
-        // Email rendering style: 'plain' (default, deliverability-optimized text) or 'styled' (HTML)
-        this.emailStyle = "plain"
+        // Email rendering style the admin picked: 'styled' (HTML with a text fallback),
+        // 'plain' (text only), or null for the default. Only an explicit pick is stored,
+        // so servers that never chose follow the default if it changes again.
+        this.emailStyle = null
+    }
+
+    /** The style verification emails are sent in: the admin's pick, else styled. */
+    get effectiveEmailStyle() {
+        return this.emailStyle === 'plain' ? 'plain' : 'styled'
     }
 
     get status() {

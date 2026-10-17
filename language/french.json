@@ -205,8 +205,6 @@
     "statusMonthNov": "Novembre",
     "statusMonthDec": "Décembre",
     "statusFooterServer": "Serveur : %VAR%",
-    "emailStyleSpamWarningTitle": "⚠️ Confirmer : passer aux emails au format HTML ?",
-    "emailStyleSpamWarning": "Les **emails de vérification stylés (HTML)** sont plus jolis, mais les fournisseurs d'email (Gmail, Outlook, etc.) les classent souvent comme marketing ou spam. Les emails en **texte brut** sont la valeur par défaut car ils ont une livraison nettement meilleure.\n\nSi des utilisateurs signalent qu'ils ne reçoivent pas les codes de vérification, repassez en `plain`.\n\nPour confirmer et passer en HTML, exécutez :\n`/settings email-style style:styled confirm:True`",
     "emailStyleSetStyledTitle": "✅ Style d'email défini sur HTML",
     "emailStyleSetStyledDescription": "Les emails de vérification de ce serveur seront désormais envoyés au format HTML. Si la livraison baisse, revenez en arrière avec `/settings email-style style:plain`.",
     "emailStyleSetPlainTitle": "✅ Style d'email défini sur texte brut",

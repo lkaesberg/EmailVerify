@@ -205,8 +205,6 @@
   "statusMonthNov": "November",
   "statusMonthDec": "December",
   "statusFooterServer": "Server: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ Confirm: switch to HTML-styled emails?",
-  "emailStyleSpamWarning": "**Styled (HTML) verification emails** look nicer, but mail providers (Gmail, Outlook, etc.) often classify them as marketing or spam. **Plain text** emails are the default because they have noticeably better deliverability.\n\nIf users start reporting that they don't receive verification codes, switch back to plain.\n\nTo confirm and switch to HTML, run:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ Email style set to HTML",
   "emailStyleSetStyledDescription": "Verification emails for this server will now be sent in HTML format. If deliverability drops, switch back with `/settings email-style style:plain`.",
   "emailStyleSetPlainTitle": "✅ Email style set to plain text",

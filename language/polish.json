@@ -205,8 +205,6 @@
   "statusMonthNov": "Listopad",
   "statusMonthDec": "Grudzień",
   "statusFooterServer": "Serwer: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ Potwierdź: przełączyć na emaile HTML?",
-  "emailStyleSpamWarning": "**Stylizowane (HTML) emaile weryfikacyjne** wyglądają lepiej, ale dostawcy poczty (Gmail, Outlook itp.) często klasyfikują je jako marketing lub spam. Emaile w **zwykłym tekście** są domyślne, ponieważ mają zauważalnie lepszą dostarczalność.\n\nJeśli użytkownicy zaczną zgłaszać brak otrzymywania kodów weryfikacyjnych, wróć do plain.\n\nAby potwierdzić i przełączyć na HTML, wykonaj:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ Styl emaila ustawiony na HTML",
   "emailStyleSetStyledDescription": "Emaile weryfikacyjne dla tego serwera będą teraz wysyłane w formacie HTML. Jeśli dostarczalność spadnie, przełącz z powrotem przez `/settings email-style style:plain`.",
   "emailStyleSetPlainTitle": "✅ Styl emaila ustawiony na zwykły tekst",

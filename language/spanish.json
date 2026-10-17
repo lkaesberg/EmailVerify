@@ -205,8 +205,6 @@
   "statusMonthNov": "Noviembre",
   "statusMonthDec": "Diciembre",
   "statusFooterServer": "Servidor: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ Confirmar: ¿cambiar a emails con estilo HTML?",
-  "emailStyleSpamWarning": "Los **emails de verificación con estilo (HTML)** se ven mejor, pero los proveedores de correo (Gmail, Outlook, etc.) a menudo los clasifican como marketing o spam. Los emails de **texto plano** son la opción predeterminada porque tienen una entrega notablemente mejor.\n\nSi los usuarios empiezan a reportar que no reciben los códigos de verificación, vuelve al modo plano.\n\nPara confirmar y cambiar a HTML, ejecuta:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ Estilo de email cambiado a HTML",
   "emailStyleSetStyledDescription": "Los emails de verificación de este servidor ahora se enviarán en formato HTML. Si la entrega disminuye, vuelve con `/settings email-style style:plain`.",
   "emailStyleSetPlainTitle": "✅ Estilo de email cambiado a texto plano",

@@ -76,7 +76,7 @@ module.exports = {
                 guildId: interaction.guildId,
                 guildName: interaction.guild.name,
                 language: serverSettings.language,
-                emailStyle: serverSettings.emailStyle,
+                emailStyle: serverSettings.effectiveEmailStyle,
                 premiumSource: premiumCheck.source
             });
 

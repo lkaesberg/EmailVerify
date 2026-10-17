@@ -205,8 +205,6 @@
   "statusMonthNov": "Kasım",
   "statusMonthDec": "Aralık",
   "statusFooterServer": "Sunucu: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ Onayla: HTML stilinde e-postalara geç?",
-  "emailStyleSpamWarning": "**Stilize (HTML) doğrulama e-postaları** daha hoş görünür, ancak posta sağlayıcıları (Gmail, Outlook vb.) bunları sıklıkla pazarlama veya spam olarak sınıflandırır. **Düz metin** e-postalar varsayılandır çünkü teslim edilebilirlikleri belirgin biçimde daha iyidir.\n\nKullanıcılar doğrulama kodlarını almadıklarını bildirirse, plain'e geri dön.\n\nOnaylamak ve HTML'e geçmek için şunu çalıştır:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ E-posta stili HTML olarak ayarlandı",
   "emailStyleSetStyledDescription": "Bu sunucu için doğrulama e-postaları artık HTML formatında gönderilecek. Teslimat düşerse, `/settings email-style style:plain` ile geri dön.",
   "emailStyleSetPlainTitle": "✅ E-posta stili düz metin olarak ayarlandı",

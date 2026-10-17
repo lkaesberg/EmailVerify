@@ -205,8 +205,6 @@
   "statusMonthNov": "נובמבר",
   "statusMonthDec": "דצמבר",
   "statusFooterServer": "שרת: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ אישור: לעבור לאימיילים בעיצוב HTML?",
-  "emailStyleSpamWarning": "**אימיילי אימות בעיצוב (HTML)** נראים יפה יותר, אבל ספקי דואר (Gmail, Outlook וכו') מסווגים אותם לעיתים קרובות כשיווק או ספאם. אימיילים ב**טקסט פשוט** הם ברירת המחדל כי יש להם מסירות טובה משמעותית.\n\nאם משתמשים מדווחים שלא מקבלים קודי אימות, חזור ל-plain.\n\nכדי לאשר ולעבור ל-HTML, הרץ:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ סגנון אימייל נקבע ל-HTML",
   "emailStyleSetStyledDescription": "אימיילי אימות לשרת זה יישלחו כעת בפורמט HTML. אם המסירות יורדת, חזור עם `/settings email-style style:plain`.",
   "emailStyleSetPlainTitle": "✅ סגנון אימייל נקבע לטקסט פשוט",

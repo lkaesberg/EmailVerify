@@ -78,13 +78,13 @@ module.exports = class MailSender {
      * @param {boolean} emailNotify
      * @param {Function} callback - Called with accepted email on success
      * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'free' | 'disabled'
-     * @param {string} [emailStyle='plain'] - 'plain' | 'styled'
+     * @param {string} [emailStyle='styled'] - 'styled' | 'plain'
      * @param {import('discord.js').Guild} [guild=null] - resolved guild; required for the DM
      *   verification flow where interaction.guild / interaction.guildId are null.
      * @param {Object} [preloadedSettings=null] - already-loaded ServerSettings; when the
      *   caller just read them, passing them here skips a redundant DB read.
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null) {
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'styled', guild = null, preloadedSettings = null) {
         // Prefer the explicit guild: in the DM flow interaction.guild/guildId are null.
         const ctxGuild = guild || interaction.guild || null
         const serverId = ctxGuild?.id || interaction.guildId

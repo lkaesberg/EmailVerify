@@ -113,7 +113,7 @@ Configure bot behavior and preferences.
 | `/settings verify-message [message]` | Set a custom message shown in the verification form (leave empty for default) |
 | `/settings auto-verify <enable>` | Automatically prompt new members to verify when they join |
 | `/settings auto-unverified <enable>` | Automatically assign the unverified role to new members |
-| `/settings email-style <plain\|styled> [confirm]` | Choose plain text (default) or HTML rendering for verification emails. Switching to `styled` requires `confirm:True` because HTML mail is more likely to be filtered as spam. |
+| `/settings email-style <styled\|plain>` | Choose how verification emails look. `styled` (default) is an HTML email with a plain-text fallback; `plain` sends text only. |
 | `/settings mail-mode <free\|zeptomail>` | Choose how verification emails leave the bot. `free` (default) uses the operator's self-SMTP server with the 25/month free quota. `zeptomail` is an opt-in **credit-funded** mode: no free quota — every verification routes through Zoho ZeptoMail and costs 1 bonus credit. Auto-disables back to `free` when credits hit 0 and notifies the server owner. Requires bonus credits to enable. |
 
 ### 🛡️ Moderation & Setup

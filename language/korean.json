@@ -205,8 +205,6 @@
   "statusMonthNov": "11월",
   "statusMonthDec": "12월",
   "statusFooterServer": "서버: %VAR%",
-  "emailStyleSpamWarningTitle": "⚠️ 확인: HTML 스타일 이메일로 전환하시겠습니까?",
-  "emailStyleSpamWarning": "**스타일 (HTML) 인증 이메일**은 더 보기 좋지만 메일 제공자(Gmail, Outlook 등)가 종종 마케팅이나 스팸으로 분류합니다. **일반 텍스트** 이메일은 전달성이 눈에 띄게 더 좋기 때문에 기본값입니다.\n\n사용자가 인증 코드를 받지 못한다고 보고하면 plain으로 다시 전환하세요.\n\nHTML로 확인하고 전환하려면 실행하세요:\n`/settings email-style style:styled confirm:True`",
   "emailStyleSetStyledTitle": "✅ 이메일 스타일을 HTML로 설정",
   "emailStyleSetStyledDescription": "이 서버의 인증 이메일은 이제 HTML 형식으로 전송됩니다. 전달성이 떨어지면 `/settings email-style style:plain`으로 되돌리세요.",
   "emailStyleSetPlainTitle": "✅ 이메일 스타일을 일반 텍스트로 설정",

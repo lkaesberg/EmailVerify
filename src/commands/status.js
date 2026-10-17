@@ -271,7 +271,7 @@ module.exports = {
                         },
                         {
                             name: getLocale(language, 'statusFieldEmailStyle'),
-                            value: getLocale(language, serverSettings.emailStyle === 'styled' ? 'statusEmailStyleStyled' : 'statusEmailStylePlain'),
+                            value: getLocale(language, serverSettings.effectiveEmailStyle === 'styled' ? 'statusEmailStyleStyled' : 'statusEmailStylePlain'),
                             inline: true
                         }
                     )

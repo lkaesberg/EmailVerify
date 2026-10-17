@@ -271,6 +271,13 @@ class Database {
                 lastNudgeAt INTEGER
             );`)
         })
+        this.runMigration(25, () => {
+            // Styled (HTML) emails become the default. emailStyle now holds only an
+            // explicit pick, null meaning "the default". Plain was the default until now,
+            // so a stored 'plain' almost always means "never chose" and is cleared; the
+            // few admins who picked it on purpose can pick it again.
+            this.db.run("UPDATE guilds SET emailStyle = NULL WHERE emailStyle = 'plain'")
+        })
     }
 
     /**
@@ -346,7 +353,7 @@ class Database {
     updateServerSettings(guildID, serverSettings) {
         this.db.run(
             "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || 'plain'])
+            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || null])
     }
 
     async getServerSettings(guildID, callback) {
@@ -426,7 +433,7 @@ class Database {
                         serverSettings.allowedEmails = []
                     }
 
-                    serverSettings.emailStyle = result.emailStyle === 'styled' ? 'styled' : 'plain'
+                    serverSettings.emailStyle = ['plain', 'styled'].includes(result.emailStyle) ? result.emailStyle : null
                     
                     // Legacy migration: if defaultRoles is empty but verifiedRoleName exists, use it
                     if (serverSettings.defaultRoles.length === 0 && serverSettings.verifiedRoleName) {
