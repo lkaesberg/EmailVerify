@@ -278,6 +278,15 @@ class Database {
             // few admins who picked it on purpose can pick it again.
             this.db.run("UPDATE guilds SET emailStyle = NULL WHERE emailStyle = 'plain'")
         })
+        this.runMigration(26, () => {
+            // A vote no longer raises the whole server's quota: it unlocks verification
+            // emails for the voter alone, in the server the vote was for. bonusGranted is
+            // now that personal allowance and mailsUsed counts what the voter has spent
+            // of it. Votes from before the change carry over as the voter's own allowance
+            // for the rest of their month.
+            this.db.run("ALTER TABLE votes ADD COLUMN mailsUsed INTEGER NOT NULL DEFAULT 0")
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_user_guild_month ON votes(userID, guildID, month)")
+        })
     }
 
     /**
@@ -327,8 +336,8 @@ class Database {
     deleteUserData(userID) {
         this.db.run("DELETE FROM userEmails WHERE userID = ?;", [userID])
         this.db.run("DELETE FROM vote_targets WHERE userID = ?;", [userID])
-        // Votes stay, so a server keeps the bonus it earned, but no longer name the voter.
-        this.db.run("UPDATE votes SET userID = 'deleted' WHERE userID = ?;", [userID])
+        // A vote only ever rewards the voter, so nothing is left to keep for anyone else.
+        this.db.run("DELETE FROM votes WHERE userID = ?;", [userID])
     }
 
     deleteServerData(guildID) {
@@ -819,7 +828,8 @@ class Database {
      * `UPDATE ... WHERE flag = 0` query.
      *
      * @param {string} guildID
-     * @param {string} source - 'free' | 'credits' | 'credits-zepto' | 'subscription' | 'disabled'
+     * @param {string} source - 'free' | 'credits' | 'credits-zepto' | 'vote' | 'subscription' | 'disabled'
+     *   ('vote' only counts the send: the voter's own emails have no warnings)
      * @param {number} freeLimit
      */
     async recordMailSentAndCheckThresholds(guildID, source, freeLimit) {
@@ -1308,29 +1318,78 @@ class Database {
         })
     }
 
-    /** Bonus mails a guild has earned from votes in the current month. */
-    getVoteBonus(guildID) {
+    /**
+     * The verification emails a user's votes have unlocked for them in one guild this
+     * month, and how many of those they have already used.
+     *
+     * @returns {Promise<{earned: number, used: number}>}
+     */
+    getVotePass(userID, guildID) {
         return new Promise((resolve) => {
             this.db.get(
-                "SELECT COALESCE(SUM(bonusGranted), 0) AS bonus FROM votes WHERE guildID = ? AND month = ?",
-                [guildID, this.getCurrentMonth()],
+                "SELECT COALESCE(SUM(bonusGranted), 0) AS earned, COALESCE(SUM(mailsUsed), 0) AS used FROM votes WHERE userID = ? AND guildID = ? AND month = ?",
+                [userID, guildID, this.getCurrentMonth()],
                 (err, row) => {
-                    if (err) console.error('Error reading vote bonus:', err)
-                    resolve(row?.bonus ?? 0)
+                    if (err) console.error('Error reading vote pass:', err)
+                    resolve({ earned: row?.earned ?? 0, used: row?.used ?? 0 })
                 }
             )
         })
     }
 
     /**
-     * Log one vote and grant its bonus, capped per guild per month.
+     * Spend one of the emails a user's votes unlocked in this guild this month. A single
+     * UPDATE, so two sends at once can't both take the last one.
+     *
+     * @returns {Promise<boolean>} false when the user has none left
+     */
+    consumeVotePass(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `UPDATE votes SET mailsUsed = mailsUsed + 1 WHERE id = (
+                     SELECT id FROM votes WHERE userID = ? AND guildID = ? AND month = ? AND mailsUsed < bonusGranted
+                     ORDER BY id LIMIT 1
+                 )`,
+                [userID, guildID, this.getCurrentMonth()],
+                function (err) {
+                    if (err) {
+                        console.error('Error consuming vote pass:', err)
+                        resolve(false)
+                        return
+                    }
+                    resolve(this.changes > 0)
+                }
+            )
+        })
+    }
+
+    /** Give back a vote email whose send failed, like refundGuildCredit does for credits. */
+    refundVotePass(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `UPDATE votes SET mailsUsed = mailsUsed - 1 WHERE id = (
+                     SELECT id FROM votes WHERE userID = ? AND guildID = ? AND month = ? AND mailsUsed > 0
+                     ORDER BY id DESC LIMIT 1
+                 )`,
+                [userID, guildID, this.getCurrentMonth()],
+                (err) => {
+                    if (err) console.error('Error refunding vote pass:', err)
+                    resolve()
+                }
+            )
+        })
+    }
+
+    /**
+     * Log one vote and unlock its emails for the voter in `guildID`, capped per voter
+     * per guild per month.
      *
      * Dedupe and cap are enforced inside a single INSERT ... SELECT, so a webhook retry
      * or two votes landing at once can neither double-grant nor overshoot the cap. A
      * vote from the same user on the same list inside `dedupeWindowMs` is a retry (both
      * lists allow one vote per 12 hours) and is dropped.
      *
-     * @returns {Promise<{duplicate: boolean, bonusGranted: number, monthTotal: number}>}
+     * @returns {Promise<{duplicate: boolean, bonusGranted: number, monthTotal: ?number, remaining: ?number}>}
      */
     recordVote({ source, userID, guildID, perVote, monthlyCap, dedupeWindowMs }) {
         const now = Date.now()
@@ -1342,7 +1401,7 @@ class Database {
                  SELECT $source, $userID, $guildID, $month, $now,
                         CASE WHEN $guildID IS NULL THEN 0
                              ELSE MAX(0, MIN($perVote, $cap - COALESCE(
-                                 (SELECT SUM(bonusGranted) FROM votes WHERE guildID = $guildID AND month = $month), 0)))
+                                 (SELECT SUM(bonusGranted) FROM votes WHERE userID = $userID AND guildID = $guildID AND month = $month), 0)))
                         END
                  WHERE NOT EXISTS (
                      SELECT 1 FROM votes WHERE source = $source AND userID = $userID AND votedAt > $since
@@ -1353,23 +1412,19 @@ class Database {
                 },
                 function (err) {
                     if (err) return reject(err)
-                    if (this.changes === 0) return resolve({ duplicate: true, bonusGranted: 0, monthTotal: null })
+                    if (this.changes === 0) return resolve({ duplicate: true, bonusGranted: 0, monthTotal: null, remaining: null })
                     const voteId = this.lastID
                     db.get("SELECT bonusGranted FROM votes WHERE id = ?", [voteId], (e1, row) => {
                         if (e1) return reject(e1)
                         const bonusGranted = row?.bonusGranted ?? 0
-                        if (!guildID) return resolve({ duplicate: false, bonusGranted, monthTotal: null })
+                        if (!guildID) return resolve({ duplicate: false, bonusGranted, monthTotal: null, remaining: null })
                         db.get(
-                            "SELECT COALESCE(SUM(bonusGranted), 0) AS total FROM votes WHERE guildID = ? AND month = ?",
-                            [guildID, month],
+                            "SELECT COALESCE(SUM(bonusGranted), 0) AS earned, COALESCE(SUM(mailsUsed), 0) AS used FROM votes WHERE userID = ? AND guildID = ? AND month = ?",
+                            [userID, guildID, month],
                             (e2, sum) => {
                                 if (e2) return reject(e2)
-                                // A raised limit re-arms the "quota used up" warning, so admins
-                                // hear about it again once the bonus is spent too.
-                                if (bonusGranted > 0) {
-                                    db.run("UPDATE guild_stats SET warned100 = 0 WHERE guildID = ? AND statsMonth = ?", [guildID, month])
-                                }
-                                resolve({ duplicate: false, bonusGranted, monthTotal: sum?.total ?? 0 })
+                                const earned = sum?.earned ?? 0
+                                resolve({ duplicate: false, bonusGranted, monthTotal: earned, remaining: Math.max(0, earned - (sum?.used ?? 0)) })
                             }
                         )
                     })

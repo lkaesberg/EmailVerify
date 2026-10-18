@@ -27,19 +27,14 @@ class PremiumManager {
         return monetization.freeMonthlyLimit ?? 25
     }
 
-    /** Bonus mails per vote and the most a server can earn from votes in one month. */
+    /**
+     * Verification emails one vote unlocks for the voter in one server, and the most a
+     * voter can unlock there in a month. The keys were renamed when the reward moved
+     * from the whole server to the voter, so an old server-wide config isn't misread.
+     */
     get voteReward() {
         const cfg = monetization.voteReward || {}
-        return { perVote: cfg.mails ?? 5, monthlyCap: cfg.monthlyCap ?? 25 }
-    }
-
-    /**
-     * This month's free allowance for one guild: the base quota plus whatever its members
-     * have earned by voting. Every quota check and warning goes through this, so a vote
-     * takes effect on the very next send.
-     */
-    async getFreeLimit(guildID) {
-        return this.freeMonthlyLimit + await database.getVoteBonus(guildID)
+        return { perVote: cfg.mailsPerVote ?? 3, monthlyCap: cfg.monthlyCapPerVoter ?? 6 }
     }
 
     /** Whether the operator has configured the ZeptoMail provider. Required for
@@ -119,13 +114,7 @@ class PremiumManager {
             // Buttons are a bonus — proceed without them if SKUs aren't fetchable.
         }
 
-        // Required here, not at the top: voting.js itself requires this module.
-        const voting = require('../utils/voting')
-        const vote = await voting.quotaWarningExtras(lang, guild.id)
-        if (vote) components = [...(components || []), vote.row].slice(0, 5)
-
         let message = getLocale(lang, 'mailDeniedWarnMessage', String(crossings.deniedMonth ?? 1))
-        if (vote) message += '\n\n' + vote.line
         message += '\n\n' + getLocale(lang, 'quotaWarnRedeemHint')
         const mobileHint = mobileHintLine(lang)
         if (mobileHint) {
@@ -151,8 +140,12 @@ class PremiumManager {
      * Returns { allowed, source, autoDisabled?, reason?, mailsSentMonth?, freeLimit? }.
      * `autoDisabled` is true exactly once per zeptomail-mode exhaustion event so the
      * caller knows to notify the owner.
+     *
+     * With `userID` (the member the email is for), a server that is out of free emails
+     * and credits still lets that member through on emails their own votes unlocked
+     * (source 'vote'). Those are spent last, after the free quota and any credits.
      */
-    async canSendMail(guildID, entitlements) {
+    async canSendMail(guildID, entitlements, userID = null) {
         if (!this.enabled) return { allowed: true, source: 'disabled' }
 
         // 1. Subscription → always allowed, always Zepto, free quota irrelevant.
@@ -171,12 +164,15 @@ class PremiumManager {
 
             const autoDisabled = await database.tryAutoDisableZeptoMode(guildID)
             const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
-            const freeLimit = await this.getFreeLimit(guildID)
+            const freeLimit = this.freeMonthlyLimit
             if (stats.mailsSentMonth < freeLimit) {
                 return { allowed: true, source: 'free', autoDisabled, autoDisabledReason: 'credits_exhausted' }
             }
             const consumedFallback = await database.consumeGuildCredit(guildID)
             if (consumedFallback) return { allowed: true, source: 'credits', autoDisabled, autoDisabledReason: 'credits_exhausted' }
+            if (userID && await database.consumeVotePass(userID, guildID)) {
+                return { allowed: true, source: 'vote', autoDisabled, autoDisabledReason: 'credits_exhausted' }
+            }
             return {
                 allowed: false,
                 reason: 'limit_reached',
@@ -187,14 +183,16 @@ class PremiumManager {
             }
         }
 
-        // 3. Default 'free' mode: free monthly allowance → credits → denied.
+        // 3. Default 'free' mode: free monthly allowance → credits → the member's own
+        //    vote emails → denied.
         const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
-        const freeLimit = await this.getFreeLimit(guildID)
+        const freeLimit = this.freeMonthlyLimit
         if (stats.mailsSentMonth < freeLimit) {
             return { allowed: true, source: 'free' }
         }
         const consumed = await database.consumeGuildCredit(guildID)
         if (consumed) return { allowed: true, source: 'credits' }
+        if (userID && await database.consumeVotePass(userID, guildID)) return { allowed: true, source: 'vote' }
         return {
             allowed: false,
             reason: 'limit_reached',
@@ -382,15 +380,12 @@ class PremiumManager {
         const stats = await new Promise(resolve => {
             database.getGuildStats(guildID, resolve)
         })
-        const voteBonus = await database.getVoteBonus(guildID)
-        const freeLimit = this.freeMonthlyLimit + voteBonus
+        const freeLimit = this.freeMonthlyLimit
 
         return {
             enabled: this.enabled,
             subscriptionTier: tier,
             freeLimit,
-            voteBonus,
-            voteBonusCap: this.voteReward.monthlyCap,
             mailsSentMonth: stats.mailsSentMonth,
             mailsDeniedMonth: stats.mailsDeniedMonth || 0,
             freeRemaining: Math.max(0, freeLimit - stats.mailsSentMonth),

@@ -24,8 +24,8 @@
         "enabled": false,
         "freeMonthlyLimit": 25,
         "voteReward": {
-            "mails": 5,
-            "monthlyCap": 25
+            "mailsPerVote": 3,
+            "monthlyCapPerVoter": 6
         },
         "currency": "EUR",
         "skus": {

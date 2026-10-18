@@ -219,7 +219,7 @@ async function handleResendCode(interaction, guildId) {
         }
 
         // Resends consume quota/credits like any other send.
-        const premiumCheck = await premiumManager.canSendMail(guildId, await getEntitlementsForGuild(guildId, interaction))
+        const premiumCheck = await premiumManager.canSendMail(guildId, await getEntitlementsForGuild(guildId, interaction), interaction.user.id)
         if (premiumCheck.autoDisabled) {
             premiumManager.notifyZeptoModeAutoDisabled(userGuild, language).catch(() => {})
         }
@@ -235,7 +235,7 @@ async function handleResendCode(interaction, guildId) {
                     resend: true
                 }
             })
-            await interaction.editReply(await voting.limitReachedMessage(language, guildId)).catch(() => {})
+            await interaction.editReply(await voting.limitReachedMessage(language, guildId, interaction.user.id)).catch(() => {})
             premiumManager.notifyMailDenied(userGuild, language).catch(() => {})
             autoDelete(15000)
             return
@@ -1330,7 +1330,7 @@ bot.on('interactionCreate', async interaction => {
                 // The user-facing embed deliberately omits quota numbers and purchase prompts —
                 // verifying members can't (and shouldn't) pay for a server-level SKU. The
                 // server's admins get the full purchase-enabled warning via ErrorNotifier instead.
-                const premiumCheck = await premiumManager.canSendMail(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction))
+                const premiumCheck = await premiumManager.canSendMail(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction), interaction.user.id)
                 if (premiumCheck.autoDisabled) {
                     premiumManager.notifyZeptoModeAutoDisabled(userGuild, serverSettings.language).catch(() => {})
                 }
@@ -1345,7 +1345,7 @@ bot.on('interactionCreate', async interaction => {
                             free_limit: premiumCheck.freeLimit ?? null
                         }
                     })
-                    const limitMessage = await voting.limitReachedMessage(serverSettings.language, userGuild.id)
+                    const limitMessage = await voting.limitReachedMessage(serverSettings.language, userGuild.id, interaction.user.id)
                     await interaction.followUp({ ...limitMessage, flags: MessageFlags.Ephemeral }).catch(() => {})
                     // Record the denial and fire the escalating admin upsell (1st/5th/20th
                     // blocked member per month) — this is lost demand admins can't see otherwise.

@@ -16,7 +16,7 @@ All purchases run through Discord's native subscription system. Discord handles 
 | | :material-account: **Free** | :material-star: **Standard** | :material-diamond: **Pro** |
 |---|---|---|---|
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
-| **Vote bonus** | +5 per vote, up to +25 / month | n/a | n/a |
+| **Vote unlock** (for the voter only) | 3 emails per vote, up to 6 / month | n/a | n/a |
 | **"Get EmailVerify" link on the member's success message** | Shown | Hidden | Hidden |
 | **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
@@ -53,14 +53,15 @@ You don't sign up. You don't add a payment method. You invite the bot, run `/rol
 
 If 25/month works for you, you can stop reading here.
 
-### Free bonus emails by voting
+### Verify by voting when the quota is used up
 
-Any member can run `/vote` and vote for EmailVerify on [top.gg](https://top.gg/bot/895056197789564969/vote) or [discordbotlist.com](https://discordbotlist.com/bots/emailverify/upvote). Each vote adds **+5 verification emails** to this server's free quota for the current month, up to **+25 a month**, so a busy free server can reach 50.
+When a server is out of free emails, a member who still needs to verify can run `/vote` and vote for EmailVerify on [top.gg](https://top.gg/bot/895056197789564969/vote) or [discordbotlist.com](https://discordbotlist.com/bots/emailverify/upvote). Each vote unlocks **3 verification emails for that member only**, up to **6 a month** per member and server. It doesn't raise the server's quota: everyone else is still blocked until the month resets or the server buys a plan or credits.
 
+- The unlocked emails are used only after the free quota and any credits, so they never replace what the server has.
 - Votes count for the server where the member last ran `/vote` or pressed a vote button.
-- Each site allows one vote every 12 hours, so a member voting on both sites for three days fills the month's bonus.
-- The bonus resets on the 1st along with the free quota. It doesn't carry over and can't be saved up.
-- When a server runs out of free emails, the notice members see includes a vote button, so the member waiting to get in can fix it in half a minute.
+- Each site allows one vote every 12 hours.
+- Unlocked emails expire on the 1st along with the free quota. They don't carry over into the next month.
+- When a server runs out of free emails, the notice members see includes a vote button, so the member waiting to get in can get through in half a minute.
 
 ---
 

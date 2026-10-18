@@ -10,11 +10,12 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const voting = require("../utils/voting");
 
-// Open to every member: anyone can vote, and each vote gives this server bonus emails.
+// Open to every member: anyone can vote, and each vote unlocks verification emails for
+// the voter in this server.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('vote')
-        .setDescription('Vote for EmailVerify and give this server free bonus verification emails')
+        .setDescription('Vote for EmailVerify to verify here even when the server runs out of free emails')
         .setDefaultMemberPermissions(null),
 
     async execute(interaction) {

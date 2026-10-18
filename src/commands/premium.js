@@ -13,7 +13,6 @@ const premiumManager = require("../premium/PremiumManager");
 const database = require("../database/Database");
 const { getLocale } = require("../Language");
 const { buildPlanButtons, appStoreUrl } = require("../utils/premiumButtons");
-const voting = require("../utils/voting");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -57,9 +56,6 @@ module.exports = {
                     : (status.mailMode === 'zeptomail' && !status.subscriptionTier
                         ? getLocale(language, 'premiumMailsZeptoMode', status.bonusCredits.toString())
                         : getLocale(language, 'premiumMailsLimited', status.mailsSentMonth.toString(), status.freeLimit.toString(), status.freeRemaining.toString()))
-
-                const voteLine = voting.bonusStatusLine(language, status)
-                if (voteLine) mailsValue += '\n' + voteLine
 
                 // Lost demand + run-out forecast — the strongest upgrade signals.
                 if (status.mailsDeniedMonth > 0) {

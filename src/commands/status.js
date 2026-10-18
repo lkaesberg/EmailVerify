@@ -14,7 +14,6 @@ const premiumManager = require("../premium/PremiumManager");
 const { buildPlanButtons, mobileHintLine } = require("../utils/premiumButtons");
 const { getLocale } = require("../Language");
 const permissions = require("../utils/permissions");
-const voting = require("../utils/voting");
 
 const MONTH_KEYS = [
     'statusMonthJan', 'statusMonthFeb', 'statusMonthMar', 'statusMonthApr',
@@ -306,9 +305,6 @@ module.exports = {
                         `**${getLocale(language, 'premiumFieldEmails')}:** ${mailsInfo}\n` +
                         `**${getLocale(language, 'premiumFieldCredits')}:** ${premiumStatus.bonusCredits}\n` +
                         `**${getLocale(language, 'premiumFieldCsv')}:** ${premiumStatus.csvUnlocked || premiumStatus.subscriptionTier === 'tier2' ? getLocale(language, 'premiumCsvUnlocked') : getLocale(language, 'premiumCsvLocked')}`
-
-                    const voteLine = voting.bonusStatusLine(language, premiumStatus)
-                    if (voteLine) premiumValue += `\n${voteLine}`
 
                     // Lost demand + run-out forecast: the two numbers that actually
                     // drive an upgrade decision, surfaced where admins diagnose problems.

@@ -94,7 +94,7 @@ module.exports = class MailSender {
      * @param {Interaction} interaction
      * @param {boolean} emailNotify
      * @param {Function} callback - Called with accepted email on success
-     * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'free' | 'disabled'
+     * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'credits-zepto' | 'free' | 'vote' | 'disabled'
      * @param {string} [emailStyle='styled'] - 'styled' | 'plain'
      * @param {import('discord.js').Guild} [guild=null] - resolved guild; required for the DM
      *   verification flow where interaction.guild / interaction.guildId are null.
@@ -212,6 +212,9 @@ module.exports = class MailSender {
                 if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                     database.refundGuildCredit(serverId).catch(() => {})
                 }
+                if (premiumSource === 'vote' && interaction.user?.id) {
+                    database.refundVotePass(interaction.user.id, serverId).catch(() => {})
+                }
                 // A rejected recipient is the member's typo, not an outage — point them at
                 // the address instead of showing the generic "mail system failed" embed.
                 const errorEmbed = invalidRecipient
@@ -242,10 +245,8 @@ module.exports = class MailSender {
             })
 
             try {
-                // This month's limit includes any vote bonus, so warnings track the real quota.
-                const freeLimit = premiumSource === 'free' ? await premiumManager.getFreeLimit(serverId) : this.freeMonthlyLimit
-                const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, freeLimit)
-                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings, ctxGuild, freeLimit)
+                const crossings = await database.recordMailSentAndCheckThresholds(serverId, premiumSource, this.freeMonthlyLimit)
+                this.#fireQuotaWarnings(interaction, language, serverSettings, crossings, ctxGuild)
                 if (premiumSource === 'credits-zepto' && crossings.creditsRemaining !== null && crossings.creditsRemaining <= 0) {
                     this.#maybeAutoDisableZeptoMode(interaction, language, ctxGuild)
                 }
@@ -382,8 +383,9 @@ module.exports = class MailSender {
         }
     }
 
-    async #fireQuotaWarnings(interaction, language, serverSettings, crossings, guild = null, freeLimit = this.freeMonthlyLimit) {
+    async #fireQuotaWarnings(interaction, language, serverSettings, crossings, guild = null) {
         guild = guild || interaction?.guild
+        const freeLimit = this.freeMonthlyLimit
         if (!guild || !crossings) return
 
         const anyCrossed = crossings.crossed80 || crossings.crossed95 || crossings.crossed100
@@ -408,18 +410,7 @@ module.exports = class MailSender {
             console.warn('[MailSender] Could not build premium buttons for quota warning:', e.message)
         }
 
-        let footer = this.#buildQuotaFooter(language, getWebsiteUrl())
-
-        // Voting is the free way to more emails: offer it next to the paid plans on the
-        // free-quota warnings. A single send crosses either free-quota or credit
-        // thresholds, never both, and credit warnings go to servers that already pay.
-        if (crossings.crossed80 || crossings.crossed95 || crossings.crossed100) {
-            const vote = await voting.quotaWarningExtras(language, guild.id)
-            if (vote) {
-                footer = `${vote.line}\n\n${footer}`
-                components = [...(components || []), vote.row].slice(0, 5)
-            }
-        }
+        const footer = this.#buildQuotaFooter(language, getWebsiteUrl())
 
         const fire = (titleKey, msgKey, extraLine, ...vars) => {
             let baseMessage = getLocale(language, msgKey, ...vars)
@@ -485,7 +476,8 @@ module.exports = class MailSender {
         // notice is for the guild's verify channel, so skip it there.
         if (channel.isDMBased?.()) return
         try {
-            // Carries the vote button, so any member in the channel can add emails back.
+            // Carries the vote button, so a member who can't get in can unlock their own
+            // verification.
             await channel.send(await voting.limitReachedMessage(language, guildId))
         } catch (e) {
             // Missing send permission is fine — the admin DM path still fires.

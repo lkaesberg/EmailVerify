@@ -7,15 +7,17 @@
 // Software Foundation, either version 3 of the License, or (at your option) any
 // later version. See the LICENSE file for details.
 
-// Vote rewards: a vote on top.gg or discordbotlist.com gives one server extra free
-// verification emails for the current month, capped per month.
+// Vote rewards: a vote on top.gg or discordbotlist.com unlocks a few verification
+// emails for the voter alone, in one server, for the current month, capped per month.
+// They are spent only once that server is out of free emails and credits, so a vote
+// lets its voter in without raising the quota for everyone else.
 //
 // Votes arrive from the lists as webhooks carrying only the voter's user id, so the
-// server to reward is the one the voter last ran /vote (or pressed a vote button) in.
-// top.gg can also carry it in the vote URL's query string, which wins when present.
+// server is the one the voter last ran /vote (or pressed a vote button) in. top.gg can
+// also carry it in the vote URL's query string, which wins when present.
 //
-// The prompts are placed where a vote is most wanted: when a server runs out of free
-// emails, the member who can't get in is one click away from fixing it themselves.
+// The prompt is placed where a vote is most wanted: when a server runs out of free
+// emails, the member who can't get in is one click away from getting in anyway.
 
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags, Routes } = require('discord.js')
 const config = require('../../config/config.json')
@@ -59,18 +61,19 @@ function isEnabled() {
     return premiumManager.enabled && activeSources().length > 0
 }
 
-async function getVoteStatus(guildId) {
+/** What one member's votes have unlocked for them in one server this month. */
+async function getVoteStatus(guildId, userId) {
     const { perVote, monthlyCap } = premiumManager.voteReward
-    const bonus = await database.getVoteBonus(guildId)
-    return { bonus, perVote, cap: monthlyCap, capped: bonus >= monthlyCap }
+    const { earned, used } = await database.getVotePass(userId, guildId)
+    return { earned, remaining: Math.max(0, earned - used), perVote, cap: monthlyCap, capped: earned >= monthlyCap }
 }
 
-/** "Vote for +5 free emails" button; opens the vote prompt for `guildId`. */
+/** "Vote to unlock your verification" button; opens the vote prompt for `guildId`. */
 function voteButtonRow(language, guildId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`vote:${guildId}`)
-            .setLabel(getLocale(language, 'voteButtonLabel', String(premiumManager.voteReward.perVote)))
+            .setLabel(getLocale(language, 'voteButtonLabel'))
             .setEmoji('🗳️')
             .setStyle(ButtonStyle.Primary)
     )
@@ -106,7 +109,7 @@ function getLanguage(guildId) {
 
 /**
  * Answer /vote or a vote button: remember this server as the voter's target and show
- * the vote links with how much of this month's bonus is left.
+ * the vote links with what the voter has unlocked there this month.
  */
 async function showVotePrompt(interaction, guildId, entry) {
     const language = await getLanguage(guildId)
@@ -122,11 +125,11 @@ async function showVotePrompt(interaction, guildId, entry) {
         : (interaction.client.guilds.cache.get(guildId)?.name ?? (await fetchGuild(guildId))?.name ?? '')
 
     await database.setVoteTarget(interaction.user.id, guildId)
-    const status = await getVoteStatus(guildId)
+    const status = await getVoteStatus(guildId, interaction.user.id)
 
     const description = status.capped
-        ? getLocale(language, 'voteCommandCapped', guildName, String(status.cap))
-        : getLocale(language, 'voteCommandDescription', guildName, String(status.perVote), String(status.cap), String(status.bonus), String(status.cap))
+        ? getLocale(language, 'voteCommandCapped', guildName, String(status.cap), String(status.remaining))
+        : getLocale(language, 'voteCommandDescription', guildName, String(status.perVote), String(status.cap), String(status.remaining))
 
     const embed = new EmbedBuilder()
         .setTitle(getLocale(language, 'voteCommandTitle'))
@@ -138,7 +141,7 @@ async function showVotePrompt(interaction, guildId, entry) {
         userId: interaction.user.id,
         guildId,
         guild: interaction.guild?.id === guildId ? interaction.guild : null,
-        properties: { entry, capped: status.capped, bonus_month_total: status.bonus }
+        properties: { entry, capped: status.capped, bonus_month_total: status.earned, bonus_remaining: status.remaining }
     })
 
     await interaction.reply({
@@ -149,48 +152,23 @@ async function showVotePrompt(interaction, guildId, entry) {
 }
 
 /**
- * The "this server is out of free emails" message a member sees, plus a vote button
- * while this month's bonus isn't used up.
+ * The "this server is out of free emails" message, plus the offer to vote for your own
+ * way in. `userId` is the member who was turned away; the offer is left out once they
+ * have unlocked this month's maximum. Without it (the public notice in the verify
+ * channel) the offer is always there.
  */
-async function limitReachedMessage(language, guildId) {
+async function limitReachedMessage(language, guildId, userId = null) {
     const embed = createMailLimitReachedEmbed(language, getWebsiteUrl())
     const payload = { embeds: [embed] }
     if (!isEnabled() || !guildId) return payload
     try {
-        const status = await getVoteStatus(guildId)
-        if (status.capped) return payload
-        embed.setDescription(embed.data.description + '\n\n' + getLocale(language, 'voteLimitHint', String(status.perVote)))
+        if (userId && (await getVoteStatus(guildId, userId)).capped) return payload
+        embed.setDescription(embed.data.description + '\n\n' + getLocale(language, 'voteLimitHint', String(premiumManager.voteReward.perVote)))
         payload.components = [voteButtonRow(language, guildId)]
     } catch {
         // The limit notice matters more than the vote offer — send it without.
     }
     return payload
-}
-
-/**
- * For admin quota warnings: the free way to get more emails and a button for it, or
- * null when voting is off or this month's bonus is spent.
- *
- * @returns {Promise<?{line: string, row: ActionRowBuilder}>}
- */
-async function quotaWarningExtras(language, guildId) {
-    if (!isEnabled() || !guildId) return null
-    try {
-        const status = await getVoteStatus(guildId)
-        if (status.capped) return null
-        return {
-            line: getLocale(language, 'voteQuotaHint', String(status.perVote), String(status.cap)),
-            row: voteButtonRow(language, guildId)
-        }
-    } catch {
-        return null
-    }
-}
-
-/** "Vote bonus this month: +10 / +25" for /premium and /status, or null. */
-function bonusStatusLine(language, premiumStatus) {
-    if (!isEnabled() || premiumStatus.subscriptionTier || premiumStatus.mailMode === 'zeptomail') return null
-    return getLocale(language, 'premiumVoteBonusLine', String(premiumStatus.voteBonus ?? 0), String(premiumStatus.voteBonusCap ?? 0))
 }
 
 /**
@@ -230,8 +208,12 @@ async function processVote({ source, userId, queryGuildId, client }) {
         properties: {
             source,
             attributed_via: attributedVia,
+            // 'voter' since the reward stopped raising the server's quota; the bonus
+            // numbers below are the voter's own from then on.
+            reward_scope: 'voter',
             bonus_granted: result.bonusGranted,
             bonus_month_total: result.monthTotal,
+            bonus_remaining: result.remaining,
             capped: !!guild && result.bonusGranted === 0
         }
     })
@@ -248,7 +230,7 @@ async function sendThanks(client, { source, userId, guild, result, monthlyCap })
         text = getLocale(language, 'voteThanksUnattributed', listName)
     } else if (result.bonusGranted > 0) {
         text = getLocale(language, 'voteThanksRewarded', listName, guild.name,
-            String(result.bonusGranted), String(result.monthTotal), String(monthlyCap))
+            String(result.bonusGranted), String(result.remaining))
     } else {
         text = getLocale(language, 'voteThanksCapped', listName, guild.name, String(monthlyCap))
     }
@@ -268,7 +250,5 @@ module.exports = {
     voteButtonRow,
     showVotePrompt,
     limitReachedMessage,
-    quotaWarningExtras,
-    bonusStatusLine,
     processVote
 }
