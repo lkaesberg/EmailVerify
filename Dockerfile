@@ -1,7 +1,7 @@
 # node:19 was EOL and its Debian bullseye base no longer resolves in the
 # security pool -- apt 404s on libsqlite3-0, which broke every release build.
-# node:22 is the current LTS (bookworm) and also clears the EOL runtime.
-FROM node:22.23.4
+# node:24 is the active LTS (bookworm) and also clears the EOL runtime.
+FROM node:24.22.1
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 LABEL org.opencontainers.image.source="https://github.com/lkaesberg/EmailVerify"
