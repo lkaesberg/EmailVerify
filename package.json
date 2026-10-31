@@ -25,5 +25,8 @@
   },
   "devDependencies": {
     "process": "^0.11.10"
+  },
+  "overrides": {
+    "undici": "^6.29.1"
   }
 }
