@@ -125,7 +125,7 @@ jobs:
           # Full history, so the push's previous head is there to diff against.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.x
 
