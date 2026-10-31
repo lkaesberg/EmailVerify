@@ -21,6 +21,8 @@ RUN ls /usr/app/language
 # Compile against the system libsqlite3 installed above instead, which is what
 # libsqlite3-dev was always here for and keeps the image independent of whatever
 # glibc the upstream prebuilds happen to target.
-RUN npm install --build-from-source=sqlite3 --sqlite=/usr
+# npm ci installs exactly what package-lock.json pins, so every build gets the
+# versions Dependabot reviewed instead of whatever the caret ranges resolve to.
+RUN npm ci --build-from-source=sqlite3 --sqlite=/usr
 
 CMD ["npm", "start"]
