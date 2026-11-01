@@ -2,7 +2,7 @@
 # security pool -- apt 404s on libsqlite3-0, which broke every release build.
 # node:22 is the current LTS. The trixie variant is needed for SQLCipher 4:
 # bookworm only packages SQLCipher 3.4.1, which is built on SQLite 3.15 (2016).
-FROM node:22.23.4-trixie
+FROM node:26.13.0-trixie
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 LABEL org.opencontainers.image.source="https://github.com/lkaesberg/EmailVerify"
