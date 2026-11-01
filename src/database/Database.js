@@ -11,10 +11,32 @@ const ServerSettings = require('./ServerSettings.js')
 const EmailUser = require("./EmailUser");
 const sqlite3 = require('sqlite3').verbose()
 const md5hash = require("../crypto/Crypto")
+const { DB_PATH, databaseKey, keyPragma, isPlaintext } = require('./DatabaseEncryption.js')
 
 class Database {
     constructor() {
-        this.db = new sqlite3.Database('config/bot.db');
+        // The sharder encrypts an unencrypted database before any shard starts
+        // (DatabaseEncryption.prepareDatabase). Reaching this with a key and a
+        // plaintext file means it was skipped; keying would only fail later with
+        // "file is not a database" on every query.
+        const key = databaseKey()
+        if (key && isPlaintext(DB_PATH)) {
+            throw new Error(`${DB_PATH} is not encrypted yet. Start the bot through src/sharder.js, which encrypts it first.`)
+        }
+
+        this.db = new sqlite3.Database(DB_PATH);
+
+        // SQLCipher needs the key before any other statement touches the file.
+        // exec() is always scheduled exclusively, so everything queued after it
+        // waits until the connection is keyed.
+        if (key) {
+            this.db.exec(keyPragma(key), (e) => {
+                if (e) {
+                    console.error('[DB] Could not apply the encryption key:', e.message)
+                    process.exit(1)
+                }
+            })
+        }
 
         // All shard processes open this same file. busy_timeout makes a process wait
         // briefly instead of erroring with SQLITE_BUSY when another shard is writing.

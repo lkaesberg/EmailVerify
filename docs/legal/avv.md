@@ -5,7 +5,7 @@ description: Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Server-Betreib
 
 # Auftragsverarbeitungsvertrag (AVV)
 
-**gemäß Art. 28 DSGVO** — **Stand:** September 2026
+**gemäß Art. 28 DSGVO** — **Stand:** November 2026
 
 Dieser Auftragsverarbeitungsvertrag (im Folgenden "AVV") gilt für Betreiber von
 Discord-Servern (z. B. Unternehmen, Hochschulen, Organisationen), die den
@@ -121,7 +121,8 @@ erforderlich (§ 38 BDSG).
 Der Auftragnehmer trifft insbesondere folgende Maßnahmen nach Art. 32 DSGVO:
 
 - **Verschlüsselung:** Übertragung der Verifizierungs-E-Mails und aller
-  API-Verbindungen ausschließlich verschlüsselt (TLS/STARTTLS bzw. HTTPS).
+  API-Verbindungen ausschließlich verschlüsselt (TLS/STARTTLS bzw. HTTPS);
+  die Bot-Datenbank wird verschlüsselt gespeichert (SQLCipher, AES-256).
 - **Pseudonymisierung / Datenminimierung:** E-Mail-Adressen werden in der
   Datenbank ausschließlich als kryptografischer Hash gespeichert;
   Klartext-Adressen werden nach dem Versand nicht aufbewahrt.
@@ -243,7 +244,8 @@ lists and setup reminders to the person who added the bot are also WKSolutions'
 own processing.
 
 **Security measures (Art. 32 GDPR):** TLS/STARTTLS for all email and API
-traffic, email addresses stored only as cryptographic hashes, SSH-key and
+traffic, the bot database encrypted at rest (SQLCipher, AES-256), email
+addresses stored only as cryptographic hashes, SSH-key and
 2FA-protected access, 30-day log retention, self-service deletion via
 `/data delete-user` and `/data delete-server`, ISO 27001-certified data center.
 

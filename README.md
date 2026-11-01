@@ -240,6 +240,8 @@ services:
       - 8181:8181
     volumes:
       - ./config:/usr/app/config
+    environment:
+      - DB_ENCRYPTION_KEY=<output of: openssl rand -base64 32>
     restart: always
 ```
 
@@ -254,6 +256,7 @@ docker run -d \
   --name emailverify \
   -p 8181:8181 \
   -v $(pwd)/config:/usr/app/config \
+  -e DB_ENCRYPTION_KEY="<output of: openssl rand -base64 32>" \
   --restart always \
   ghcr.io/lkaesberg/emailverify:latest
 ```
@@ -312,6 +315,15 @@ npm start
 | `topggWebhookSecret` / `discordbotlistWebhookSecret` | *(Optional)* Webhook secrets for vote rewards; the endpoints are `/webhooks/topgg` and `/webhooks/discordbotlist` on the stats server (port 8181) |
 
 > 💡 **Gmail Users:** You need to create an [App Password](https://support.google.com/accounts/answer/185833) and use that instead of your regular password.
+
+### Database encryption
+
+With the `DB_ENCRYPTION_KEY` environment variable set, the bot keeps `config/bot.db` encrypted with [SQLCipher](https://www.zetetic.net/sqlcipher/) (AES-256). An existing unencrypted database is encrypted in place on the next start. You can also set the key as `databaseEncryptionKey` in `config.json`, but the environment variable is better: `config.json` sits next to the database, so a copy of the config folder would carry the key along with the data.
+
+- **Keep a copy of the key somewhere safe.** Without it, the database can't be opened again.
+- Without a key, the bot runs unencrypted as before and logs a warning on start.
+- The Docker image ships a SQLCipher build. For a manual installation, build `sqlite3` against SQLCipher the way the [Dockerfile](Dockerfile) does; otherwise the bot refuses to start when a key is set.
+- To inspect the database by hand: `sqlcipher config/bot.db`, then `PRAGMA key = '<your key>';` as the first command.
 
 ### Discord Developer Portal setup
 

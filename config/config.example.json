@@ -1,6 +1,7 @@
 {
     "token": "YOUR_DISCORD_BOT_TOKEN",
     "clientId": "YOUR_DISCORD_CLIENT_ID",
+    "databaseEncryptionKey": "",
     "email": "verify@example.com",
     "username": "smtp-username",
     "password": "smtp-password",

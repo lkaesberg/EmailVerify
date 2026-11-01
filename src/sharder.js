@@ -12,6 +12,7 @@ const path = require('path');
 const { token, topggToken } = require('../config/config.json');
 const { AutoPoster } = require('topgg-autoposter');
 const { startBotListStats } = require('./api/BotListStats');
+const { prepareDatabase } = require('./database/DatabaseEncryption');
 
 const manager = new ShardingManager(path.join(__dirname, 'EmailBot.js'), {
   token,
@@ -24,6 +25,16 @@ manager.on('shardCreate', (shard) => {
 });
 
 (async () => {
+  // Before any shard opens the database: check the encryption key, and encrypt a
+  // database that predates encryption at rest. Shards all share the one file, so
+  // this has to finish while nothing else has it open.
+  try {
+    await prepareDatabase();
+  } catch (error) {
+    console.error('[DB] Not starting:', error.message);
+    process.exit(1);
+  }
+
   try {
     await manager.spawn();
     if (typeof topggToken !== 'undefined') {

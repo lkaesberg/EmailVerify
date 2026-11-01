@@ -5,7 +5,7 @@ description: Wie EmailVerify personenbezogene Daten verarbeitet, von gehashten E
 
 # Datenschutzerklärung
 
-**Stand:** September 2026
+**Stand:** November 2026
 
 Diese Datenschutzerklärung informiert über die Verarbeitung personenbezogener
 Daten bei der Nutzung des Discord-Bots **EmailVerify** sowie der zugehörigen
@@ -220,7 +220,8 @@ der Aufsichtsbehörde Ihres Wohnsitzlandes. Eine Übersicht finden Sie unter
 Die Übertragung der Verifizierungs-E-Mails erfolgt verschlüsselt (TLS/STARTTLS).
 E-Mail-Adressen werden in der Bot-Datenbank ausschließlich als kryptografischer
 Hash gespeichert; Klartext-Adressen werden außer für den unmittelbaren
-Mail-Versand nicht verarbeitet.
+Mail-Versand nicht verarbeitet. Die Bot-Datenbank selbst wird verschlüsselt
+gespeichert (SQLCipher, AES-256).
 
 ## 10. Änderungen dieser Datenschutzerklärung
 
@@ -245,7 +246,7 @@ their own members, WKSolutions acts as a processor on their behalf; a
 **Data processed:** Discord user ID, server ID, hashed (MD5 of lowercase) email
 address, aggregate per-server statistics, server configuration set by admins.
 Plain-text email addresses are used only to send the verification message; they
-are not retained.
+are not retained. The bot database is encrypted at rest (SQLCipher, AES-256).
 
 - **Setup reminders:** when the bot is added, we store the Discord ID of the person
   who added it (when Discord provides it), to send up to two reminder DMs if setup
