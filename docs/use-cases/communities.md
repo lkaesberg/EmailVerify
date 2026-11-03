@@ -9,7 +9,7 @@ faq:
   - q: What happens if someone is not on the allowlist?
     a: Verification is refused and no role is granted. You can re-upload an updated CSV at any time; duplicate entries are skipped automatically, so adding late registrations just means uploading the new list.
   - q: Are the uploaded email addresses stored in plaintext?
-    a: No. The allowlist is hashed with the same scheme as verified addresses. Once uploaded you cannot read the individual entries back, only the total count, so the list cannot leak from the bot's database.
+    a: No. The allowlist is hashed with the same scheme as verified addresses. Once uploaded you cannot read the individual entries back, only the total count, and the bot's database holds no plain-text copy of the list. A hash can still be matched against an address someone already knows or guesses.
 ---
 
 # Verification for courses, events and hackathons
@@ -64,7 +64,7 @@ Re-upload whenever the list changes — late registrations, a second cohort, a n
 `/emaillist clear` empties the list and returns the server to whatever domain rules you have configured.
 
 !!! info "The list is hashed, and that has a consequence"
-    Uploaded addresses are stored with the same hashing scheme as verified ones, so the bot's database cannot leak your customer list. The trade-off is that **you can't read the entries back** — `/status` shows only the count. To audit what's in there, re-upload the CSV you believe is current; the duplicate-skipping tells you whether it matched.
+    Uploaded addresses are stored with the same hashing scheme as verified ones, so the bot's database holds no plain-text copy of your customer list (a hash can still be matched against an address someone already knows). The trade-off is that **you can't read the entries back** — `/status` shows only the count. To audit what's in there, re-upload the CSV you believe is current; the duplicate-skipping tells you whether it matched.
 
 ---
 

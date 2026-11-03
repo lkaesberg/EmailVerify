@@ -68,7 +68,7 @@ Many servers want both. They compose fine — run a captcha bot for raid protect
 There are several bots in this category, plus a number of university-specific ones on GitHub that a student built for their own campus. Things worth checking about any of them, this one included:
 
 **How are addresses stored?**
-A bot holding a plaintext table of your members' email addresses is a liability for whoever installed it. Ask, and if the answer isn't "hashed", think hard. *(EmailVerify stores hashes only; plaintext exists just long enough to send the code.)*
+A bot holding a plaintext table of your members' email addresses is a liability for whoever installed it. Ask, and if the answer isn't "hashed", think hard. *(EmailVerify's database stores hashes only, never plain text.)*
 
 **Where does the mail come from, and does it arrive?**
 Deliverability is the whole product. A verification bot whose codes land in spam is a broken verification bot, and university filters are brutal. Test before you commit — *(EmailVerify has `/testmail` for exactly this; paid plans route through Zoho ZeptoMail, EU-hosted and transactional-only)*.
