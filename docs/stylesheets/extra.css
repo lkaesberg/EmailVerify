@@ -159,6 +159,19 @@
   color: var(--ev-text);
 }
 
+/* "Free for 25 a month" line between the lead and the buttons: the first
+   thing a visitor deciding whether to click needs to know. */
+.md-typeset .ev-hero-free {
+  margin: .4rem 0 0;
+  font-size: .8rem;
+  color: var(--ev-muted);
+}
+
+.md-typeset .ev-hero-free strong,
+.md-typeset .ev-hero-free .twemoji {
+  color: var(--ev-text);
+}
+
 /* Optional wash behind the top of a landing page. */
 .ev-hero {
   margin: -1rem -1rem 0;
@@ -1206,10 +1219,37 @@
   text-decoration: underline;
 }
 
+/* Room below the page while the banner is open (height set by extra.js), so
+   nothing at the end of a page stays hidden behind it. */
+.ev-consent-shown body {
+  padding-bottom: calc(var(--ev-consent-h, 0px) + 1rem);
+}
+
+/* Phones: a slim bar flush with the bottom edge instead of a card, short text,
+   so the hero's "Add to your server" button stays visible above it. */
 @media screen and (max-width: 30em) {
   .ev-consent {
-    left: 1rem;
-    right: 1rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: auto;
+    padding: .6rem .8rem calc(.6rem + env(safe-area-inset-bottom, 0px));
+    border-width: 1px 0 0;
+    border-radius: 0;
+    font-size: .65rem;
+    line-height: 1.4;
+  }
+
+  .ev-consent__title,
+  .ev-consent__more {
+    display: none;
+  }
+
+  .ev-consent__body {
+    margin-bottom: .5rem;
+  }
+
+  .ev-consent__button {
+    padding: .35rem .5rem;
   }
 }

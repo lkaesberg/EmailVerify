@@ -9,6 +9,11 @@ Most servers stay on the free tier forever. About 95% of servers using EmailVeri
 
 All purchases run through Discord's native subscription system. Discord handles billing, refunds, and cancellations.
 
+<div class="ev-cta" markdown>
+[:fontawesome-brands-discord: Add to your server — free](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
+[Quick start guide →](setup.md){ .md-button }
+</div>
+
 ---
 
 ## At a glance
@@ -18,10 +23,10 @@ All purchases run through Discord's native subscription system. Discord handles 
 | **Verification emails** | 25 / month | Unlimited | Unlimited |
 | **Vote unlock** (for the voter only) | 3 emails per vote, up to 6 / month | n/a | n/a |
 | **"Get EmailVerify" link on the member's success message** | Shown | Hidden | Hidden |
-| **Premium delivery (ZeptoMail)** | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
+| **Premium delivery** (paid email service, more mail reaches the inbox) | Optional, credit-funded (1 credit / mail) | ✓ Always on | ✓ Always on |
 | **CSV import & export** | — | — | ✓ |
 | **Allowed-email API** | — | — | ✓ |
-| **Quota warnings (80% / 95% / 100%)** | ✓ | n/a | n/a |
+| **Monthly limit warnings (80% / 95% / 100%)** | ✓ | n/a | n/a |
 | **Domain rules, role mapping, blacklist** | ✓ | ✓ | ✓ |
 | **Privacy-first storage (hashed emails)** | ✓ | ✓ | ✓ |
 | **Best for** | Most servers | Busy servers | Closed groups + audit needs |
@@ -43,7 +48,9 @@ All purchases run through Discord's native subscription system. Discord handles 
 
 ## Free tier — what you actually get
 
-You don't sign up. You don't add a payment method. You invite the bot, run `/role add`, and you're done.
+You don't sign up. You don't add a payment method. You add the bot to your server, run `/setup`, and you're done.
+
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 
 - **25 verification emails per month**, per server. Resets on the 1st.
 - **All the configuration features** — domain rules, wildcard matching, domain-specific role mapping, blacklist, language settings, log channel, custom verify messages, auto-verify on join.
@@ -70,7 +77,7 @@ When a server is out of free emails, a member who still needs to verify can run 
 A monthly subscription (listed in Discord's store as **EmailVerify Premium**). Adds two things:
 
 - :material-infinity: **Unlimited verification emails** every month — no quota worries.
-- :material-email-fast: **Premium delivery via Zoho ZeptoMail.** Verification mails go through Zoho's transactional infrastructure with EU data residency. Better inbox placement than self-hosted SMTP because ZeptoMail is transactional-only — no marketing senders share its IP reputation.
+- :material-email-fast: **Premium delivery via Zoho ZeptoMail.** ZeptoMail is a paid email delivery service with servers in the EU. It only sends emails like verification codes, never advertising, so spam filters trust it more and more codes land in the inbox than with the bot's own mail server.
 
 Best for: large communities, university servers with seasonal verification spikes, paid Discord communities.
 
@@ -242,6 +249,7 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
 
 ---
 
+[:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [See all commands →](commands.md){ .md-button }
 [Status page →](status.md){ .md-button }
 [Support server →](https://discord.com/invite/fEBSHUQXu2){ .md-button }

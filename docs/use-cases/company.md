@@ -37,6 +37,8 @@ Gating on a company mailbox is the cheapest fix that actually means something. I
 
 ## Basic configuration
 
+The quickest way is `/setup`: its wizard asks for the role and the domain and posts the button. If you'd rather type the commands yourself, these three do the same:
+
 ```
 /role add @Employee
 /domain add @yourcompany.com

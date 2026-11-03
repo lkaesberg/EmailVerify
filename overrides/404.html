@@ -1,0 +1,17 @@
+{% extends "main.html" %}
+
+<!--
+  GitHub Pages serves this page for every unknown path, at that path, so all
+  links are absolute (site_url). Replaces Material's bare "404 - Not found".
+-->
+{% block content %}
+  <h1>Page not found</h1>
+  <p>This page doesn't exist, or it has moved. Here is where most people want to go:</p>
+  <div class="ev-cta">
+    <a class="md-button md-button--primary" href="{{ config.extra.invite_url }}">Add to your server</a>
+    <a class="md-button" href="{{ config.site_url }}">Home page</a>
+    <a class="md-button" href="{{ config.site_url }}setup/">Quick start guide</a>
+    <a class="md-button" href="{{ config.site_url }}premium/">Free plan &amp; pricing</a>
+  </div>
+  <p>Still stuck? Ask in the <a href="{{ config.extra.social[0].link }}">support server</a>.</p>
+{% endblock %}
