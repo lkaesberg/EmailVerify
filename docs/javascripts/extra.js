@@ -19,6 +19,10 @@
   document.addEventListener('click', function (event) {
     var button = event.target.closest('[data-ev-video]');
     if (!button) return;
+    // The second click of a double-click is not a choice to play: when the
+    // first one closes the consent banner above the video, the second lands
+    // here. Only a single click (or Enter/Space, detail 0) loads YouTube.
+    if (event.detail > 1) return;
 
     var id = button.getAttribute('data-ev-video');
     if (!id || !/^[\w-]{6,20}$/.test(id)) return;
@@ -36,6 +40,24 @@
 
     container.innerHTML = '';
     container.appendChild(frame);
+  });
+
+  /* ------------------------------------------------------------------
+   * Escape closes the search overlay, wherever focus is.
+   *
+   * A shared search link (/?q=…) opens the search over a dimmed backdrop
+   * that catches every click; the UX check found Escape left it open. Close
+   * it through Material's own toggle and its change event, so the theme
+   * cleans up (such as dropping ?q= from the address) as on its own close.
+   * ------------------------------------------------------------------ */
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    var toggle = document.querySelector('[data-md-toggle="search"]');
+    if (!toggle || !toggle.checked) return;
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
+    var active = document.activeElement;
+    if (active && active !== document.body && typeof active.blur === 'function') active.blur();
   });
 
   /* ------------------------------------------------------------------

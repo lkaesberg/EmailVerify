@@ -227,7 +227,7 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
     If you reliably send more than the credit cost per month would imply, Standard is cheaper. If your volume is bursty or seasonal, the credit-funded mode lets you only pay for what you actually use.
 
 ??? question "Are emails stored anywhere?"
-    Plaintext only at the moment of sending the verification code. The bot stores email addresses as MD5 base64 hashes — same scheme for verified users and for the allowedEmails list. Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).
+    Not in plain text in the bot's database. The bot stores email addresses as MD5 base64 hashes of the lowercased address — same scheme for verified users and for the allowedEmails list — and uses the address itself only to send the verification code. A hash can still be matched against an address someone already knows or guesses. If you set a log channel, each verification is posted there with the address. Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).
 
 ??? question "Can I self-host with monetization disabled?"
     Yes. The source is on [GitHub](https://github.com/lkaesberg/EmailVerify) under AGPL-3.0. Set `monetization.enabled` to `false` in `config/config.json`, supply your own SMTP credentials, and run it. Self-hosters bypass the quota system entirely.
