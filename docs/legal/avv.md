@@ -46,8 +46,12 @@ unterzeichnete PDF-Fassung bereit.
 
 - Discord-Nutzer-IDs und Server-ID (Guild-ID),
 - E-Mail-Adressen der zu verifizierenden Mitglieder — gespeichert
-  ausschließlich als kryptografischer Hash; Klartext wird nur transient für
-  den unmittelbaren Versand der Verifizierungs-E-Mail verarbeitet,
+  ausschließlich als kryptografischer Hash (MD5, ungesalzen, daher
+  pseudonymisiert, nicht anonymisiert); Klartext wird nur transient für den
+  unmittelbaren Versand der Verifizierungs-E-Mail verarbeitet sowie, wenn der
+  Auftraggeber einen Log-Kanal eingerichtet hat (`/settings log-channel`), in
+  der Verifizierungsnachricht, die der Bot in diesen Kanal des Discord-Servers
+  des Auftraggebers postet,
 - vom Auftraggeber konfigurierte Daten (Verifizierungs-Domains, Rollen-IDs,
   optionale Allowlist — gehasht),
 - aggregierte, nicht nutzerbezogene Verifizierungs-Statistiken,
@@ -125,7 +129,8 @@ Der Auftragnehmer trifft insbesondere folgende Maßnahmen nach Art. 32 DSGVO:
   die Bot-Datenbank wird verschlüsselt gespeichert (SQLCipher, AES-256).
 - **Pseudonymisierung / Datenminimierung:** E-Mail-Adressen werden in der
   Datenbank ausschließlich als kryptografischer Hash gespeichert;
-  Klartext-Adressen werden nach dem Versand nicht aufbewahrt.
+  Klartext-Adressen werden nach dem Versand nicht in der Datenbank aufbewahrt
+  (zum optionalen Log-Kanal des Auftraggebers siehe § 2).
 - **Zugangs- und Zugriffskontrolle:** Zugriff auf den Server nur durch die
   Gesellschafter über SSH mit Schlüssel-Authentifizierung; Zugriff auf
   Verwaltungsoberflächen mit Zwei-Faktor-Authentifizierung.
@@ -221,7 +226,9 @@ controllers.
 **Scope:** email-based verification of the controller's server members —
 sending verification emails and storing verification records (Discord user
 IDs, guild ID, hashed email addresses, aggregate statistics, technical logs
-deleted after 30 days at the latest).
+deleted after 30 days at the latest). If the controller sets a log channel
+(`/settings log-channel`), the bot also posts each verification, with the email
+address in plain text, to that channel of the controller's Discord server.
 
 **Processing location:** processing on your behalf happens exclusively in the EU — Hetzner data center in
 Helsinki, Finland (hosting and self-hosted SMTP; DPA with Hetzner in place)
@@ -245,7 +252,8 @@ own processing.
 
 **Security measures (Art. 32 GDPR):** TLS/STARTTLS for all email and API
 traffic, the bot database encrypted at rest (SQLCipher, AES-256), email
-addresses stored only as cryptographic hashes, SSH-key and
+addresses stored in the database only as cryptographic hashes (unsalted MD5,
+so pseudonymous rather than anonymous), SSH-key and
 2FA-protected access, 30-day log retention, self-service deletion via
 `/data delete-user` and `/data delete-server`, ISO 27001-certified data center.
 

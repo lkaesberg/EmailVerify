@@ -36,7 +36,18 @@ weniger als 20 Personen mit der Datenverarbeitung beschäftigt sind).
 - **E-Mail-Adresse** (eingegeben vom Nutzer): an die eingegebene Adresse wird
   ein Bestätigungscode gesendet. Die Adresse wird **nicht im Klartext**
   gespeichert, sondern als kryptografischer Hash (MD5 vom lowercased Wert),
-  ausschließlich um Doppelverifizierungen pro Server zu verhindern.
+  ausschließlich um Doppelverifizierungen pro Server zu verhindern. Der Hash
+  ist nicht gesalzen: Wer ihn kennt, kann ihn mit einer bekannten oder
+  erratenen Adresse abgleichen. Er ist daher ein pseudonymisiertes, kein
+  anonymes Datum.
+- **Verifizierungs-Log (optional):** Hat ein Server-Administrator mit
+  `/settings log-channel` einen Log-Kanal festgelegt, postet der Bot nach jeder
+  Verifizierung die Discord-Nutzer-ID und die E-Mail-Adresse **im Klartext** in
+  diesen Kanal des Servers, bei manuellen Verifizierungen zusätzlich die
+  Discord-Nutzer-ID des Administrators. Diese Nachrichten speichert Discord; sie
+  sind für alle sichtbar, die den Kanal lesen dürfen, Administratoren können sie
+  mit `/export logs` als CSV exportieren, und sie werden nicht durch
+  `/data delete-user` gelöscht, sondern vom Server-Betreiber verwaltet.
 - **Server-ID** (Discord Guild-ID), in der die Verifizierung erfolgt.
 - **Zeitpunkt** und Erfolg der Verifizierung in den Server-Statistiken
   (aggregiert, nicht nutzerbezogen).
@@ -220,7 +231,8 @@ der Aufsichtsbehörde Ihres Wohnsitzlandes. Eine Übersicht finden Sie unter
 Die Übertragung der Verifizierungs-E-Mails erfolgt verschlüsselt (TLS/STARTTLS).
 E-Mail-Adressen werden in der Bot-Datenbank ausschließlich als kryptografischer
 Hash gespeichert; Klartext-Adressen werden außer für den unmittelbaren
-Mail-Versand nicht verarbeitet. Die Bot-Datenbank selbst wird verschlüsselt
+Mail-Versand und, falls ein Server-Administrator ihn eingerichtet hat, für den
+Verifizierungs-Log (Abschnitt 2.1) nicht verarbeitet. Die Bot-Datenbank selbst wird verschlüsselt
 gespeichert (SQLCipher, AES-256).
 
 ## 10. Änderungen dieser Datenschutzerklärung
@@ -245,8 +257,17 @@ their own members, WKSolutions acts as a processor on their behalf; a
 
 **Data processed:** Discord user ID, server ID, hashed (MD5 of lowercase) email
 address, aggregate per-server statistics, server configuration set by admins.
-Plain-text email addresses are used only to send the verification message; they
-are not retained. The bot database is encrypted at rest (SQLCipher, AES-256).
+Plain-text email addresses are used to send the verification message and are not
+kept in the bot's database. The hash is unsalted, so it can be matched against a
+known or guessed address: it is pseudonymous, not anonymous, data. The bot
+database is encrypted at rest (SQLCipher, AES-256).
+
+- **Verification log (optional):** if a server admin sets a log channel
+  (`/settings log-channel`), the bot posts each verified member's Discord user ID
+  and email address **in plain text** to that channel (for manual verifications
+  also the admin's ID). Discord stores these messages, everyone who can read the
+  channel sees them, admins can export them with `/export logs`, and they are
+  managed by the server operator, not deleted by `/data delete-user`.
 
 - **Setup reminders:** when the bot is added, we store the Discord ID of the person
   who added it (when Discord provides it), to send up to two reminder DMs if setup
