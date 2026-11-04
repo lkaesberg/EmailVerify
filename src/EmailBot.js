@@ -35,7 +35,7 @@ const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/re
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
-const { isValidEmailAddress } = require('./utils/emailFormat');
+const { isValidEmailAddress, maskEmailAddress } = require('./utils/emailFormat');
 const { startSetupNudges } = require('./utils/setupNudges');
 const voting = require('./utils/voting');
 const OperatorWebhook = require('./utils/OperatorWebhook');
@@ -1539,7 +1539,7 @@ bot.on('interactionCreate', async interaction => {
                         const logChannel = userGuild.channels.cache.get(serverSettings.logChannel)
                             || await userGuild.channels.fetch(serverSettings.logChannel).catch(() => null)
                         if (logChannel) {
-                            logChannel.send(`✅ <@${interaction.user.id}> → \`${pending.logEmail}\`${rolesText}`).catch(() => {})
+                            logChannel.send(`✅ <@${interaction.user.id}> → \`${maskEmailAddress(pending.logEmail)}\`${rolesText}`).catch(() => {})
                         }
                     }
                 } catch {}
