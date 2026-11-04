@@ -104,7 +104,7 @@ Paid plans send through Zoho ZeptoMail (EU-hosted, transactional-only), which cl
 ## Security and data handling
 
 <ul class="ev-checks">
-<li><strong>Addresses are stored as hashes, not in plain text.</strong> The bot's database holds no readable list of your employees' email addresses, though a hash can still be matched against an address someone already knows or guesses. With a log channel set, each verification is posted there with the address, so keep that channel to admins.</li>
+<li><strong>Addresses are stored as hashes, not in plain text.</strong> The bot's database holds no readable list of your employees' email addresses, though a hash can still be matched against an address someone already knows or guesses. With a log channel set, each verification is posted there with a shortened address (the first letters and the domain), so keep that channel to admins.</li>
 <li><strong>No OAuth scope on your identity provider.</strong> The bot never touches your Entra ID or Google Workspace tenant, so there is nothing to review or approve there.</li>
 <li><strong>Blacklist for throwaway domains</strong> — <code>/blacklist add *@tempmail.*</code> and similar, if you also allow a public domain.</li>
 <li><strong>AGPL-3.0 source</strong>, so your security team can read it, and a <a href="https://github.com/lkaesberg/EmailVerify#-self-hosting">Docker image</a> if policy says it has to run on your own infrastructure.</li>

@@ -26,4 +26,18 @@ function isValidEmailAddress(email) {
     return typeof email === 'string' && email.length <= MAX_EMAIL_LENGTH && EMAIL_FORMAT.test(email)
 }
 
-module.exports = { isValidEmailAddress, MAX_EMAIL_LENGTH }
+/**
+ * The address as the log channel shows it: the first letters of the mailbox and the
+ * full domain (s1•••@uni.edu). Enough to tell entries apart and to see which domain
+ * rule matched, without keeping the address itself in Discord, where /data
+ * delete-user cannot reach it.
+ */
+function maskEmailAddress(email) {
+    const at = email.lastIndexOf('@')
+    if (at < 0) return '•••'
+    const local = Array.from(email.slice(0, at))
+    const shown = local.length >= 6 ? 2 : local.length >= 3 ? 1 : 0
+    return `${local.slice(0, shown).join('')}•••${email.slice(at)}`
+}
+
+module.exports = { isValidEmailAddress, maskEmailAddress, MAX_EMAIL_LENGTH }

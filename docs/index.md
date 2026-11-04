@@ -9,7 +9,7 @@ faq:
   - q: Can I restrict my Discord server to university students?
     a: Yes. Add @*.edu as an allowed domain to accept any US university address, or add a specific domain such as @students.uni-example.de. You can also map different domains to different roles, so staff and students get separate roles automatically.
   - q: Does the bot store email addresses?
-    a: Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the verification code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with the address, as your own audit trail.
+    a: Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the verification code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu), as your own audit trail.
   - q: Can I self-host EmailVerify?
     a: Yes. The source is on GitHub under AGPL-3.0 and there is a prebuilt Docker image. You supply your own SMTP credentials and the quota system does not apply.
 ---
@@ -290,7 +290,7 @@ This is a single-developer project that has been running on personal infrastruct
     Yes. Add `@*.edu` to accept any US university address, or a specific domain like `@students.uni-example.de`. You can map several domains to several roles, so staff and students end up separated automatically. See the [university guide](use-cases/university.md).
 
 ??? question "Does the bot store email addresses?"
-    Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with the address, as your own audit trail.
+    Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu), as your own audit trail.
 
 ??? question "Can I self-host it?"
     Yes, it's AGPL-3.0 with a prebuilt Docker image. Bring your own SMTP credentials and the quota system doesn't apply. Instructions are in the [repository README](https://github.com/lkaesberg/EmailVerify#-self-hosting).

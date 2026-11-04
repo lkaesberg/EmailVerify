@@ -81,7 +81,7 @@ Best for: large communities, university servers with seasonal verification spike
 Everything in Standard, plus the CSV features:
 
 - :material-file-upload: **Upload allowlists.** `/emaillist upload` accepts a CSV of specific addresses. Only those exact addresses can verify, regardless of domain. Useful for invite-only events, paid courses, alumni groups.
-- :material-file-download: **Export verification logs.** `/export logs` writes every verification (with timestamp, user ID, email, role tags) to CSV. Useful for compliance, audit trails, or just keeping records.
+- :material-file-download: **Export verification logs.** `/export logs` writes every verification (with timestamp, user ID, shortened email, role tags) to CSV. Useful for compliance, audit trails, or just keeping records.
 - :material-api: **Allowed-email API.** Sync the allowlist straight from your own systems — a student information system, an HR export, a nightly cron job — instead of re-uploading a CSV by hand. Run `/api token generate` for an access token, then add, remove or clear addresses over HTTPS. See the [API guide](api.md).
 
 Best for: closed groups where the membership list is known up front, organisations with audit obligations.
@@ -227,7 +227,7 @@ If you're in the 5% and the bot has been useful, picking up a subscription helps
     If you reliably send more than the credit cost per month would imply, Standard is cheaper. If your volume is bursty or seasonal, the credit-funded mode lets you only pay for what you actually use.
 
 ??? question "Are emails stored anywhere?"
-    Not in plain text in the bot's database. The bot stores email addresses as MD5 base64 hashes of the lowercased address — same scheme for verified users and for the allowedEmails list — and uses the address itself only to send the verification code. A hash can still be matched against an address someone already knows or guesses. If you set a log channel, each verification is posted there with the address. Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).
+    Not in plain text in the bot's database. The bot stores email addresses as MD5 base64 hashes of the lowercased address — same scheme for verified users and for the allowedEmails list — and uses the address itself only to send the verification code. A hash can still be matched against an address someone already knows or guesses. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu). Discord may keep its own logs of bot interactions; that's outside the bot's control. Your full data flow is in the [privacy policy](legal/datenschutz.md).
 
 ??? question "Can I self-host with monetization disabled?"
     Yes. The source is on [GitHub](https://github.com/lkaesberg/EmailVerify) under AGPL-3.0. Set `monetization.enabled` to `false` in `config/config.json`, supply your own SMTP credentials, and run it. Self-hosters bypass the quota system entirely.
