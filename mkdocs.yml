@@ -158,10 +158,10 @@ nav:
       - Contributors: 'contributing.md'
   - Legal:
       - Legal: 'legal/index.md'
-      - Impressum: 'legal/impressum.md'
-      - Datenschutz: 'legal/datenschutz.md'
-      - AGB: 'legal/agb.md'
-      - Widerruf: 'legal/widerruf.md'
+      - Imprint (Impressum): 'legal/impressum.md'
+      - Privacy (Datenschutz): 'legal/datenschutz.md'
+      - AGB (German terms of sale): 'legal/agb.md'
+      - Cancellation (Widerruf): 'legal/widerruf.md'
       - Terms: 'legal/terms.md'
       - AV-Vertrag (DPA): 'legal/avv.md'
   - Buy Me a Coffee❤️: https://buymeacoffee.com/sral12486

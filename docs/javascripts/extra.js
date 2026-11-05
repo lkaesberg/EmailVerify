@@ -187,7 +187,10 @@
    * pre-selected. English, like the rest of the site. */
   var CONSENT_TEXT = {
     title: 'Help us improve EmailVerify',
-    body: 'With your consent we measure which pages and links lead people to add EmailVerify, using PostHog (EU cloud). No cookies, no profiles, nothing stored on your device for analytics. You can withdraw any time via “Privacy settings” at the bottom of each page.',
+    body: 'With your consent we measure which pages and links lead people to add EmailVerify, using PostHog (EU cloud). You can withdraw any time via “Privacy settings” at the bottom of each page.',
+    // Hidden on phones (extra.css), where the banner must stay small enough
+    // not to cover the page's main button. The withdrawal sentence above stays.
+    more: 'No cookies, no profiles, nothing stored on your device for analytics.',
     policy: 'Privacy policy',
     allow: 'Allow analytics',
     deny: 'Decline'
@@ -210,6 +213,10 @@
     var body = document.createElement('p');
     body.className = 'ev-consent__body';
     body.textContent = CONSENT_TEXT.body + ' ';
+    var more = document.createElement('span');
+    more.className = 'ev-consent__more';
+    more.textContent = CONSENT_TEXT.more + ' ';
+    body.appendChild(more);
     if (analytics.privacy) {
       var policy = document.createElement('a');
       policy.href = analytics.privacy;
@@ -232,8 +239,28 @@
     banner.appendChild(body);
     banner.appendChild(actions);
     document.body.appendChild(banner);
+    reserveConsentSpace(banner);
     return banner;
   }
+
+  /* While the banner is open, pad the page by its height so the end of every
+   * page (and any button there) can still be scrolled clear of it. */
+  function reserveConsentSpace(banner) {
+    var root = document.documentElement;
+    if (banner) {
+      root.style.setProperty('--ev-consent-h', banner.offsetHeight + 'px');
+      root.classList.add('ev-consent-shown');
+    } else {
+      root.style.removeProperty('--ev-consent-h');
+      root.classList.remove('ev-consent-shown');
+    }
+  }
+
+  // A rotated phone or a resized window changes the banner's height.
+  window.addEventListener('resize', function () {
+    var banner = document.getElementById('ev-consent');
+    if (banner) reserveConsentSpace(banner);
+  });
 
   document.addEventListener('click', function (event) {
     var choice = event.target.closest && event.target.closest('[data-ev-consent]');
@@ -242,6 +269,7 @@
       saveConsent(value);
       var banner = document.getElementById('ev-consent');
       if (banner) banner.remove();
+      reserveConsentSpace(null);
       if (value === 'granted') startAnalytics(); else stopAnalytics();
       return;
     }

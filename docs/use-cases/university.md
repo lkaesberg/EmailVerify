@@ -65,7 +65,7 @@ Most institutions issue students and staff addresses on different subdomains. Ma
 /domainrole add domain:@alumni.university.edu   role:@Alumni
 ```
 
-Members receive the domain-specific role **plus** whatever default role you set with `/role add`. No manual role handing-out, and no admin having to judge whether a screenshot of a student card is real.
+Members receive the domain-specific role **plus** whatever default role you set in `/setup` (or with `/role add`). No manual role handing-out, and no admin having to judge whether a screenshot of a student card is real.
 
 ### Make verification mandatory
 

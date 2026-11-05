@@ -3,7 +3,7 @@ title: EmailVerify Bot — Email Verification for Discord
 description: Verify that Discord members really own an email address at a domain you choose (@*.edu, your company domain, or a fixed allowlist) before they get a role. Free for 25 verifications a month, open source, GDPR-friendly.
 faq:
   - q: How does email verification on Discord work?
-    a: The member clicks a button in your server, types their email address into a popup, and receives a 6-digit code. Entering that code back in Discord proves they control the mailbox, and the bot assigns the role you configured. No external account and no OAuth is involved.
+    a: The member clicks a button in your server, types their email address into a popup, and receives a 6-digit code. Entering that code back in Discord proves they control the mailbox, and the bot assigns the role you configured. There is no account to create on another website and no extra login screen.
   - q: Is EmailVerify free?
     a: Yes. Every server gets 25 verification emails per month at no cost, with every configuration feature included. About 95% of servers never exceed that. Busier servers can buy credit packs or a subscription through Discord.
   - q: Can I restrict my Discord server to university students?
@@ -11,7 +11,7 @@ faq:
   - q: Does the bot store email addresses?
     a: Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the verification code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu), as your own audit trail.
   - q: Can I self-host EmailVerify?
-    a: Yes. The source is on GitHub under AGPL-3.0 and there is a prebuilt Docker image. You supply your own SMTP credentials and the quota system does not apply.
+    a: Yes. The source is on GitHub under AGPL-3.0 and there is a prebuilt Docker image. You supply your own mail server login (SMTP) and the monthly limit does not apply.
 ---
 
 <div class="hero-head" markdown>
@@ -27,10 +27,13 @@ A user enters their email, gets a 6-digit code, types it back, and a role is ass
 Built for university servers, employee groups, and any closed community where you want to know who's joining.
 { .hero-lead }
 
+:material-check-circle: **Free for 25 verification emails a month** per server. No sign-up, no payment details.
+{ .ev-hero-free }
+
 <div class="ev-cta" markdown>
 [:fontawesome-brands-discord: Add to your server](https://discord.com/api/oauth2/authorize?client_id=895056197789564969&permissions=268553344&scope=bot%20applications.commands){ .md-button .md-button--primary }
 [Quick start guide →](setup.md){ .md-button }
-[See pricing →](premium.md){ .md-button }
+[Free plan & pricing →](premium.md){ .md-button }
 </div>
 
 <!--
@@ -193,7 +196,7 @@ Prefer to read? The [quick start guide](setup.md) covers the same three steps.
 
     ---
 
-    The user enters their address, the bot sends a 6-digit code, the user types it back. No external account, no OAuth, no extra steps.
+    The user enters their address, the bot sends a 6-digit code, the user types it back. No account on another website, no extra login, no extra steps.
 
 - :material-shield-key:{ .lg .middle } __Restrict by domain__
 
@@ -211,19 +214,19 @@ Prefer to read? The [quick start guide](setup.md) covers the same three steps.
 
     ---
 
-    Upload a CSV of specific addresses for invite-only servers. Stored as hashes, not plain text: the bot can count the entries but never list them back.
+    Upload a CSV (spreadsheet) file of specific addresses for invite-only servers. Stored as hashes (a scrambled code instead of the address itself): the bot can count the entries but never list them back.
 
-- :material-bell-ring:{ .lg .middle } __Quota reminders__
+- :material-bell-ring:{ .lg .middle } __Monthly limit reminders__
 
     ---
 
-    Like a phone plan: warnings at 80%, 95%, and 100% of your monthly send limit — with a run-out forecast and a count of members turned away once it's hit. Sent to whoever you want — owner DM, channel, or specific admin.
+    Like a phone plan: warnings at 80%, 95%, and 100% of the emails your server can send each month — with a run-out forecast and a count of members turned away once it's hit. Sent to whoever you want — owner DM, channel, or specific admin.
 
 - :material-shield-lock:{ .lg .middle } __Privacy-first storage__
 
     ---
 
-    The bot's database keeps email addresses only as hashes, never as plain text; the address itself is only needed to send the code. GDPR-compliant.
+    The bot's database keeps email addresses only as hashes (a scrambled code), never as plain text; the address itself is only needed to send the code. GDPR-compliant.
 
 </div>
 
@@ -234,18 +237,18 @@ Prefer to read? The [quick start guide](setup.md) covers the same three steps.
 <div class="ev-steps" markdown>
 
 <div class="ev-step" markdown>
-**Invite the bot and run `/setup`.**
+**Add the bot to your server.**
+Click **Add to your server**, pick your server in Discord, and confirm.
+</div>
+
+<div class="ev-step" markdown>
+**Run `/setup`.**
 A short wizard creates the verified role for you (or uses yours), sets the allowed domains, and posts the verification button in the channel you pick.
 </div>
 
 <div class="ev-step" markdown>
 **Check delivery with `/testmail`.**
-Sends a real verification mail to an address you pick, so you find out about a spam-folder problem before your members do.
-</div>
-
-<div class="ev-step" markdown>
-**Post the button with `/button`.**
-Members click it, verify, and get their role. Nothing else for you to run.
+Sends a real verification mail to an address you pick, so you find out about a spam-folder problem before your members do. Members can now click the button, verify, and get their role.
 </div>
 
 </div>
@@ -268,14 +271,14 @@ If you do hit the limit, you'll get warnings at 80% and 95% before sending pause
 
 ## Built for transparency
 
-This is a single-developer project that has been running on personal infrastructure for the past five years. The source code stays open under AGPL-3.0 — fork it, audit it, self-host it. Premium routes through Zoho ZeptoMail (EU servers, GDPR-friendly) for paying servers; free-tier mail keeps using the operator's own SMTP.
+This is a single-developer project that has been running on personal infrastructure for the past five years. The source code stays open under AGPL-3.0 — fork it, audit it, self-host it. Paying servers' emails go out through Zoho ZeptoMail, a paid email delivery service with servers in the EU (GDPR-friendly); free-tier emails go out through the operator's own mail server.
 
 <div class="grid" markdown>
 
 - [:material-source-branch: GitHub repository](https://github.com/lkaesberg/EmailVerify)
-- [:material-shield-check-outline: Privacy policy](legal/datenschutz.md)
-- [:material-file-document-outline: Terms](legal/terms.md)
-- [:material-information-outline: Impressum](legal/impressum.md)
+- [:material-shield-check-outline: Privacy policy](legal/datenschutz.md#privacy-policy-english-summary)
+- [:material-file-document-outline: Terms](legal/terms.md#english)
+- [:material-information-outline: Imprint](legal/impressum.md#imprint-english)
 
 </div>
 
@@ -284,7 +287,7 @@ This is a single-developer project that has been running on personal infrastruct
 ## Common questions
 
 ??? question "How does email verification on Discord actually work?"
-    The member clicks a button in your server and types their email address into a popup. The bot sends a 6-digit code to that address; entering the code back in Discord proves they control the mailbox, and the configured role is assigned. There is no external account to create and no OAuth consent screen.
+    The member clicks a button in your server and types their email address into a popup. The bot sends a 6-digit code to that address; entering the code back in Discord proves they control the mailbox, and the configured role is assigned. There is no account to create on another website and no extra login screen.
 
 ??? question "Can I restrict my Discord server to university students?"
     Yes. Add `@*.edu` to accept any US university address, or a specific domain like `@students.uni-example.de`. You can map several domains to several roles, so staff and students end up separated automatically. See the [university guide](use-cases/university.md).
@@ -293,10 +296,10 @@ This is a single-developer project that has been running on personal infrastruct
     Not in plain text. The bot's database keeps a hash of each address (MD5 of the lowercased address), which is enough to stop the same address verifying twice; the address itself is only used to send the code. A hash can still be matched against an address someone already knows or guesses, so it counts as personal data, not anonymous data. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu), as your own audit trail.
 
 ??? question "Can I self-host it?"
-    Yes, it's AGPL-3.0 with a prebuilt Docker image. Bring your own SMTP credentials and the quota system doesn't apply. Instructions are in the [repository README](https://github.com/lkaesberg/EmailVerify#-self-hosting).
+    Yes, it's AGPL-3.0 with a prebuilt Docker image. Bring your own mail server login (SMTP) and the monthly limit doesn't apply. Instructions are in the [repository README](https://github.com/lkaesberg/EmailVerify#-self-hosting).
 
 ??? question "What if a member never receives the code?"
-    The "Code Sent" message has a **Resend code** button with a 60-second cooldown. If mail is landing in spam for everyone, run `/testmail` — most of the time it's a filter on the recipient's side, and paid plans route through Zoho ZeptoMail for noticeably better inbox placement.
+    The "Code Sent" message has a **Resend code** button with a 60-second cooldown. If mail is landing in spam for everyone, run `/testmail` — most of the time it's a filter on the recipient's side, and paid plans send through Zoho ZeptoMail, a paid email delivery service that lands in the inbox more often.
 
 ---
 

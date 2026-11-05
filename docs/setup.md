@@ -9,11 +9,11 @@ video_title: EmailVerify — Email Verification for Discord Servers (Setup in 60
 video_date: "2026-08-27T12:00:00+02:00"
 faq:
   - q: How long does it take to set up email verification on Discord?
-    a: About three minutes. Invite the bot, run the /setup wizard to choose a role and the allowed email domains, then run /button to post the verification message. The wizard handles all three steps in sequence.
+    a: About three minutes. Invite the bot, then run the /setup wizard; it asks for a role and the allowed email domains and posts the verification button for you. Finish with /testmail to check the email arrives.
   - q: Why do members get "Can't find roles. Please contact the admin!"?
     a: The EmailVerify role sits below the verified role in your server's role list, so Discord will not let it assign that role. Drag the EmailVerify role above every role it needs to grant, in Server Settings then Roles.
   - q: Verification emails are going to spam. What can I do?
-    a: Run /testmail with your own address to see where it lands. Free-tier mail goes through the operator's own SMTP server; Standard and Pro subscriptions route through Zoho ZeptoMail, a transactional-only provider with markedly better inbox placement, which resolves most filtering problems at universities.
+    a: Run /testmail with your own address to see where it lands. Free-tier mail goes through the operator's own mail server; Standard and Pro subscriptions send through Zoho ZeptoMail, a paid email delivery service that lands in the inbox more often, which resolves most filtering problems at universities.
 ---
 
 # Quick start
@@ -69,14 +69,14 @@ That's the whole setup. Members now click the button, enter their address, recei
 
 ## Prefer to configure it manually?
 
-`/setup` is a shortcut for these commands, which you can also run individually:
+Start with `/setup` unless you have a reason not to. It is a shortcut for these commands, which you can also run one by one instead:
 
 | Step | Command | Notes |
 |---|---|---|
 | Default role | `/role add @Verified` | Given to everyone who verifies, whatever their domain. |
 | Allowed domains | `/domain add @university.edu` | Use `@*.edu` for every `.edu` address. Omit entirely to accept any valid email. |
-| Verification button | `/button #verification "Click to verify"` | Posts the embed members interact with. |
-| Test delivery | `/testmail you@example.com` | Confirms SMTP works and shows spam placement. |
+| Verification button | `/button #verification "Click to verify"` | Posts the message with the button members click. |
+| Test delivery | `/testmail you@example.com` | Confirms the email is sent and shows whether it lands in spam. |
 | Check config | `/status` | Lists your settings and flags problems it can detect. |
 
 [Full command reference →](commands.md){ .md-button }
@@ -152,7 +152,7 @@ Wildcards work on both sides of the `@`, so `*spam*` blocks any address containi
     The last three are optional: without them the bot still verifies members, but those specific features degrade.
 
 ??? question "Nobody is receiving the verification emails"
-    Run `/testmail` with an address you control. If that arrives but members' don't, the recipients' mail provider is filtering — universities in particular run aggressive filters. Paid plans route through Zoho ZeptoMail (EU, transactional-only) which has substantially better inbox placement than shared SMTP.
+    Run `/testmail` with an address you control. If that arrives but members' don't, the recipients' mail provider is filtering — universities in particular run aggressive filters. Paid plans send through Zoho ZeptoMail (a paid email delivery service in the EU), which lands in the inbox more often than a shared mail server.
 
 ??? question "The member says the code doesn't work"
     Codes are valid for 15 minutes and allow 5 attempts. The "Code Sent" message carries a **Resend code** button with a 60-second cooldown. After 5 failed attempts they need a fresh code.
@@ -161,7 +161,7 @@ Wildcards work on both sides of the `@`, so `*spam*` blocks any address containi
     The free tier is 25 verification emails per server per month, resetting on the 1st. You'll have been warned at 80% and 95%. [Credit packs or a subscription](premium.md) lift the cap; credits never expire.
 
 ??? question "I want to run it on my own infrastructure"
-    It's AGPL-3.0 with a published Docker image. Point it at your own SMTP server and the quota system doesn't apply to you at all. See the [self-hosting section of the README](https://github.com/lkaesberg/EmailVerify#-self-hosting).
+    It's AGPL-3.0 with a published Docker image. Point it at your own mail server (SMTP) and the monthly limit doesn't apply to you at all. See the [self-hosting section of the README](https://github.com/lkaesberg/EmailVerify#-self-hosting).
 
 ---
 
