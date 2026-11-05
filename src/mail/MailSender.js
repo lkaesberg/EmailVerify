@@ -42,7 +42,7 @@ module.exports = class MailSender {
     /**
      * @param {Object} serverStatsAPI
      * @param {{codeTtlMs?: number}} [options] - codeTtlMs: how long a code stays valid,
-     *   shown in the styled email; the line is left out when not given.
+     *   shown in the email; the line is left out when not given.
      */
     constructor(serverStatsAPI, { codeTtlMs } = {}) {
         this.serverStatsAPI = serverStatsAPI
@@ -95,20 +95,20 @@ module.exports = class MailSender {
      * @param {boolean} emailNotify
      * @param {Function} callback - Called with accepted email on success
      * @param {string} [premiumSource='free'] - 'subscription' | 'credits' | 'credits-zepto' | 'free' | 'vote' | 'disabled'
-     * @param {string} [emailStyle='styled'] - 'styled' | 'plain'
+     * @param {string} [emailStyle='plain'] - 'plain' | 'styled'
      * @param {import('discord.js').Guild} [guild=null] - resolved guild; required for the DM
      *   verification flow where interaction.guild / interaction.guildId are null.
      * @param {Object} [preloadedSettings=null] - already-loaded ServerSettings; when the
      *   caller just read them, passing them here skips a redundant DB read.
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'styled', guild = null, preloadedSettings = null) {
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null) {
         // Prefer the explicit guild: in the DM flow interaction.guild/guildId are null.
         const ctxGuild = guild || interaction.guild || null
         const serverId = ctxGuild?.id || interaction.guildId
 
         const proceed = async (serverSettings) => {
             const language = serverSettings.language || defaultLanguage
-            const plainText = getLocale(language, "emailText", name, code)
+            const plainText = this.#buildPlainTextEmail(language, name, code)
             // The code goes in the subject so mail clients can detect it: Gmail offers
             // "Copy code", iOS/macOS Mail offers it in AutoFill, and it shows in
             // notification previews. A distinct subject per code also stops Gmail from
@@ -305,7 +305,7 @@ module.exports = class MailSender {
             from: this.fromAddress,
             to: toEmail,
             subject: getLocale(lang, 'emailSubject', code),
-            text: getLocale(lang, 'emailText', guildName, code),
+            text: this.#buildPlainTextEmail(lang, guildName, code),
             html,
             headers: {
                 'X-Mailer': 'EmailVerify',
@@ -494,18 +494,35 @@ module.exports = class MailSender {
             .replace(/'/g, '&#39;')
     }
 
+    /**
+     * The plain-text email: the whole message for the default plain style, and the
+     * text part of the styled one. Same lines as the HTML email, in the same order:
+     * the code comes first, so the inbox preview and a quick glance show it, then how
+     * long it lasts, then who sent it and for which server. No links or images.
+     */
+    #buildPlainTextEmail(language, serverName, code) {
+        const blocks = [
+            getLocale(language, 'emailCodeIntro'),
+            code,
+            this.codeTtlMinutes ? getLocale(language, 'emailExpiry', String(this.codeTtlMinutes)) : null,
+            `${getLocale(language, 'emailServerIntro')}\n${serverName || ''}`,
+            `${getLocale(language, 'emailIgnoreNote')} ${getLocale(language, 'emailNoReply')}`
+        ]
+        return blocks.filter(Boolean).join('\n\n')
+    }
+
     #buildLocalizedHtmlEmail(language, serverName, code) {
         const safeServerName = this.#escapeHtml(serverName || '')
         const safeCode = this.#escapeHtml(code || '')
 
         const title = this.#escapeHtml(getLocale(language, 'emailHtmlTitle'))
-        const serverIntro = this.#escapeHtml(getLocale(language, 'emailHtmlServerIntro'))
-        const codeIntro = this.#escapeHtml(getLocale(language, 'emailHtmlCodeIntro'))
-        const ignoreNote = this.#escapeHtml(getLocale(language, 'emailHtmlIgnoreNote'))
-        const noReply = this.#escapeHtml(getLocale(language, 'emailHtmlNoReply'))
+        const serverIntro = this.#escapeHtml(getLocale(language, 'emailServerIntro'))
+        const codeIntro = this.#escapeHtml(getLocale(language, 'emailCodeIntro'))
+        const ignoreNote = this.#escapeHtml(getLocale(language, 'emailIgnoreNote'))
+        const noReply = this.#escapeHtml(getLocale(language, 'emailNoReply'))
         const moreInfo = this.#escapeHtml(getLocale(language, 'emailHtmlMoreInfo'))
         const expiry = this.codeTtlMinutes
-            ? this.#escapeHtml(getLocale(language, 'emailHtmlExpiry', String(this.codeTtlMinutes)))
+            ? this.#escapeHtml(getLocale(language, 'emailExpiry', String(this.codeTtlMinutes)))
             : null
         // Hidden preheader: the inbox preview shows the code instead of the heading, and
         // code detectors get the keyword and the number in a single sentence.

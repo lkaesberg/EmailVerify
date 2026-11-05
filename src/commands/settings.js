@@ -79,15 +79,15 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('email-style')
-                .setDescription('Choose how verification emails are rendered (HTML or plain text)')
+                .setDescription('Choose how verification emails are rendered (plain text or HTML)')
                 .addStringOption(option =>
                     option
                         .setName('style')
-                        .setDescription('styled = HTML with a text fallback (default), plain = text only')
+                        .setDescription('plain = text only (default, best delivery), styled = HTML (Outlook may file it as junk)')
                         .setRequired(true)
                         .addChoices(
-                            { name: 'styled', value: 'styled' },
-                            { name: 'plain', value: 'plain' }
+                            { name: 'plain', value: 'plain' },
+                            { name: 'styled', value: 'styled' }
                         )
                 )
         )

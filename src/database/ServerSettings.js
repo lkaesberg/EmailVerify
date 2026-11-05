@@ -43,9 +43,14 @@ class ServerSettings {
         this.emailStyle = null
     }
 
-    /** The style verification emails are sent in: the admin's pick, else styled. */
+    /**
+     * The style verification emails are sent in: the admin's pick, else plain. Plain is
+     * the default again since 2026-11: after HTML became the default on 2026-10-17,
+     * members on Microsoft 365 / Outlook mail completed far less often (the email went
+     * to junk), while Google-hosted recipients didn't change.
+     */
     get effectiveEmailStyle() {
-        return this.emailStyle === 'plain' ? 'plain' : 'styled'
+        return this.emailStyle === 'styled' ? 'styled' : 'plain'
     }
 
     get status() {
