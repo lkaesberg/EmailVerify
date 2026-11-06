@@ -9,7 +9,7 @@ faq:
   - q: Does this work for universities outside the United States that do not use .edu?
     a: Yes. Any domain works, including multi-level ones such as @uni-goettingen.de or @student.tudelft.nl, and wildcards let you cover every subdomain of an institution at once.
   - q: Is storing student email addresses in a Discord bot GDPR-compliant?
-    a: EmailVerify's database keeps addresses only as hashes (MD5 of the lowercased address), never in plain text; the address itself is only used to send the verification code. A hash can still be matched against an address someone already knows or guesses, such as a student number at your domain. If you set a log channel, each verification is posted there with a shortened address (the first letters and the domain, like s1•••@uni.edu). Members can delete their own record with /data delete-user and admins can wipe an entire server with /data delete-server.
+    a: EmailVerify's database keeps addresses only as hashes (MD5 of the lowercased address), never in plain text; the address itself is only used to send the verification code. A hash can still be matched against an address someone already knows or guesses, such as a student number at your domain. If you set a log channel, each verification is posted there with the address. Members can delete their own record with /data delete-user and admins can wipe an entire server with /data delete-server.
 ---
 
 # Discord verification for universities and schools
@@ -112,7 +112,7 @@ If your IT department will do it, asking them to allowlist the sending domain is
 Student email addresses are personal data, and a Discord bot holding a plaintext list of them is a genuine liability for whoever set it up.
 
 <ul class="ev-checks">
-<li><strong>Addresses are stored as hashes, never in plain text.</strong> The address itself is only used to send the code. A hash can still be matched against an address someone already knows or guesses, such as a student number at your domain. With a log channel set, each verification is posted there with a shortened address (the first letters and the domain), so keep that channel to admins.</li>
+<li><strong>Addresses are stored as hashes, never in plain text.</strong> The address itself is only used to send the code. A hash can still be matched against an address someone already knows or guesses, such as a student number at your domain. With a log channel set, each verification is posted there with the address, so keep that channel to admins.</li>
 <li><strong>Members can erase themselves</strong> with <code>/data delete-user</code>, which also removes their verified status.</li>
 <li><strong>Admins can wipe the server's whole record</strong> with <code>/data delete-server</code>.</li>
 <li><strong>Mail for paying servers stays in the EU</strong> (Zoho ZeptoMail, EU data residency).</li>

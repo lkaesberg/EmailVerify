@@ -15,7 +15,6 @@ const md5hash = require("../crypto/Crypto");
 const EmailUser = require("../database/EmailUser");
 const ErrorNotifier = require("../utils/ErrorNotifier");
 const { resolveVerificationRoles, unverifyPreviousHolder } = require("../utils/resolveVerificationRoles");
-const { maskEmailAddress } = require("../utils/emailFormat");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -95,7 +94,7 @@ module.exports = {
                     const logChannel = interaction.guild.channels.cache.get(serverSettings.logChannel);
                     if (logChannel) {
                         logChannel.send(
-                            `🔧 <@${targetUser.id}> → \`${maskEmailAddress(email)}\` (by <@${interaction.user.id}>)`
+                            `🔧 <@${targetUser.id}> → \`${email}\` (by <@${interaction.user.id}>)`
                         ).catch(() => {});
                     }
                 }
