@@ -227,7 +227,11 @@ async function showEmailModal(interaction, guildId, guild = null) {
             // Domain already has @, so just remove it for placeholder
             placeholder += firstDomain.replace('@', '')
         }
-        
+        // Discord rejects placeholders over 100 characters and text displays over 4000;
+        // domains and the verify message are admin input of any length.
+        placeholder = placeholder.slice(0, 100)
+        headerText = headerText.slice(0, 4000)
+
         const emailInput = new TextInputBuilder()
             .setCustomId('emailInput')
             .setStyle(TextInputStyle.Short)

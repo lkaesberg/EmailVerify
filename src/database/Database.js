@@ -391,7 +391,11 @@ class Database {
         const serverSettings = new ServerSettings()
         await this.db.get("SELECT * FROM guilds WHERE guildid = ?", [guildID], async (err, result) => {
                 if (err) {
-                    throw err;
+                    // Throwing here is an unhandled rejection, which exits the whole shard on
+                    // Node 26. Calling back with defaults could overwrite the real row, so log
+                    // and leave this one interaction unanswered instead.
+                    console.error('Error reading server settings:', err)
+                    return
                 }
                 if (result !== undefined) {
                     serverSettings.channelID = result.channelid
@@ -471,7 +475,16 @@ class Database {
                         serverSettings.defaultRoles = [serverSettings.verifiedRoleName]
                     }
                 }
-                callback(serverSettings)
+                // Callers pass async callbacks that nobody awaits (db.get does not return a
+                // promise), so an error inside one would be an unhandled rejection and exit
+                // the shard with every guild on it. Catch it here for all callers.
+                try {
+                    Promise.resolve(callback(serverSettings)).catch((callbackErr) => {
+                        console.error('Error in server settings callback:', callbackErr)
+                    })
+                } catch (callbackErr) {
+                    console.error('Error in server settings callback:', callbackErr)
+                }
             }
         )
     }
