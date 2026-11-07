@@ -93,9 +93,10 @@ module.exports = {
                 if (serverSettings.logChannel !== "") {
                     const logChannel = interaction.guild.channels.cache.get(serverSettings.logChannel);
                     if (logChannel) {
-                        logChannel.send(
-                            `🔧 <@${targetUser.id}> → \`${email}\` (by <@${interaction.user.id}>)`
-                        ).catch(() => {});
+                        logChannel.send({
+                            content: `🔧 <@${targetUser.id}> → \`${email}\` (by <@${interaction.user.id}>)`,
+                            allowedMentions: { users: [targetUser.id, interaction.user.id] }
+                        }).catch(() => {});
                     }
                 }
             } catch {}

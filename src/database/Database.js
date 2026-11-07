@@ -368,6 +368,10 @@ class Database {
         this.db.run("DELETE FROM votes WHERE guildID = ?;", [guildID])
         this.db.run("DELETE FROM vote_targets WHERE guildID = ?;", [guildID])
         this.db.run("DELETE FROM guild_onboarding WHERE guildID = ?;", [guildID])
+        // The API token and pending codes are server data too: a token that survived
+        // here would control the allowlist again once the bot is re-added.
+        this.db.run("DELETE FROM guild_api_tokens WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM pending_verifications WHERE guildID = ?;", [guildID])
     }
 
     /** Whether the guild has saved settings at all (a fresh join has none). */
