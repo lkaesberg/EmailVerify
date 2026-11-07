@@ -1539,7 +1539,12 @@ bot.on('interactionCreate', async interaction => {
                         const logChannel = userGuild.channels.cache.get(serverSettings.logChannel)
                             || await userGuild.channels.fetch(serverSettings.logChannel).catch(() => null)
                         if (logChannel) {
-                            logChannel.send(`✅ <@${interaction.user.id}> → \`${pending.logEmail}\`${rolesText}`).catch(() => {})
+                            // The address is member input and may contain a backtick that ends
+                            // the code span, so only the member's own mention may ping.
+                            logChannel.send({
+                                content: `✅ <@${interaction.user.id}> → \`${pending.logEmail}\`${rolesText}`,
+                                allowedMentions: { users: [interaction.user.id] }
+                            }).catch(() => {})
                         }
                     }
                 } catch {}
@@ -1578,6 +1583,12 @@ bot.on('interactionCreate', async interaction => {
         // unreachable — it exists so a future context change degrades to empty
         // suggestions instead of an exception per keystroke.
         if (!interaction.guildId) return interaction.respond([]).catch(() => {});
+        // Same rule as command execution below: suggestions for admin-only commands
+        // (the blacklist, domains) must not reach members who cannot run them.
+        const openToMembers = ["data", "verify", "premium", "vote"].includes(interaction.commandName)
+        if (!openToMembers && !interaction.memberPermissions?.has(PermissionsBitField.Flags.Administrator)) {
+            return interaction.respond([]).catch(() => {});
+        }
 
         try {
             await command.autocomplete(interaction);

@@ -275,11 +275,16 @@ function parseLogMessage(content) {
 }
 
 /**
- * Escape a field for CSV (handle commas, quotes, newlines)
+ * Escape a field for CSV (handle commas, quotes, newlines, formulas)
  */
 function escapeCsvField(field) {
     if (!field) return '';
-    const str = String(field);
+    let str = String(field);
+    // Spreadsheets evaluate a cell that starts with = + - @ (or tab/CR) as a formula.
+    // Role names and member-typed addresses reach these cells unchanged.
+    if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+    }
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
     }
