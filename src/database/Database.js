@@ -355,6 +355,24 @@ class Database {
         runNext(0)
     }
 
+    /**
+     * Every guild in which this user holds a verification row.
+     * @param {string} userID
+     * @returns {Promise<string[]>}
+     */
+    getUserGuildIDs(userID) {
+        return new Promise((resolve) => {
+            this.db.all("SELECT DISTINCT guildID FROM userEmails WHERE userID = ?", [userID], (err, rows) => {
+                if (err) {
+                    console.error('Error reading user guilds:', err)
+                    resolve([])
+                    return
+                }
+                resolve((rows || []).map(row => row.guildID))
+            })
+        })
+    }
+
     deleteUserData(userID) {
         this.db.run("DELETE FROM userEmails WHERE userID = ?;", [userID])
         this.db.run("DELETE FROM vote_targets WHERE userID = ?;", [userID])

@@ -10,6 +10,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags, PermissionsBitField } = require('discord.js');
 const database = require("../database/Database.js");
+const { removeVerifiedStatus, removeVerifiedStatusEverywhere } = require("../utils/removeVerifiedStatus");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,49 +48,28 @@ module.exports = {
             
             if (confirm !== 'delete') {
                 await interaction.reply({
-                    content: "❌ **Confirmation failed.**\n\nTo delete your data, type `delete` in the confirm field.\n\n⚠️ This will:\n• Remove your verified status on this server\n• Delete your stored email hash\n• Require you to verify again",
+                    content: "❌ **Confirmation failed.**\n\nTo delete your data, type `delete` in the confirm field.\n\n⚠️ This will:\n• Remove your verified status on every server where you verified\n• Delete your stored email hash\n• Require you to verify again",
                     flags: MessageFlags.Ephemeral
                 });
                 return;
             }
 
-            database.deleteUserData(interaction.user.id);
-            
-            await database.getServerSettings(interaction.guildId, async serverSettings => {
-                const roleUnverified = interaction.guild.roles.cache.find(role => role.id === serverSettings.unverifiedRoleName);
-                const member = interaction.guild.members.cache.get(interaction.user.id);
-                
-                if (member !== undefined) {
-                    // Remove all default roles
-                    const defaultRoles = serverSettings.defaultRoles || [];
-                    for (const roleId of defaultRoles) {
-                        const role = interaction.guild.roles.cache.get(roleId);
-                        if (role) {
-                            await member.roles.remove(role).catch(() => {});
-                        }
-                    }
-                    
-                    // Remove all domain-specific roles (we don't know which domain the user verified with)
-                    const domainRoles = serverSettings.domainRoles || {};
-                    for (const pattern of Object.keys(domainRoles)) {
-                        for (const roleId of domainRoles[pattern]) {
-                            const role = interaction.guild.roles.cache.get(roleId);
-                            if (role) {
-                                await member.roles.remove(role).catch(() => {});
-                            }
-                        }
-                    }
-                    
-                    // Re-add unverified role
-                    if (roleUnverified !== undefined) {
-                        await member.roles.add(roleUnverified).catch(() => {});
-                    }
-                }
-                
-                await interaction.reply({
-                    content: "✅ **Your data has been deleted.**\n\n• Your verified status has been removed\n• Your stored email hash has been deleted\n• You can verify again at any time with `/verify`",
-                    flags: MessageFlags.Ephemeral
-                });
+            // Role removal can take longer than the 3 seconds Discord allows before a reply.
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+            const userId = interaction.user.id;
+            // The rows go in every server, so the verified roles must go there too: roles
+            // kept without a row let a second account verify with the same mailbox.
+            const guildIds = await database.getUserGuildIDs(userId);
+            database.deleteUserData(userId);
+
+            await removeVerifiedStatus(interaction.guild, userId);
+            const otherGuildIds = guildIds.filter(id => id !== interaction.guildId);
+            removeVerifiedStatusEverywhere(interaction.client, otherGuildIds, userId)
+                .catch(err => console.error('Error removing verified status on other servers:', err));
+
+            await interaction.editReply({
+                content: "✅ **Your data has been deleted.**\n\n• Your verified status has been removed on every server where you verified\n• Your stored email hash has been deleted\n• You can verify again at any time with `/verify`"
             });
             return;
         }

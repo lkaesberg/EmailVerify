@@ -32,6 +32,7 @@ const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
 const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
+const { removeVerifiedStatusOnShard } = require('./utils/removeVerifiedStatus');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
@@ -82,6 +83,8 @@ const bot = new Discord.Client({
 const serverStatsAPI = new ServerStatsAPI(bot, false)
 // expose for shard broadcast usage
 bot.serverStatsAPI = serverStatsAPI
+// /data delete-user strips verification roles on whichever shard holds each guild
+bot.removeVerifiedStatusOnShard = (guildIds, userId) => removeVerifiedStatusOnShard(bot, guildIds, userId)
 
 let emailNotify = true
 
