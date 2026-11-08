@@ -11,6 +11,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
 const { suggestFromList } = require("../utils/autocompleteList");
+const { isAcceptablePattern, MAX_PATTERN_LENGTH, MAX_PATTERN_WILDCARDS } = require("../utils/wildcardMatch");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -84,11 +85,16 @@ module.exports = {
 
             if (subcommand === 'add') {
                 const emailsInput = interaction.options.getString('emails', true);
-                const newEntries = emailsInput.split(",").map(name => name.trim()).filter(name => name.length > 0);
-                
+                const allEntries = emailsInput.split(",").map(name => name.trim()).filter(name => name.length > 0);
+                const newEntries = allEntries.filter(isAcceptablePattern);
+                const skipped = allEntries.length - newEntries.length;
+                const skippedNote = skipped > 0
+                    ? `\n\n⚠️ Skipped ${skipped} ${skipped === 1 ? 'entry' : 'entries'} longer than ${MAX_PATTERN_LENGTH} characters or with more than ${MAX_PATTERN_WILDCARDS} \`*\`.`
+                    : '';
+
                 if (newEntries.length === 0) {
                     await interaction.reply({
-                        content: "❌ **No valid entries provided.**\n\nPlease provide email addresses or patterns to blacklist.",
+                        content: "❌ **No valid entries provided.**\n\nPlease provide email addresses or patterns to blacklist." + skippedNote,
                         flags: MessageFlags.Ephemeral
                     });
                     return;
@@ -96,10 +102,10 @@ module.exports = {
 
                 // Filter out duplicates
                 const addedEntries = newEntries.filter(entry => !serverSettings.blacklist.includes(entry));
-                
+
                 if (addedEntries.length === 0) {
                     await interaction.reply({
-                        content: "⚠️ **All provided entries are already blacklisted.**",
+                        content: "⚠️ **All provided entries are already blacklisted.**" + skippedNote,
                         flags: MessageFlags.Ephemeral
                     });
                     return;
@@ -110,7 +116,7 @@ module.exports = {
 
                 const addedDisplay = addedEntries.map(e => `\`${e.replaceAll("*", "✱")}\``).join(', ');
                 await interaction.reply({
-                    content: `✅ **Added to blacklist:** ${addedDisplay}\n\nEmails matching these patterns will be blocked from verifying.\n\n💡 **Tip:** \`*\` matches any characters (e.g. \`*@tempmail.*\` blocks all tempmail domains)`,
+                    content: `✅ **Added to blacklist:** ${addedDisplay}\n\nEmails matching these patterns will be blocked from verifying.\n\n💡 **Tip:** \`*\` matches any characters (e.g. \`*@tempmail.*\` blocks all tempmail domains)${skippedNote}`,
                     flags: MessageFlags.Ephemeral
                 });
                 return;

@@ -11,6 +11,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageFlags } = require('discord.js');
 const database = require("../database/Database.js");
 const permissions = require("../utils/permissions");
+const { isAcceptablePattern, MAX_PATTERN_LENGTH, MAX_PATTERN_WILDCARDS } = require("../utils/wildcardMatch");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -117,7 +118,15 @@ module.exports = {
                 });
                 return;
             }
-            
+
+            if (!isAcceptablePattern(domain)) {
+                await interaction.reply({
+                    content: `**Invalid domain format!**\n\nDomain can have at most ${MAX_PATTERN_LENGTH} characters and ${MAX_PATTERN_WILDCARDS} \`*\`.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
             if (role.name === "@everyone") {
                 await interaction.reply({
                     content: "**Error:** @everyone cannot be used as a domain role!",
