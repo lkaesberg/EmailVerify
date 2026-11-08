@@ -7,12 +7,14 @@
 // Software Foundation, either version 3 of the License, or (at your option) any
 // later version. See the LICENSE file for details.
 
+const { isAcceptablePattern } = require('./wildcardMatch')
+
 /**
  * Parse a comma-separated domain input string into normalized domain patterns.
  * Accepts entries with or without a leading '@' ("gmail.com" → "@gmail.com"),
- * supports '*' wildcards (e.g. "@*.edu"), and drops anything without a dot or
- * containing a user part. Single source of truth shared by `/domain add` and
- * the `/setup` wizard.
+ * supports '*' wildcards (e.g. "@*.edu"), and drops anything without a dot,
+ * containing a user part, or over the pattern length and wildcard limits.
+ * Single source of truth shared by `/domain add` and the `/setup` wizard.
  *
  * @param {string} input - raw comma-separated user input
  * @returns {string[]} normalized, deduplicated domain patterns (may be empty)
@@ -22,10 +24,10 @@ function parseDomains(input) {
     for (let domain of String(input || '').split(',')) {
         domain = domain.trim()
         if (domain.startsWith('@') && domain.includes('.')) {
-            if (!domains.includes(domain)) domains.push(domain)
+            if (isAcceptablePattern(domain) && !domains.includes(domain)) domains.push(domain)
         } else if (domain.length > 0 && !domain.includes('@') && domain.includes('.')) {
             const formatted = '@' + domain
-            if (!domains.includes(formatted)) domains.push(formatted)
+            if (isAcceptablePattern(formatted) && !domains.includes(formatted)) domains.push(formatted)
         }
     }
     return domains

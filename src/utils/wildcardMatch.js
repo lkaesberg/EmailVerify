@@ -7,63 +7,123 @@
 // Software Foundation, either version 3 of the License, or (at your option) any
 // later version. See the LICENSE file for details.
 
+// Patterns come from guild admins and the strings from members, so matching must
+// not be a backtracking regex: `a*a*a*a*a*a*a*b` compiled to `a.*a.*…b` takes
+// time exponential in the number of wildcards on a 254-character input and
+// blocks the whole shard. globMatch below walks the string once and keeps the
+// set of pattern positions that can still match, so it runs in
+// O(string length × pattern length) whatever the pattern. It matches exactly
+// what the old `.*` regexes matched: every other character is literal, the
+// comparison folds case the way a RegExp with the `i` flag does, and `*` does not
+// cross a line break (as `.` did not).
+
+// An address is at most 254 characters, so a longer pattern is a mistake.
+// Matching stays linear without these limits; they keep stored lists sane.
+const MAX_PATTERN_LENGTH = 254;
+const MAX_PATTERN_WILDCARDS = 10;
+
+const STAR = 0x2a;
+const WILDCARD = -1;
+
 /**
- * Escape a string for use in a regular expression
- * Uses RegExp.escape() if available (Node.js 23+), otherwise provides a polyfill
- * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/escape
- * @param {string} str - The string to escape
- * @returns {string} The escaped string safe for use in RegExp
+ * Whether a pattern may be stored in a blacklist, domain or domain-role list
+ * @param {string} pattern - The pattern with optional * wildcards
+ * @returns {boolean} True if the pattern is within the length and wildcard limits
  */
-function escapeRegExp(str) {
-    if (typeof RegExp.escape === 'function') {
-        return RegExp.escape(str);
+function isAcceptablePattern(pattern) {
+    return typeof pattern === 'string'
+        && pattern.length <= MAX_PATTERN_LENGTH
+        && pattern.split('*').length - 1 <= MAX_PATTERN_WILDCARDS;
+}
+
+/** The line terminators `.` never matched without the `s` flag. */
+function isLineTerminator(code) {
+    return code === 0x0a || code === 0x0d || code === 0x2028 || code === 0x2029;
+}
+
+/** Case folding of a RegExp with the `i` flag and no `u` flag (ECMAScript Canonicalize). */
+function canonicalize(code) {
+    const upper = String.fromCharCode(code).toUpperCase();
+    if (upper.length !== 1) return code;
+    const folded = upper.charCodeAt(0);
+    if (code >= 128 && folded < 128) return code;
+    return folded;
+}
+
+/** Marks every state reachable by letting a wildcard match nothing. */
+function closeOverWildcards(units, states) {
+    for (let j = 0; j < units.length; j++) {
+        if (states[j] && units[j] === WILDCARD) states[j + 1] = 1;
     }
-    // Polyfill: escape all regex special characters
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
- * Convert a wildcard pattern to a RegExp
- * Supports * as a wildcard that matches any characters
+ * Match a string against a wildcard pattern in linear time
+ * @param {string} str - The string to test
  * @param {string} pattern - The pattern with optional * wildcards
- * @param {Object} options - Options for the regex
- * @param {boolean} options.fullMatch - If true, pattern must match entire string (default: false)
+ * @param {Object} options - Options for the match
+ * @param {'contains'|'suffix'|'full'} options.anchor - Match anywhere, at the end, or the whole string (default: contains)
  * @param {boolean} options.caseInsensitive - If true, match is case-insensitive (default: true)
- * @returns {RegExp} The compiled regular expression
+ * @returns {boolean} True if the string matches the pattern
  */
-function wildcardToRegex(pattern, options = {}) {
-    const { fullMatch = false, caseInsensitive = true } = options;
-    
-    // Split by * to get literal parts
-    const parts = pattern.split('*');
-    
-    // Escape each part and join with .* (match any characters)
-    const regexPattern = parts.map(part => escapeRegExp(part)).join('.*');
-    
-    // Build final pattern
-    const finalPattern = fullMatch ? `^${regexPattern}$` : regexPattern;
-    const flags = caseInsensitive ? 'i' : '';
-    
-    return new RegExp(finalPattern, flags);
+function globMatch(str, pattern, options = {}) {
+    const { anchor = 'contains', caseInsensitive = true } = options;
+    const units = [];
+    for (let j = 0; j < pattern.length; j++) {
+        const code = pattern.charCodeAt(j);
+        units.push(code === STAR ? WILDCARD : (caseInsensitive ? canonicalize(code) : code));
+    }
+    const end = units.length;
+    const anchoredStart = anchor === 'full';
+    const anchoredEnd = anchor !== 'contains';
+
+    // live[j] is set when the first j pattern units match a run of str ending here.
+    let live = new Uint8Array(end + 1);
+    let next = new Uint8Array(end + 1);
+    live[0] = 1;
+    closeOverWildcards(units, live);
+    if (!anchoredEnd && live[end]) return true;
+
+    for (let i = 0; i < str.length; i++) {
+        let code = str.charCodeAt(i);
+        if (caseInsensitive) code = canonicalize(code);
+        const lineBreak = isLineTerminator(code);
+        next.fill(0);
+        for (let j = 0; j < end; j++) {
+            if (!live[j]) continue;
+            if (units[j] === WILDCARD) {
+                if (!lineBreak) next[j] = 1;
+            } else if (units[j] === code) {
+                next[j + 1] = 1;
+            }
+        }
+        if (!anchoredStart) next[0] = 1;
+        closeOverWildcards(units, next);
+        if (!anchoredEnd && next[end]) return true;
+        [live, next] = [next, live];
+    }
+    return live[end] === 1;
 }
 
 /**
  * Check if a string matches a wildcard pattern
  * @param {string} str - The string to test
  * @param {string} pattern - The pattern with optional * wildcards
- * @param {Object} options - Options passed to wildcardToRegex
+ * @param {Object} options - Options for the match
+ * @param {boolean} options.fullMatch - If true, pattern must match entire string (default: false)
+ * @param {boolean} options.caseInsensitive - If true, match is case-insensitive (default: true)
  * @returns {boolean} True if the string matches the pattern
  */
 function matchesWildcard(str, pattern, options = {}) {
-    const regex = wildcardToRegex(pattern, options);
-    return regex.test(str);
+    const { fullMatch = false, caseInsensitive = true } = options;
+    return globMatch(str, pattern, { anchor: fullMatch ? 'full' : 'contains', caseInsensitive });
 }
 
 /**
  * Check if a string matches any of the given wildcard patterns
  * @param {string} str - The string to test
  * @param {string[]} patterns - Array of patterns with optional * wildcards
- * @param {Object} options - Options passed to wildcardToRegex
+ * @param {Object} options - Options passed to matchesWildcard
  * @returns {boolean} True if the string matches any pattern
  */
 function matchesAnyWildcard(str, patterns, options = {}) {
@@ -79,14 +139,10 @@ function matchesAnyWildcard(str, patterns, options = {}) {
  */
 function emailMatchesDomains(email, domainPatterns) {
     email = email.toLowerCase();
-    
+
     for (const pattern of domainPatterns) {
-        // Domain patterns should match at the end of the email
-        const regex = wildcardToRegex(pattern, { fullMatch: false, caseInsensitive: true });
-        
-        // Ensure it matches at the end (domain part)
-        const endPattern = new RegExp(regex.source + '$', regex.flags);
-        if (endPattern.test(email)) {
+        // Domain patterns should match at the end of the email (domain part)
+        if (globMatch(email, pattern, { anchor: 'suffix' })) {
             return true;
         }
     }
@@ -102,10 +158,10 @@ function emailMatchesDomains(email, domainPatterns) {
  */
 function emailIsBlacklisted(email, blacklistPatterns) {
     email = email.toLowerCase();
-    
+
     for (const pattern of blacklistPatterns) {
         // Blacklist patterns match anywhere in the email (contains match)
-        if (matchesWildcard(email, pattern, { fullMatch: false, caseInsensitive: true })) {
+        if (globMatch(email, pattern, { anchor: 'contains' })) {
             return true;
         }
     }
@@ -121,24 +177,15 @@ function emailIsBlacklisted(email, blacklistPatterns) {
  */
 function getMatchingDomainPatterns(email, domainPatterns) {
     email = email.toLowerCase();
-    const matches = [];
-    
-    for (const pattern of domainPatterns) {
-        // Domain patterns should match at the end of the email
-        const regex = wildcardToRegex(pattern, { fullMatch: false, caseInsensitive: true });
-        
-        // Ensure it matches at the end (domain part)
-        const endPattern = new RegExp(regex.source + '$', regex.flags);
-        if (endPattern.test(email)) {
-            matches.push(pattern);
-        }
-    }
-    return matches;
+    // Domain patterns should match at the end of the email (domain part)
+    return domainPatterns.filter(pattern => globMatch(email, pattern, { anchor: 'suffix' }));
 }
 
 module.exports = {
-    escapeRegExp,
-    wildcardToRegex,
+    MAX_PATTERN_LENGTH,
+    MAX_PATTERN_WILDCARDS,
+    isAcceptablePattern,
+    globMatch,
     matchesWildcard,
     matchesAnyWildcard,
     emailMatchesDomains,
