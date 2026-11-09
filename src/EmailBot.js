@@ -33,6 +33,7 @@ const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttempts
 const { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder } = require('./utils/resolveVerificationRoles');
 const { removeVerifiedStatusOnShard } = require('./utils/removeVerifiedStatus');
 const ErrorNotifier = require('./utils/ErrorNotifier');
+const { throttledNotify } = require('./utils/notifyThrottle');
 const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
 const onboarding = require('./utils/onboarding');
 const { isValidEmailAddress } = require('./utils/emailFormat');
@@ -52,18 +53,18 @@ const MAX_CODE_ATTEMPTS = 5
 const RESEND_COOLDOWN_MS = 60 * 1000
 
 const EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS = 60 * 60 * 1000
-const emaillistLockedLastNotify = new Map()
+// Throttle shared by every shard and kept across restarts.
+const NOTIFICATION_THROTTLE_STALE_MS = 30 * 24 * 60 * 60 * 1000
 
 function notifyEmaillistLocked(guild, language) {
-    const last = emaillistLockedLastNotify.get(guild.id) || 0
-    if (Date.now() - last < EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS) return
-    emaillistLockedLastNotify.set(guild.id, Date.now())
-    ErrorNotifier.notify({
-        guild,
-        errorTitle: getLocale(language, 'emaillistLockedAdminTitle'),
-        errorMessage: getLocale(language, 'emaillistLockedAdminMessage'),
-        language
-    }).catch(() => {})
+    throttledNotify('emaillist_locked', guild.id, EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS, () =>
+        ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(language, 'emaillistLockedAdminTitle'),
+            errorMessage: getLocale(language, 'emaillistLockedAdminMessage'),
+            language
+        })
+    ).catch(() => {})
 }
 const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
 
@@ -748,13 +749,11 @@ setInterval(() => {
     for (const [key, v] of codePromptMessages) {
         if (!v || v.ts < now - CLEANUP_STALE_MS) codePromptMessages.delete(key)
     }
-    for (const [gid, ts] of emaillistLockedLastNotify) {
-        if (ts < now - EMAILLIST_LOCKED_NOTIFY_INTERVAL_MS) emaillistLockedLastNotify.delete(gid)
-    }
     const isPrimary = !bot.shard || bot.shard.ids.includes(0)
     if (isPrimary) {
         database.sweepExpiredPendingVerifications().catch(() => {})
         database.sweepEmailRateLimits(CLEANUP_STALE_MS).catch(() => {})
+        database.sweepNotificationThrottles(NOTIFICATION_THROTTLE_STALE_MS).catch(() => {})
     }
 }, 30 * 60 * 1000).unref();
 

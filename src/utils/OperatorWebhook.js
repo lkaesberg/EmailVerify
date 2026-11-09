@@ -41,9 +41,10 @@ if (url && typeof url === 'string' && url.trim().length > 0) {
  * @param {string} [opts.description] Embed description / body text.
  * @param {Array<{name:string,value:string,inline?:boolean}>} [opts.fields] Embed fields.
  * @param {'info'|'success'|'warn'|'error'} [opts.level='info'] Color/severity hint.
+ * @returns {Promise<boolean>} whether the webhook accepted the message
  */
 async function notify({ title, description, fields, level = 'info' } = {}) {
-    if (!webhook || !title) return
+    if (!webhook || !title) return false
     try {
         const embed = new EmbedBuilder()
             .setTitle(title.slice(0, 256))
@@ -54,8 +55,10 @@ async function notify({ title, description, fields, level = 'info' } = {}) {
             embed.addFields(fields.slice(0, 25))
         }
         await webhook.send({ embeds: [embed] })
+        return true
     } catch (err) {
         console.error('[OperatorWebhook] Failed to send notification:', err?.message || err)
+        return false
     }
 }
 

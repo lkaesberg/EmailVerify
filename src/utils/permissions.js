@@ -24,6 +24,7 @@
 const Discord = require('discord.js')
 const { PermissionsBitField } = Discord
 const { getLocale } = require('../Language')
+const { throttledNotify } = require('./notifyThrottle')
 const { clientId } = require('../../config/config.json')
 
 const Flags = PermissionsBitField.Flags
@@ -360,7 +361,8 @@ async function buildRoleWarning(guild, roles, language) {
  * enough to be actionable without becoming noise the admin mutes.
  */
 const NOTIFY_INTERVAL_MS = 24 * 60 * 60 * 1000
-const lastNotified = new Map()
+// The window is shared by every shard and survives restarts (utils/notifyThrottle).
+const PERMISSION_NOTIFY_KIND = 'permission_issues'
 
 /**
  * Audit a guild and, if anything is broken, tell its admins — with the concrete list of
@@ -394,17 +396,16 @@ async function notifyPermissionIssues(guild, serverSettings, language) {
     const report = buildPermissionIssueReport(guild, audit, language)
     if (!report) return null
 
-    const last = lastNotified.get(guild.id) || 0
-    if (Date.now() - last < NOTIFY_INTERVAL_MS) return null
-    lastNotified.set(guild.id, Date.now())
-
-    await ErrorNotifier.notify({
-        guild,
-        errorTitle: getLocale(language, 'permIssueTitle'),
-        errorMessage: clampDescription(report, language),
-        language,
-        components: [buildReinviteRow(language)]
-    }).catch(e => console.warn(`[permissions] notify failed for ${guild.id}:`, e?.message || e))
+    const outcome = await throttledNotify(PERMISSION_NOTIFY_KIND, guild.id, NOTIFY_INTERVAL_MS, () =>
+        ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(language, 'permIssueTitle'),
+            errorMessage: clampDescription(report, language),
+            language,
+            components: [buildReinviteRow(language)]
+        })
+    )
+    if (!outcome) return null
 
     return audit
 }
@@ -430,46 +431,40 @@ async function notifyPermissionIssues(guild, serverSettings, language) {
  * @returns {Promise<?object>} the audit when a notification was sent, else null
  */
 const ROLE_FAILURE_INTERVAL_MS = 60 * 60 * 1000
-const roleFailureState = new Map()   // guildId -> { lastNotify: number, suppressed: number }
+// Window and suppressed count live in the database, shared by every shard (utils/notifyThrottle).
+const ROLE_FAILURE_KIND = 'role_assignment_failure'
 
 async function notifyRoleAssignmentFailure(guild, serverSettings, language, user = null) {
     const ErrorNotifier = require('./ErrorNotifier')
 
     // Checked before the audit, not after: on a raid every join would otherwise trigger a
     // full permission audit (member fetch, channel fetches) just to be discarded.
-    const state = roleFailureState.get(guild.id) || { lastNotify: 0, suppressed: 0 }
-    if (Date.now() - state.lastNotify < ROLE_FAILURE_INTERVAL_MS) {
-        state.suppressed++
-        roleFailureState.set(guild.id, state)
-        return null
-    }
+    let audit = null
+    const outcome = await throttledNotify(ROLE_FAILURE_KIND, guild.id, ROLE_FAILURE_INTERVAL_MS, async (suppressed) => {
+        audit = await auditGuild(guild, serverSettings).catch(() => null)
+        const report = audit ? buildPermissionIssueReport(guild, audit, language) : null
 
-    const suppressed = state.suppressed
-    roleFailureState.set(guild.id, { lastNotify: Date.now(), suppressed: 0 })
+        const parts = [getLocale(language, report ? 'permRoleAssignFailedIntro' : 'errorRoleAssignMessage')]
+        if (report) parts.push(report)
+        if (suppressed > 0) parts.push(getLocale(language, 'permRoleAssignSuppressed', String(suppressed)))
 
-    const audit = await auditGuild(guild, serverSettings).catch(() => null)
-    const report = audit ? buildPermissionIssueReport(guild, audit, language) : null
-
-    const parts = [getLocale(language, report ? 'permRoleAssignFailedIntro' : 'errorRoleAssignMessage')]
-    if (report) parts.push(report)
-    if (suppressed > 0) parts.push(getLocale(language, 'permRoleAssignSuppressed', String(suppressed)))
-
-    await ErrorNotifier.notify({
-        guild,
-        errorTitle: getLocale(language, report ? 'permRoleAssignFailedTitle' : 'errorRoleAssignTitle'),
-        errorMessage: clampDescription(parts.join('\n\n'), language),
-        user,
-        language,
-        components: report ? [buildReinviteRow(language)] : null
-    }).catch(e => console.warn(`[permissions] role-failure notify failed for ${guild.id}:`, e?.message || e))
+        return ErrorNotifier.notify({
+            guild,
+            errorTitle: getLocale(language, report ? 'permRoleAssignFailedTitle' : 'errorRoleAssignTitle'),
+            errorMessage: clampDescription(parts.join('\n\n'), language),
+            user,
+            language,
+            components: report ? [buildReinviteRow(language)] : null
+        })
+    })
+    if (!outcome) return null
 
     return audit
 }
 
 /** Test seam: drop the throttle state so a test is not shaped by a previous one. */
 function __resetNotificationThrottles() {
-    roleFailureState.clear()
-    lastNotified.clear()
+    return require('../database/Database.js').resetNotificationThrottles([ROLE_FAILURE_KIND, PERMISSION_NOTIFY_KIND])
 }
 
 module.exports = {

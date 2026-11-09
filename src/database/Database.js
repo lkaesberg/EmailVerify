@@ -391,6 +391,24 @@ class Database {
             // follow-ups count only verifications since this join.
             await m.run("ALTER TABLE guild_onboarding ADD verificationsAtJoin INTEGER NOT NULL DEFAULT 0")
         })
+        this.runMigration(30, async (m) => {
+            // Admin-alert throttles (role-assignment failures, permission problems, a locked
+            // email list, the ZeptoMail fallback ping). They were per-shard in-memory maps,
+            // so a guild seen by shard 0 (DMs) and by its own shard was alerted twice per
+            // window, every restart reset the windows, and the "N more failures" count was
+            // lost. scope is a guild id, or '*' for a bot-wide alert. claimID/claimedSuppressed
+            // belong to the alert currently being sent, so a send that fails can hand its
+            // window and its count back (Database.releaseNotification).
+            await m.run(`CREATE TABLE IF NOT EXISTS notification_throttles(
+                kind TEXT NOT NULL,
+                scope TEXT NOT NULL,
+                lastNotifyAt INTEGER NOT NULL DEFAULT 0,
+                suppressed INTEGER NOT NULL DEFAULT 0,
+                claimID TEXT,
+                claimedSuppressed INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (kind, scope)
+            );`)
+        })
     }
 
     /**
@@ -804,6 +822,82 @@ class Database {
                 if (err) console.error('Error sweeping email rate limits:', err)
                 resolve(err ? 0 : (this.changes || 0))
             })
+        })
+    }
+
+    /**
+     * Claim the right to send one throttled admin alert. Shared by every shard and kept
+     * across restarts (notification_throttles). The claim succeeds when the last alert
+     * of this kind for this scope is at least intervalMs old; it then stamps the window
+     * and takes over the count of events suppressed since the last alert. Otherwise
+     * the event is counted as suppressed. One statement, so two shards cannot both win.
+     *
+     * @param {string} kind
+     * @param {string} scope guild id, or '*' for a bot-wide alert
+     * @param {number} intervalMs
+     * @returns {Promise<?{claimID: string, suppressed: number}>} null when throttled (or on a DB error)
+     */
+    claimNotification(kind, scope, intervalMs) {
+        const now = Date.now()
+        const cutoff = now - intervalMs
+        const claimID = `${now}-${Math.random().toString(36).slice(2)}`
+        return new Promise((resolve) => {
+            this.db.get(
+                `INSERT INTO notification_throttles (kind, scope, lastNotifyAt, suppressed, claimID, claimedSuppressed)
+                 VALUES (?, ?, ?, 0, ?, 0)
+                 ON CONFLICT(kind, scope) DO UPDATE SET
+                    claimID = CASE WHEN lastNotifyAt <= ?5 THEN excluded.claimID ELSE claimID END,
+                    claimedSuppressed = CASE WHEN lastNotifyAt <= ?5 THEN suppressed ELSE claimedSuppressed END,
+                    suppressed = CASE WHEN lastNotifyAt <= ?5 THEN 0 ELSE suppressed + 1 END,
+                    lastNotifyAt = CASE WHEN lastNotifyAt <= ?5 THEN excluded.lastNotifyAt ELSE lastNotifyAt END
+                 RETURNING claimID, claimedSuppressed`,
+                [kind, scope, now, claimID, cutoff],
+                (err, row) => {
+                    if (err) {
+                        console.error('Error claiming notification throttle:', err)
+                        return resolve(null)
+                    }
+                    resolve(row && row.claimID === claimID ? { claimID, suppressed: row.claimedSuppressed || 0 } : null)
+                }
+            )
+        })
+    }
+
+    /**
+     * Hand back a claim whose alert did not reach anyone: the window reopens after
+     * retryAfterMs instead of the full interval, and the suppressed count it took over
+     * (plus the event that failed to send) is counted again for the next alert. Only
+     * touches the claim made by `claimID`.
+     */
+    releaseNotification(kind, scope, claimID, intervalMs, retryAfterMs) {
+        return new Promise((resolve) => {
+            this.db.run(
+                `UPDATE notification_throttles
+                 SET lastNotifyAt = ?, suppressed = suppressed + claimedSuppressed + 1, claimedSuppressed = 0, claimID = NULL
+                 WHERE kind = ? AND scope = ? AND claimID = ?`,
+                [Date.now() - intervalMs + retryAfterMs, kind, scope, claimID],
+                function (err) {
+                    if (err) console.error('Error releasing notification throttle:', err)
+                    resolve(!err && this.changes > 0)
+                }
+            )
+        })
+    }
+
+    /** Forget alert windows that ended long ago. */
+    sweepNotificationThrottles(staleMs) {
+        return new Promise((resolve) => {
+            this.db.run("DELETE FROM notification_throttles WHERE lastNotifyAt < ?", [Date.now() - staleMs], function (err) {
+                if (err) console.error('Error sweeping notification throttles:', err)
+                resolve(err ? 0 : (this.changes || 0))
+            })
+        })
+    }
+
+    /** Drop throttle state of the given kinds (test seam). */
+    resetNotificationThrottles(kinds) {
+        return new Promise((resolve) => {
+            this.db.run(`DELETE FROM notification_throttles WHERE kind IN (${kinds.map(() => '?').join(',')})`, kinds, () => resolve())
         })
     }
 
