@@ -53,16 +53,22 @@ function getStats(guildId) {
 
 /**
  * What still stands between the server and its first verification, or null once
- * someone has verified.
+ * someone has verified since the bot joined. `verificationsAtJoin` is the server's
+ * verificationsTotal when it was (re-)added: stats survive the bot leaving, so a
+ * re-added server would otherwise count as done before anyone verified again.
+ *
+ * Roles count the way ServerSettings.status does (default roles or domain roles),
+ * limited to roles that still exist.
  *
  * @returns {Promise<?('no_roles'|'no_verifications')>}
  */
-async function setupGap(guild) {
+async function setupGap(guild, verificationsAtJoin = 0) {
     const stats = await getStats(guild.id)
-    if (stats.verificationsTotal > 0) return null
+    if (stats.verificationsTotal > (verificationsAtJoin || 0)) return null
     const settings = await getSettings(guild.id)
-    const roles = (settings.defaultRoles || []).filter(id => guild.roles.cache.has(id))
-    return roles.length === 0 ? 'no_roles' : 'no_verifications'
+    const domainRoleIds = Object.values(settings.domainRoles || {}).flat()
+    const hasLiveRole = [...(settings.defaultRoles || []), ...domainRoleIds].some(id => guild.roles.cache.has(id))
+    return hasLiveRole ? 'no_verifications' : 'no_roles'
 }
 
 function buildNudge(guild, gap, language, isLast) {
@@ -123,7 +129,7 @@ async function checkGuild(client, row, delays, now) {
         return
     }
 
-    const gap = await setupGap(guild)
+    const gap = await setupGap(guild, row.verificationsAtJoin)
     if (!gap) {
         await database.deleteGuildOnboarding(row.guildID)
         return

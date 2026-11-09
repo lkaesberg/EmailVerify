@@ -386,6 +386,12 @@ class Database {
             );`)
             this.db.run("CREATE INDEX IF NOT EXISTS idx_entitlement_redemptions_status ON entitlement_redemptions(status, createdAt)")
         })
+        this.runMigration(29, () => {
+            // guild_stats outlives the bot leaving a server (it holds the monthly quota),
+            // so a re-added server still carries its old verificationsTotal. Setup
+            // follow-ups count only verifications since this join.
+            this.db.run("ALTER TABLE guild_onboarding ADD verificationsAtJoin INTEGER NOT NULL DEFAULT 0")
+        })
     }
 
     /**
@@ -472,6 +478,9 @@ class Database {
         this.db.run("DELETE FROM guild_api_tokens WHERE guildID = ?;", [guildID])
         this.db.run("DELETE FROM pending_verifications WHERE guildID = ?;", [guildID])
         this.db.run("DELETE FROM email_rate_limits WHERE guildID = ?;", [guildID])
+        // Purchased credits and the CSV unlock stay with the server, but the opt-in to
+        // spend them on every send does not: a re-added server starts on the free tier.
+        this.db.run("UPDATE guild_premium SET mailMode = 'free' WHERE guildID = ?;", [guildID])
     }
 
     /** Whether the guild has saved settings at all (a fresh join has none). */
@@ -1680,8 +1689,9 @@ class Database {
     addGuildOnboarding(guildID, inviterID) {
         return new Promise((resolve) => {
             this.db.run(
-                "INSERT OR REPLACE INTO guild_onboarding (guildID, joinedAt, inviterID, nudgesSent, lastNudgeAt) VALUES (?, ?, ?, 0, NULL)",
-                [guildID, Date.now(), inviterID ?? null],
+                `INSERT OR REPLACE INTO guild_onboarding (guildID, joinedAt, inviterID, nudgesSent, lastNudgeAt, verificationsAtJoin)
+                 VALUES (?, ?, ?, 0, NULL, COALESCE((SELECT verificationsTotal FROM guild_stats WHERE guildID = ?), 0))`,
+                [guildID, Date.now(), inviterID ?? null, guildID],
                 (err) => {
                     if (err) console.error('Error adding guild onboarding:', err)
                     resolve()
