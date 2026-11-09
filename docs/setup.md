@@ -75,7 +75,7 @@ Start with `/setup` unless you have a reason not to. It is a shortcut for these 
 |---|---|---|
 | Default role | `/role add @Verified` | Given to everyone who verifies, whatever their domain. |
 | Allowed domains | `/domain add @university.edu` | Use `@*.edu` for every `.edu` address. Omit entirely to accept any valid email. |
-| Verification button | `/button #verification "Click to verify"` | Posts the message with the button members click. |
+| Verification button | `/button "Click to verify"` | Run it in your verification channel to post the message with the button members click there, or pass `channel:` to post somewhere else. |
 | Test delivery | `/testmail you@example.com` | Confirms the email is sent and shows whether it lands in spam. |
 | Check config | `/status` | Lists your settings and flags problems it can detect. |
 

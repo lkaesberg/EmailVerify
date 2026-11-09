@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Konfiguracja — krok 4 z 4: kanał weryfikacji",
   "setupStep4Body": "Wybierz kanał, na którym ma się pojawić wiadomość weryfikacyjna (z przyciskiem **Rozpocznij Weryfikację**). Członkowie klikają go, aby rozpocząć weryfikację.",
   "setupChannelPlaceholder": "Wybierz kanał weryfikacji",
+  "setupChannelHereButton": "Opublikuj tutaj: %VAR%",
   "setupChannelNoPerms": "⚠️ Nie mogę wysyłać wiadomości na kanale %VAR%. Nadaj mi tam uprawnienia **Wyświetlanie kanału** i **Wysyłanie wiadomości** albo wybierz inny kanał.",
   "setupChannelPostFailed": "⚠️ Nie udało się opublikować wiadomości na kanale %VAR%. Sprawdź moje uprawnienia na tym kanale albo wybierz inny.",
   "setupSummaryTitle": "✅ Konfiguracja zakończona!",

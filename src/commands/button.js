@@ -19,10 +19,18 @@ module.exports = {
         .setDefaultPermission(true)
         .setName('button')
         .setDescription("Create a verification button embed in a channel for users to verify")
+        .addStringOption(option => option
+            .setName("buttontext")
+            .setRequired(true)
+            .setMaxLength(80)
+            .setDescription("Text shown on the verify button (max 80 chars, e.g. 'Click to Verify')"))
+        // Optional, and after the required option as Discord demands: the picker is
+        // filled in by the admin's client and can leave a channel out, so running the
+        // command in the target channel has to work without it.
         .addChannelOption(option => option
             .setName("channel")
-            .setRequired(true)
-            .setDescription("Channel where the verification embed will be posted")
+            .setRequired(false)
+            .setDescription("Channel to post the verification embed in (default: this channel)")
             .addChannelTypes(
                 ChannelType.GuildText,
                 ChannelType.GuildAnnouncement,
@@ -30,11 +38,6 @@ module.exports = {
                 ChannelType.PrivateThread,
                 ChannelType.AnnouncementThread,
             ))
-        .addStringOption(option => option
-            .setName("buttontext")
-            .setRequired(true)
-            .setMaxLength(80)
-            .setDescription("Text shown on the verify button (max 80 chars, e.g. 'Click to Verify')"))
         .addStringOption(option => option
             .setName("title")
             .setRequired(false)
@@ -51,7 +54,7 @@ module.exports = {
     async execute(interaction) {
         const rawButtonText = interaction.options.getString("buttontext", true)
         const buttonText = rawButtonText.substring(0, 80)
-        const channel = interaction.options.getChannel("channel", true)
+        const channel = interaction.options.getChannel("channel") ?? interaction.channel
         const customMessage = interaction.options.getString("message")
         const customTitle = interaction.options.getString("title")
         const customColor = interaction.options.getString("color")
@@ -82,11 +85,9 @@ module.exports = {
             })
             const buttons = buildVerifyButtons(language, buttonText);
 
-            const message = await channel.send({embeds: [embed], components: [buttons]}).catch(async _ => {
-                await interaction.user.send("No permissions to write in that channel!").catch(async _ => {
-                })
-            })
-            if (message === undefined) {
+            const message = await channel.send({embeds: [embed], components: [buttons]}).catch(() => null)
+            if (!message) {
+                await interaction.editReply({content: getLocale(language, "setupChannelNoPerms", `<#${channel.id}>`)}).catch(() => {})
                 return
             }
 

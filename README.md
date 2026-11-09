@@ -81,7 +81,7 @@ Prefer manual setup?
 1. **Invite the bot** using the link above
 2. **Add a default role**: `/role add @Verified` (given to all verified users)
 3. **Add allowed domains**: `/domain add @university.edu` (use `@*.edu` for all .edu domains)
-4. **Create a verification button**: `/button #verification-channel "Click to Verify"`
+4. **Create a verification button**: run `/button "Click to Verify"` in your verification channel (or pass `channel:` to post elsewhere)
 5. Done! Users can now verify themselves
 
 ### Advanced: Domain-Specific Roles
@@ -165,7 +165,7 @@ Assign different roles based on email domain:
 | Command | Description |
 |---------|-------------|
 | `/setup` | Guided setup wizard (verified role, created for you if you like → optional unverified role → domains → verification channel) |
-| `/button <channel> <buttontext>` | Create a verification button embed in a channel |
+| `/button <buttontext> [channel]` | Create a verification button embed (defaults to the current channel) |
 | `/testmail <email>` | Send a test verification email to check delivery & spam placement |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |
 | `/set_error_notify` | Configure where error notifications are sent |

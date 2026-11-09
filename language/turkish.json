@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Kurulum — Adım 4/4: Doğrulama kanalı",
   "setupStep4Body": "Doğrulama mesajının (**Doğrulamayı Başlat** düğmesiyle birlikte) paylaşılacağı kanalı seçin. Üyeler doğrulamaya başlamak için bu düğmeye tıklar.",
   "setupChannelPlaceholder": "Doğrulama kanalını seçin",
+  "setupChannelHereButton": "Buraya gönder: %VAR%",
   "setupChannelNoPerms": "⚠️ %VAR% kanalına mesaj gönderemiyorum. Orada bana **Kanalı Görüntüle** ve **Mesaj Gönder** izinlerini verin veya başka bir kanal seçin.",
   "setupChannelPostFailed": "⚠️ %VAR% kanalında paylaşım başarısız oldu. Oradaki izinlerimi kontrol edin veya başka bir kanal seçin.",
   "setupSummaryTitle": "✅ Kurulum tamamlandı!",

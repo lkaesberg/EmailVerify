@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Configuration — Étape 4 sur 4 : salon de vérification",
   "setupStep4Body": "Choisissez le salon où publier le message de vérification (avec le bouton **Démarrer la Vérification**). Les membres cliquent dessus pour se faire vérifier.",
   "setupChannelPlaceholder": "Sélectionnez le salon de vérification",
+  "setupChannelHereButton": "Publier ici dans %VAR%",
   "setupChannelNoPerms": "⚠️ Je ne peux pas envoyer de messages dans %VAR%. Accordez-moi **Voir les salons** et **Envoyer des messages** dans ce salon, ou choisissez-en un autre.",
   "setupChannelPostFailed": "⚠️ La publication dans %VAR% a échoué. Vérifiez mes permissions dans ce salon ou choisissez-en un autre.",
   "setupSummaryTitle": "✅ Configuration terminée !",

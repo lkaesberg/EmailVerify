@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Configuración — Paso 4 de 4: canal de verificación",
   "setupStep4Body": "Elige el canal donde se publicará el mensaje de verificación (con el botón **Iniciar Verificación**). Los miembros hacen clic en él para empezar a verificarse.",
   "setupChannelPlaceholder": "Selecciona el canal de verificación",
+  "setupChannelHereButton": "Publicar aquí en %VAR%",
   "setupChannelNoPerms": "⚠️ No puedo enviar mensajes en %VAR%. Dame los permisos **Ver canales** y **Enviar mensajes** allí, o elige otro canal.",
   "setupChannelPostFailed": "⚠️ No se pudo publicar en %VAR%. Revisa mis permisos allí o elige otro canal.",
   "setupSummaryTitle": "✅ ¡Configuración completada!",

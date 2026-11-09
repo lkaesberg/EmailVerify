@@ -121,7 +121,7 @@ Configure bot behavior and preferences.
 | Command | Description |
 |---------|-------------|
 | `/setup` | **Guided setup wizard** — create a Verified role in one click (or pick existing roles), optionally create an Unverified role for new members, restrict email domains (or allow any), and post the verification message. The fastest way to get started. |
-| `/button <channel> <buttontext> [title] [message] [color]` | Create a verification button embed in a channel |
+| `/button <buttontext> [channel] [title] [message] [color]` | Create a verification button embed. Posts in the channel you run it in unless you pick another one |
 | `/testmail <email>` | Send a test verification email through the real delivery path — reports the provider used and latency, so you can check inbox vs. spam placement. Counts against the monthly quota, max 3 per day. |
 | `/manualverify <user> <email>` | Manually verify a user without email confirmation |
 | `/set_error_notify channel <channel> [ping] [ping_role]` | Send error notifications to a channel, optionally pinging @everyone, @here or a role |
