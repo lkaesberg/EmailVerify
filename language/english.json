@@ -363,6 +363,7 @@
   "setupContinueButton": "Continue",
   "setupSkipButton": "Skip",
   "setupRoleBothKinds": "❌ %VAR% is already a verified role, so it can't also be the unverified role. Skip this step or set one later with `/role unverified`.",
+  "setupRoleIsUnverified": "❌ %VAR% is the unverified role, so it can't also be a verified role. Pick another role, or disable the unverified role first by selecting it again in `/role unverified`.",
   "setupUnverifiedSaved": "Unverified role: %VAR%, given to new members when they join.",
   "setupStep3Title": "🧭 Setup — Step 3 of 4: Email domains",
   "setupStep3Body": "Should verification be limited to specific email domains?\n• **Restrict domains** — e.g. only `@company.com` or `@*.edu` addresses\n• **Allow any email** — every valid address can verify",

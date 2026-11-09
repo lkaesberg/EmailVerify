@@ -146,6 +146,15 @@ module.exports = {
                     serverSettings.domainRoles[domain] = [];
                 }
                 
+                // The same role can't be both: verifying would add it and remove it again.
+                if (role.id === serverSettings.unverifiedRoleName) {
+                    await interaction.reply({
+                        content: `**${role.name}** is the unverified role, so it can't also be a domain role.\n\nPick another role, or disable the unverified role first by selecting it again in \`/role unverified\`.`,
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
                 // Check if role already exists for this domain
                 if (serverSettings.domainRoles[domain].includes(role.id)) {
                     await interaction.reply({

@@ -13,6 +13,47 @@ const sqlite3 = require('sqlite3').verbose()
 const md5hash = require("../crypto/Crypto")
 const { DB_PATH, databaseKey, keyPragma, isPlaintext } = require('./DatabaseEncryption.js')
 
+// guilds columns written by updateServerSettings (guildid aside).
+const SETTINGS_COLUMNS = ['domains', 'blacklist', 'verifiedrole', 'unverifiedrole', 'channelid', 'messageid', 'language', 'autoVerify', 'autoAddUnverified', 'verifyMessage', 'logChannel', 'errorNotifyType', 'errorNotifyTarget', 'errorNotifyChannel', 'errorNotifyPing', 'errorNotifyUsers', 'errorNotifyOwnerOptedOut', 'defaultRoles', 'domainRoles', 'allowedEmails', 'emailStyle']
+
+/** A ServerSettings object as the column values updateServerSettings stores. */
+function settingsRow(serverSettings) {
+    return {
+        domains: JSON.stringify(serverSettings.domains),
+        blacklist: JSON.stringify(serverSettings.blacklist),
+        verifiedrole: serverSettings.verifiedRoleName,
+        unverifiedrole: serverSettings.unverifiedRoleName,
+        channelid: serverSettings.channelID,
+        messageid: serverSettings.messageID,
+        language: serverSettings.language,
+        autoVerify: serverSettings.autoVerify,
+        autoAddUnverified: serverSettings.autoAddUnverified,
+        verifyMessage: serverSettings.verifyMessage,
+        logChannel: serverSettings.logChannel,
+        errorNotifyType: serverSettings.errorNotifyType,
+        errorNotifyTarget: serverSettings.errorNotifyTarget,
+        errorNotifyChannel: serverSettings.errorNotifyChannel || '',
+        errorNotifyPing: serverSettings.errorNotifyPing || 'none',
+        errorNotifyUsers: JSON.stringify(serverSettings.errorNotifyUsers || []),
+        errorNotifyOwnerOptedOut: serverSettings.errorNotifyOwnerOptedOut ? 1 : 0,
+        defaultRoles: JSON.stringify(serverSettings.defaultRoles),
+        domainRoles: JSON.stringify(serverSettings.domainRoles),
+        allowedEmails: JSON.stringify(serverSettings.allowedEmails),
+        emailStyle: serverSettings.emailStyle || null
+    }
+}
+
+// SQLite hands numbers back for numeric columns; compare loosely across that.
+function sameColumnValue(a, b) {
+    if (a === b) return true
+    if (a === undefined || b === undefined) return false
+    return a !== null && b !== null && String(a) === String(b)
+}
+
+// What each ServerSettings object held in the database when it was read, keyed by the
+// object itself, so updateServerSettings can write only what the caller changed.
+const settingsSnapshots = new WeakMap()
+
 class Database {
     constructor() {
         // The sharder encrypts an unencrypted database before any shard starts
@@ -424,10 +465,32 @@ class Database {
     }
 
 
+    /**
+     * Save a guild's settings. Only the columns that differ from what was read (by
+     * getServerSettings, for this same object) are written, so a command that changes
+     * one setting no longer writes back a stale copy of every other one — e.g. /role add
+     * overlapping an API call that adds to allowedEmails used to drop the API's entries.
+     * An object that wasn't read from an existing row writes every column.
+     */
     updateServerSettings(guildID, serverSettings) {
-        this.db.run(
-            "INSERT OR REPLACE INTO guilds (guildid, domains, blacklist, verifiedrole, unverifiedrole, channelid, messageid, language, autoVerify, autoAddUnverified, verifyMessage, logChannel, errorNotifyType, errorNotifyTarget, errorNotifyChannel, errorNotifyPing, errorNotifyUsers, errorNotifyOwnerOptedOut, defaultRoles, domainRoles, allowedEmails, emailStyle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [guildID, JSON.stringify(serverSettings.domains), JSON.stringify(serverSettings.blacklist), serverSettings.verifiedRoleName, serverSettings.unverifiedRoleName, serverSettings.channelID, serverSettings.messageID, serverSettings.language, serverSettings.autoVerify, serverSettings.autoAddUnverified, serverSettings.verifyMessage, serverSettings.logChannel, serverSettings.errorNotifyType, serverSettings.errorNotifyTarget, serverSettings.errorNotifyChannel || '', serverSettings.errorNotifyPing || 'none', JSON.stringify(serverSettings.errorNotifyUsers || []), serverSettings.errorNotifyOwnerOptedOut ? 1 : 0, JSON.stringify(serverSettings.defaultRoles), JSON.stringify(serverSettings.domainRoles), JSON.stringify(serverSettings.allowedEmails), serverSettings.emailStyle || null])
+        const row = settingsRow(serverSettings)
+        const snapshot = settingsSnapshots.get(serverSettings)
+        const columns = snapshot
+            ? SETTINGS_COLUMNS.filter(col => !sameColumnValue(row[col], snapshot[col]))
+            : SETTINGS_COLUMNS
+        settingsSnapshots.set(serverSettings, { ...(snapshot || {}), ...row })
+        if (columns.length === 0) return Promise.resolve()
+        return new Promise((resolve) => {
+            this.db.run(
+                `INSERT INTO guilds (guildid, ${columns.join(', ')}) VALUES (?, ${columns.map(() => '?').join(', ')})
+                 ON CONFLICT(guildid) DO UPDATE SET ${columns.map(col => `${col} = excluded.${col}`).join(', ')}`,
+                [guildID, ...columns.map(col => row[col])],
+                (err) => {
+                    if (err) console.error('Error saving server settings:', err)
+                    resolve()
+                }
+            )
+        })
     }
 
     async getServerSettings(guildID, callback) {
@@ -441,6 +504,9 @@ class Database {
                     return
                 }
                 if (result !== undefined) {
+                    const snapshot = {}
+                    for (const col of SETTINGS_COLUMNS) snapshot[col] = result[col]
+                    settingsSnapshots.set(serverSettings, snapshot)
                     serverSettings.channelID = result.channelid
                     serverSettings.messageID = result.messageid
                     serverSettings.verifiedRoleName = result.verifiedrole
@@ -473,6 +539,11 @@ class Database {
                     if (serverSettings.errorNotifyType === 'user' && serverSettings.errorNotifyTarget && !serverSettings.errorNotifyUsers.includes(serverSettings.errorNotifyTarget)) {
                         serverSettings.errorNotifyUsers.push(serverSettings.errorNotifyTarget)
                     }
+                    // Folded in now, so drop the legacy pair: the next save stores the new
+                    // fields and clears the old ones. Kept, they were re-applied on every
+                    // read, undoing /set_error_notify clear and "me off".
+                    serverSettings.errorNotifyType = 'owner'
+                    serverSettings.errorNotifyTarget = ''
                     
                     // Parse domains (JSON array, with fallback for legacy comma-separated format)
                     try {

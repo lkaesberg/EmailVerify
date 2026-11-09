@@ -331,6 +331,15 @@ module.exports = {
                 }).catch(() => {});
                 return;
             }
+            // The same role can't be both: verifying would add it and remove it again.
+            const unverifiedPick = selected.find(role => role.id === serverSettings.unverifiedRoleName);
+            if (unverifiedPick) {
+                await interaction.reply({
+                    content: getLocale(language, 'setupRoleIsUnverified', `<@&${unverifiedPick.id}>`),
+                    flags: MessageFlags.Ephemeral
+                }).catch(() => {});
+                return;
+            }
 
             for (const role of selected) {
                 if (!serverSettings.defaultRoles.includes(role.id)) {
@@ -359,6 +368,13 @@ module.exports = {
             trackRole(interaction, 'verified', result);
             if (!result.role) {
                 await interaction.reply(roleCreateFailedReply(result, language)).catch(() => {});
+                return;
+            }
+            if (result.role.id === serverSettings.unverifiedRoleName) {
+                await interaction.reply({
+                    content: getLocale(language, 'setupRoleIsUnverified', `<@&${result.role.id}>`),
+                    flags: MessageFlags.Ephemeral
+                }).catch(() => {});
                 return;
             }
 

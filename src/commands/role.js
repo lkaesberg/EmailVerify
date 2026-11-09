@@ -81,6 +81,15 @@ module.exports = {
                     return;
                 }
                 
+                // The same role can't be both: verifying would add it and remove it again.
+                if (role.id === serverSettings.unverifiedRoleName) {
+                    await interaction.reply({
+                        content: `**${role.name}** is the unverified role, so it can't also be a verified role.\n\nPick another role, or disable the unverified role first by selecting it again in \`/role unverified\`.`,
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
                 // Check if role is already in the list
                 if (serverSettings.defaultRoles.includes(role.id)) {
                     await interaction.reply({
@@ -196,12 +205,23 @@ module.exports = {
                     // Toggle off if selecting the current role
                     if (unverifiedRole.id === serverSettings.unverifiedRoleName) {
                         serverSettings.unverifiedRoleName = "";
+                        // Auto-assign has nothing left to hand out.
+                        serverSettings.autoAddUnverified = 0;
                         database.updateServerSettings(interaction.guildId, serverSettings);
                         await interaction.reply({
                             content: "**Unverified role disabled.**\n\nNew members will no longer receive a special role before verification.",
                             flags: MessageFlags.Ephemeral
                         });
                     } else {
+                        // The same role can't be both: verifying would add it and remove it again.
+                        const verifiedRoleIds = [...serverSettings.defaultRoles, ...Object.values(serverSettings.domainRoles || {}).flat()];
+                        if (verifiedRoleIds.includes(unverifiedRole.id)) {
+                            await interaction.reply({
+                                content: `**${unverifiedRole.name}** is already a verified role, so it can't also be the unverified role.\n\nPick another role, or remove it with \`/role remove\` or \`/domainrole remove\` first.`,
+                                flags: MessageFlags.Ephemeral
+                            });
+                            return;
+                        }
                         serverSettings.unverifiedRoleName = unverifiedRole.id;
                         database.updateServerSettings(interaction.guildId, serverSettings);
                         await interaction.reply({

@@ -363,6 +363,7 @@
   "setupContinueButton": "Weiter",
   "setupSkipButton": "Überspringen",
   "setupRoleBothKinds": "❌ %VAR% ist bereits eine Verifiziert-Rolle und kann daher nicht zugleich die Unverifiziert-Rolle sein. Überspringe diesen Schritt oder lege später eine mit `/role unverified` fest.",
+  "setupRoleIsUnverified": "❌ %VAR% ist die Unverifiziert-Rolle und kann daher nicht zugleich eine Verifiziert-Rolle sein. Wähle eine andere Rolle oder deaktiviere zuerst die Unverifiziert-Rolle, indem du sie in `/role unverified` erneut auswählst.",
   "setupUnverifiedSaved": "Unverifiziert-Rolle: %VAR%, wird neuen Mitgliedern beim Beitritt gegeben.",
   "setupStep3Title": "🧭 Einrichtung — Schritt 3 von 4: E-Mail-Domains",
   "setupStep3Body": "Soll die Verifizierung auf bestimmte E-Mail-Domains beschränkt werden?\n• **Domains beschränken** — z. B. nur Adressen mit `@company.com` oder `@*.edu`\n• **Jede E-Mail erlauben** — jede gültige Adresse kann sich verifizieren",

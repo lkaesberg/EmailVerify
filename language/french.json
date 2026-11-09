@@ -363,6 +363,7 @@
   "setupContinueButton": "Continuer",
   "setupSkipButton": "Passer",
   "setupRoleBothKinds": "❌ %VAR% est déjà un rôle vérifié : il ne peut donc pas être aussi le rôle non vérifié. Passez cette étape ou définissez-en un plus tard avec `/role unverified`.",
+  "setupRoleIsUnverified": "❌ %VAR% est le rôle non vérifié : il ne peut donc pas être aussi un rôle vérifié. Choisissez un autre rôle, ou désactivez d'abord le rôle non vérifié en le sélectionnant à nouveau dans `/role unverified`.",
   "setupUnverifiedSaved": "Rôle non vérifié : %VAR%, attribué aux nouveaux membres à leur arrivée.",
   "setupStep3Title": "🧭 Configuration — Étape 3 sur 4 : domaines e-mail",
   "setupStep3Body": "La vérification doit-elle être limitée à certains domaines e-mail ?\n• **Restreindre les domaines** — par ex. uniquement les adresses `@company.com` ou `@*.edu`\n• **Accepter tout e-mail** — toute adresse valide peut se vérifier",
