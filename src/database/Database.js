@@ -93,34 +93,34 @@ class Database {
             if (e) console.warn('[DB] WAL not applied this boot (takes effect next boot):', e.message)
         })
 
-        this.runMigration(1, () => {
-            this.db.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
-            this.db.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
+        this.runMigration(1, async (m) => {
+            await m.run("CREATE TABLE IF NOT EXISTS guilds(guildid INT PRIMARY KEY,domains TEXT, verifiedrole TEXT,unverifiedrole Text, channelid TEXT, messageid TEXT, language TEXT);")
+            await m.run("CREATE TABLE IF NOT EXISTS userEmails(email TEXT,userID TEXT, guildID TEXT, groupID TEXT,isPublic INTEGER, PRIMARY KEY (email, guildID));")
         })
-        this.runMigration(2, () => {
-            this.db.each("SELECT email, guildID FROM userEmails", (err, result) => {
-                this.db.run("UPDATE userEmails SET email = ? WHERE email = ? AND guildID = ?;", [md5hash(result.email), result.email, result.guildID])
+        this.runMigration(2, async (m) => {
+            for (const result of await m.all("SELECT email, guildID FROM userEmails")) {
+                await m.run("UPDATE userEmails SET email = ? WHERE email = ? AND guildID = ?;", [md5hash(result.email), result.email, result.guildID])
+            }
+        })
+        this.runMigration(3, async (m) => {
+            await m.run("ALTER TABLE guilds ADD autoVerify NUMBER DEFAULT 0")
+            await m.run("ALTER TABLE guilds ADD autoAddUnverified NUMBER DEFAULT 0")
+        })
+        this.runMigration(4, async (m) => {
+            await m.run("ALTER TABLE guilds ADD verifyMessage TEXT DEFAULT ''")
+        })
+        this.runMigration(5, async (m) => {
+            await m.run("ALTER TABLE guilds ADD logChannel TEXT DEFAULT ''")
+        })
+        this.runMigration(6, async (m) => {
+            await m.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
             })
+        this.runMigration(7, async (m) => {
+            await m.run("ALTER TABLE guilds ADD errorNotifyType TEXT DEFAULT 'owner'")
+            await m.run("ALTER TABLE guilds ADD errorNotifyTarget TEXT DEFAULT ''")
         })
-        this.runMigration(3, () => {
-            this.db.run("ALTER TABLE guilds ADD autoVerify NUMBER DEFAULT 0")
-            this.db.run("ALTER TABLE guilds ADD autoAddUnverified NUMBER DEFAULT 0")
-        })
-        this.runMigration(4, () => {
-            this.db.run("ALTER TABLE guilds ADD verifyMessage TEXT DEFAULT ''")
-        })
-        this.runMigration(5, () => {
-            this.db.run("ALTER TABLE guilds ADD logChannel TEXT DEFAULT ''")
-        })
-        this.runMigration(6, () => {
-            this.db.run("ALTER TABLE guilds ADD blacklist TEXT DEFAULT ''")
-            })
-        this.runMigration(7, () => {
-            this.db.run("ALTER TABLE guilds ADD errorNotifyType TEXT DEFAULT 'owner'")
-            this.db.run("ALTER TABLE guilds ADD errorNotifyTarget TEXT DEFAULT ''")
-        })
-        this.runMigration(8, () => {
-            this.db.run(`CREATE TABLE IF NOT EXISTS guild_stats(
+        this.runMigration(8, async (m) => {
+            await m.run(`CREATE TABLE IF NOT EXISTS guild_stats(
                 guildID TEXT PRIMARY KEY,
                 mailsSentTotal INTEGER DEFAULT 0,
                 mailsSentMonth INTEGER DEFAULT 0,
@@ -129,28 +129,28 @@ class Database {
                 statsMonth TEXT DEFAULT ''
             );`)
         })
-        this.runMigration(9, () => {
+        this.runMigration(9, async (m) => {
             // Rename language from 'france' to 'french'
-            this.db.run("UPDATE guilds SET language = 'french' WHERE language = 'france';")
+            await m.run("UPDATE guilds SET language = 'french' WHERE language = 'france';")
         })
-        this.runMigration(10, () => {
+        this.runMigration(10, async (m) => {
             // Add domain-based roles support
             // defaultRoles: JSON array of role IDs always assigned on verification
             // domainRoles: JSON object mapping domain patterns to arrays of role IDs
-            this.db.run("ALTER TABLE guilds ADD defaultRoles TEXT DEFAULT '[]'")
-            this.db.run("ALTER TABLE guilds ADD domainRoles TEXT DEFAULT '{}'")
+            await m.run("ALTER TABLE guilds ADD defaultRoles TEXT DEFAULT '[]'")
+            await m.run("ALTER TABLE guilds ADD domainRoles TEXT DEFAULT '{}'")
             // Migrate existing verifiedrole to defaultRoles
-            this.db.each("SELECT guildid, verifiedrole FROM guilds WHERE verifiedrole IS NOT NULL AND verifiedrole != ''", (err, result) => {
-                if (!err && result && result.verifiedrole) {
+            for (const result of await m.all("SELECT guildid, verifiedrole FROM guilds WHERE verifiedrole IS NOT NULL AND verifiedrole != ''")) {
+                if (result.verifiedrole) {
                     const defaultRoles = JSON.stringify([result.verifiedrole])
-                    this.db.run("UPDATE guilds SET defaultRoles = ? WHERE guildid = ?", [defaultRoles, result.guildid])
+                    await m.run("UPDATE guilds SET defaultRoles = ? WHERE guildid = ?", [defaultRoles, result.guildid])
                 }
-            })
+            }
         })
-        this.runMigration(11, () => {
+        this.runMigration(11, async (m) => {
             // Migrate domains and blacklist from comma-separated strings to JSON arrays
-            this.db.each("SELECT guildid, domains, blacklist FROM guilds", (err, result) => {
-                if (!err && result) {
+            for (const result of await m.all("SELECT guildid, domains, blacklist FROM guilds")) {
+                {
                     // Convert domains from comma-separated to JSON
                     let domainsJson = '[]'
                     if (result.domains && result.domains.length > 0) {
@@ -179,75 +179,74 @@ class Database {
                         }
                     }
                     
-                    this.db.run("UPDATE guilds SET domains = ?, blacklist = ? WHERE guildid = ?", 
+                    await m.run("UPDATE guilds SET domains = ?, blacklist = ? WHERE guildid = ?", 
                         [domainsJson, blacklistJson, result.guildid])
                 }
-            })
+            }
         })
-        this.runMigration(12, () => {
+        this.runMigration(12, async (m) => {
             // Add allowed emails list for CSV upload feature
-            this.db.run("ALTER TABLE guilds ADD allowedEmails TEXT DEFAULT '[]'")
+            await m.run("ALTER TABLE guilds ADD allowedEmails TEXT DEFAULT '[]'")
         })
-        this.runMigration(13, () => {
+        this.runMigration(13, async (m) => {
             // Premium / monetization: per-guild purchased credits and one-time CSV unlock
-            this.db.run(`CREATE TABLE IF NOT EXISTS guild_premium(
+            await m.run(`CREATE TABLE IF NOT EXISTS guild_premium(
                 guildID TEXT PRIMARY KEY,
                 bonusCredits INTEGER DEFAULT 0,
                 csvUnlocked INTEGER DEFAULT 0
             );`)
         })
-        this.runMigration(14, () => {
+        this.runMigration(14, async (m) => {
             // Quota warning flags: idempotent thresholds for mobile-data-style reminders
-            this.db.run("ALTER TABLE guild_stats ADD warned80 INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warned95 INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warned100 INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warnedCreditsLow INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warnedCreditsZero INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warned80 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warned95 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warned100 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warnedCreditsLow INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warnedCreditsZero INTEGER DEFAULT 0")
         })
-        this.runMigration(15, () => {
+        this.runMigration(15, async (m) => {
             // Per-guild email rendering style: 'plain' (default) or 'styled' (HTML)
-            this.db.run("ALTER TABLE guilds ADD emailStyle TEXT DEFAULT 'plain'")
+            await m.run("ALTER TABLE guilds ADD emailStyle TEXT DEFAULT 'plain'")
         })
-        this.runMigration(16, () => {
+        this.runMigration(16, async (m) => {
             // Hash any existing plaintext entries in guilds.allowedEmails for parity
             // with userEmails (which has been hashed since migration 2).
-            this.db.each("SELECT guildid, allowedEmails FROM guilds WHERE allowedEmails IS NOT NULL AND allowedEmails != '' AND allowedEmails != '[]'", (err, result) => {
-                if (err || !result) return
+            for (const result of await m.all("SELECT guildid, allowedEmails FROM guilds WHERE allowedEmails IS NOT NULL AND allowedEmails != '' AND allowedEmails != '[]'")) {
                 let parsed
-                try { parsed = JSON.parse(result.allowedEmails) } catch { return }
-                if (!Array.isArray(parsed) || parsed.length === 0) return
+                try { parsed = JSON.parse(result.allowedEmails) } catch { continue }
+                if (!Array.isArray(parsed) || parsed.length === 0) continue
                 // Plaintext emails always contain '@'; MD5 base64 hashes don't.
                 const hashed = parsed.map(entry => {
                     if (typeof entry !== 'string') return null
                     return entry.includes('@') ? md5hash(entry.toLowerCase()) : entry
                 }).filter(Boolean)
                 const dedup = Array.from(new Set(hashed))
-                this.db.run("UPDATE guilds SET allowedEmails = ? WHERE guildid = ?", [JSON.stringify(dedup), result.guildid])
-            })
+                await m.run("UPDATE guilds SET allowedEmails = ? WHERE guildid = ?", [JSON.stringify(dedup), result.guildid])
+            }
         })
-        this.runMigration(17, () => {
+        this.runMigration(17, async (m) => {
             // Error notification redesign: per-user opt-in DMs, separate channel + ping config.
             // Legacy errorNotifyType/errorNotifyTarget remain on the table and are migrated on read.
-            this.db.run("ALTER TABLE guilds ADD errorNotifyChannel TEXT DEFAULT ''")
-            this.db.run("ALTER TABLE guilds ADD errorNotifyPing TEXT DEFAULT 'none'")
-            this.db.run("ALTER TABLE guilds ADD errorNotifyUsers TEXT DEFAULT '[]'")
-            this.db.run("ALTER TABLE guilds ADD errorNotifyOwnerOptedOut INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guilds ADD errorNotifyChannel TEXT DEFAULT ''")
+            await m.run("ALTER TABLE guilds ADD errorNotifyPing TEXT DEFAULT 'none'")
+            await m.run("ALTER TABLE guilds ADD errorNotifyUsers TEXT DEFAULT '[]'")
+            await m.run("ALTER TABLE guilds ADD errorNotifyOwnerOptedOut INTEGER DEFAULT 0")
         })
-        this.runMigration(18, () => {
+        this.runMigration(18, async (m) => {
             // Per-guild mail-mode toggle for non-subscribed guilds:
             //   'free'      (default): 25 self-SMTP sends/month, then credits if any
             //   'zeptomail' (opt-in):  no free quota, every send via ZeptoMail and burns 1 credit;
             //                          auto-flips back to 'free' when credits hit 0
             // Ignored while a subscription is active (subscriptions always use ZeptoMail).
-            this.db.run("ALTER TABLE guild_premium ADD mailMode TEXT DEFAULT 'free'")
+            await m.run("ALTER TABLE guild_premium ADD mailMode TEXT DEFAULT 'free'")
         })
-        this.runMigration(19, () => {
+        this.runMigration(19, async (m) => {
             // Pending verification codes. Previously kept in an in-memory Map, which
             // (a) lost every in-flight verification on restart, and (b) was unreachable
             // from the shard a DM interaction lands on (always shard 0). Persisting here
             // makes the flow restart-safe and shard-agnostic, and lets us enforce a code
             // TTL and a max-attempts cap that the old map could not.
-            this.db.run(`CREATE TABLE IF NOT EXISTS pending_verifications(
+            await m.run(`CREATE TABLE IF NOT EXISTS pending_verifications(
                 userID TEXT NOT NULL,
                 guildID TEXT NOT NULL,
                 code TEXT NOT NULL,
@@ -259,21 +258,21 @@ class Database {
                 PRIMARY KEY (userID, guildID)
             );`)
         })
-        this.runMigration(20, () => {
+        this.runMigration(20, async (m) => {
             // Revenue funnel: count verification attempts denied by the mail quota so
             // admins can see the demand they're losing ("N members were turned away"),
             // plus idempotent escalation flags for the 1st/5th/20th denial notifications.
-            this.db.run("ALTER TABLE guild_stats ADD mailsDeniedMonth INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warnedDenied1 INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warnedDenied5 INTEGER DEFAULT 0")
-            this.db.run("ALTER TABLE guild_stats ADD warnedDenied20 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD mailsDeniedMonth INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warnedDenied1 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warnedDenied5 INTEGER DEFAULT 0")
+            await m.run("ALTER TABLE guild_stats ADD warnedDenied20 INTEGER DEFAULT 0")
         })
-        this.runMigration(21, () => {
+        this.runMigration(21, async (m) => {
             // Access tokens for the Tier 2 restriction-list API. Only the SHA-256 of the
             // token is stored, so a database leak cannot yield a usable token and the
             // plaintext exists only in the one ephemeral reply that issued it. One token
             // per guild: regenerating replaces the row, which revokes the old token.
-            this.db.run(`CREATE TABLE IF NOT EXISTS guild_api_tokens(
+            await m.run(`CREATE TABLE IF NOT EXISTS guild_api_tokens(
                 guildID TEXT PRIMARY KEY,
                 tokenHash TEXT NOT NULL,
                 createdAt INTEGER NOT NULL,
@@ -281,26 +280,26 @@ class Database {
                 lastUsedAt INTEGER
             );`)
             // Authentication looks the token up by hash on every request.
-            this.db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_guild_api_tokens_hash ON guild_api_tokens(tokenHash)")
+            await m.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_guild_api_tokens_hash ON guild_api_tokens(tokenHash)")
         })
-        this.runMigration(22, () => {
+        this.runMigration(22, async (m) => {
             // Commands moved from per-guild registration to a single global registration.
             // Guilds that joined under the old scheme still hold a guild-scoped copy of
             // every command, which Discord shows alongside the global ones — so each has
             // to be cleared once. This table records which guilds are done, so the sweep
             // costs one API call per guild ever rather than one per guild per restart.
-            this.db.run(`CREATE TABLE IF NOT EXISTS guild_command_cleanup(
+            await m.run(`CREATE TABLE IF NOT EXISTS guild_command_cleanup(
                 guildID TEXT PRIMARY KEY,
                 clearedAt INTEGER NOT NULL
             );`)
         })
-        this.runMigration(23, () => {
+        this.runMigration(23, async (m) => {
             // Vote rewards. A vote on top.gg or discordbotlist.com raises the free quota
             // of one server for the calendar month it was cast in. The bonus is summed
             // from this log rather than kept as a counter, so it expires with the month
             // by construction and needs no reset logic. guildID is null when a vote
             // could not be attributed to any server; it is still logged for dedupe.
-            this.db.run(`CREATE TABLE IF NOT EXISTS votes(
+            await m.run(`CREATE TABLE IF NOT EXISTS votes(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source TEXT NOT NULL,
                 userID TEXT NOT NULL,
@@ -309,24 +308,24 @@ class Database {
                 votedAt INTEGER NOT NULL,
                 bonusGranted INTEGER NOT NULL DEFAULT 0
             );`)
-            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_guild_month ON votes(guildID, month)")
-            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_source_user ON votes(source, userID, votedAt)")
+            await m.run("CREATE INDEX IF NOT EXISTS idx_votes_guild_month ON votes(guildID, month)")
+            await m.run("CREATE INDEX IF NOT EXISTS idx_votes_source_user ON votes(source, userID, votedAt)")
             // Votes arrive from the lists with a user id only. This remembers which server
             // each user last ran /vote (or pressed a vote button) in, so the reward lands
             // there — discordbotlist.com passes no custom data through its webhook.
-            this.db.run(`CREATE TABLE IF NOT EXISTS vote_targets(
+            await m.run(`CREATE TABLE IF NOT EXISTS vote_targets(
                 userID TEXT PRIMARY KEY,
                 guildID TEXT NOT NULL,
                 updatedAt INTEGER NOT NULL
             );`)
         })
-        this.runMigration(24, () => {
+        this.runMigration(24, async (m) => {
             // Setup follow-ups. Half of all new servers never verify anyone, most of them
             // because setup stalls after the welcome message. A row is written only when
             // the bot joins a server, so servers that were already in before this
             // shipped can never be nudged (no mass DMs). It is removed once the server
             // verifies someone, after the last nudge, or when the bot leaves.
-            this.db.run(`CREATE TABLE IF NOT EXISTS guild_onboarding(
+            await m.run(`CREATE TABLE IF NOT EXISTS guild_onboarding(
                 guildID TEXT PRIMARY KEY,
                 joinedAt INTEGER NOT NULL,
                 inviterID TEXT,
@@ -334,28 +333,28 @@ class Database {
                 lastNudgeAt INTEGER
             );`)
         })
-        this.runMigration(25, () => {
+        this.runMigration(25, async (m) => {
             // Styled (HTML) emails become the default. emailStyle now holds only an
             // explicit pick, null meaning "the default". Plain was the default until now,
             // so a stored 'plain' almost always means "never chose" and is cleared; the
             // few admins who picked it on purpose can pick it again.
-            this.db.run("UPDATE guilds SET emailStyle = NULL WHERE emailStyle = 'plain'")
+            await m.run("UPDATE guilds SET emailStyle = NULL WHERE emailStyle = 'plain'")
         })
-        this.runMigration(26, () => {
+        this.runMigration(26, async (m) => {
             // A vote no longer raises the whole server's quota: it unlocks verification
             // emails for the voter alone, in the server the vote was for. bonusGranted is
             // now that personal allowance and mailsUsed counts what the voter has spent
             // of it. Votes from before the change carry over as the voter's own allowance
             // for the rest of their month.
-            this.db.run("ALTER TABLE votes ADD COLUMN mailsUsed INTEGER NOT NULL DEFAULT 0")
-            this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_user_guild_month ON votes(userID, guildID, month)")
+            await m.run("ALTER TABLE votes ADD COLUMN mailsUsed INTEGER NOT NULL DEFAULT 0")
+            await m.run("CREATE INDEX IF NOT EXISTS idx_votes_user_guild_month ON votes(userID, guildID, month)")
         })
-        this.runMigration(27, () => {
+        this.runMigration(27, async (m) => {
             // Email-request backoff, shared by every shard. It used to be a per-shard
             // in-memory Map, so a user had one backoff on shard 0 (DM interactions) and
             // another on the guild's own shard, and two submits on different shards both
             // went through. Same escalation as before: 0 → 12 → 60 → 300 seconds.
-            this.db.run(`CREATE TABLE IF NOT EXISTS email_rate_limits(
+            await m.run(`CREATE TABLE IF NOT EXISTS email_rate_limits(
                 userID TEXT NOT NULL,
                 guildID TEXT NOT NULL,
                 waitSeconds INTEGER NOT NULL DEFAULT 0,
@@ -364,16 +363,16 @@ class Database {
             );`)
             // Displacing a previous holder checks whether they still own another address
             // in the guild, which looks rows up by user.
-            this.db.run("CREATE INDEX IF NOT EXISTS idx_userEmails_user_guild ON userEmails(userID, guildID)")
+            await m.run("CREATE INDEX IF NOT EXISTS idx_userEmails_user_guild ON userEmails(userID, guildID)")
         })
-        this.runMigration(28, () => {
+        this.runMigration(28, async (m) => {
             // Consumable redemptions (credit packs, CSV unlock). Redeeming consumes the
             // entitlement on Discord and then grants it here; before this ledger a failed
             // local grant left the entitlement consumed and the guild with nothing, and
             // nothing recorded which entitlement was owed. A row is claimed as
             // 'consuming' before consume(), turned 'granted' in the same transaction as
             // the grant, and rows left in 'consuming' are reconciled against Discord.
-            this.db.run(`CREATE TABLE IF NOT EXISTS entitlement_redemptions(
+            await m.run(`CREATE TABLE IF NOT EXISTS entitlement_redemptions(
                 entitlementID TEXT PRIMARY KEY,
                 guildID TEXT NOT NULL,
                 userID TEXT NOT NULL,
@@ -384,58 +383,105 @@ class Database {
                 createdAt INTEGER NOT NULL,
                 grantedAt INTEGER
             );`)
-            this.db.run("CREATE INDEX IF NOT EXISTS idx_entitlement_redemptions_status ON entitlement_redemptions(status, createdAt)")
+            await m.run("CREATE INDEX IF NOT EXISTS idx_entitlement_redemptions_status ON entitlement_redemptions(status, createdAt)")
         })
-        this.runMigration(29, () => {
+        this.runMigration(29, async (m) => {
             // guild_stats outlives the bot leaving a server (it holds the monthly quota),
             // so a re-added server still carries its old verificationsTotal. Setup
             // follow-ups count only verifications since this join.
-            this.db.run("ALTER TABLE guild_onboarding ADD verificationsAtJoin INTEGER NOT NULL DEFAULT 0")
+            await m.run("ALTER TABLE guild_onboarding ADD verificationsAtJoin INTEGER NOT NULL DEFAULT 0")
         })
     }
 
     /**
      * Register a migration. Migrations are queued in registration order and applied
-     * strictly one after another by #applyMigrations — the old fire-and-forget version
+     * strictly one after another by applyMigrations — the old fire-and-forget version
      * check let all pending migrations race each other on a fresh database (every
      * check read user_version 0 concurrently), running e.g. ALTER TABLE before the
      * CREATE TABLE migration had committed and crashing first-time installs.
+     *
+     * A migration is an async function of `m`, whose run/get/all return promises; it
+     * must await every statement so applyMigrations knows when (and whether) it is done.
      */
     runMigration(version, migration) {
         if (!this.pendingMigrations) {
             this.pendingMigrations = []
             // Defer the runner one tick so every constructor registration lands first.
-            setImmediate(() => this.applyMigrations())
+            // `migrated` settles once every pending migration is applied (true) or one
+            // failed and the rest were held back (false).
+            this.migrated = new Promise((resolve) => setImmediate(() => resolve(this.applyMigrations())))
         }
         this.pendingMigrations.push({ version, migration })
     }
 
-    applyMigrations() {
+    /**
+     * Apply each pending migration in its own transaction on a dedicated connection:
+     * its statements and the user_version bump commit together or not at all, so a
+     * failed statement leaves the version where it was and the migration is retried on
+     * the next boot, and a data migration can never be recorded as applied with only
+     * some rows rewritten. BEGIN IMMEDIATE takes the write lock before user_version is
+     * re-read, so shards starting together apply each migration once. The connection
+     * is separate so the shard's own queries (some of which open transactions of their
+     * own) never land inside, or get rolled back with, a migration.
+     *
+     * @returns {Promise<boolean>} true when the schema is current
+     */
+    async applyMigrations() {
         // Sort by version so a registration-order mistake can never skip a migration
         // (user_version only moves forward).
         const queue = (this.pendingMigrations || []).slice().sort((a, b) => a.version - b.version)
-        const runNext = (index) => {
-            if (index >= queue.length) return
-            const { version, migration } = queue[index]
-            this.db.get("PRAGMA user_version;", (err, result) => {
-                if (err) {
-                    throw err
-                }
-                if (result.user_version < version) {
-                    console.log("Run Migration: " + version)
-                    this.db.serialize(() => {
-                        migration()
-                    })
-                    console.log("Finished: " + version)
-                    // The version bump is queued after the migration's statements on the
-                    // same connection; its callback marks this migration complete.
-                    this.db.run(`PRAGMA user_version = ${version}`, () => runNext(index + 1))
-                } else {
-                    runNext(index + 1)
-                }
+        const conn = new sqlite3.Database(DB_PATH)
+        const call = (method, sql, params = []) => new Promise((resolve, reject) => {
+            conn[method](sql, params, function (err, result) {
+                if (err) reject(err)
+                else resolve(method === 'run' ? this : result)
             })
+        })
+        const m = {
+            run: (sql, params) => call('run', sql, params),
+            get: (sql, params) => call('get', sql, params),
+            all: (sql, params) => call('all', sql, params)
         }
-        runNext(0)
+        const userVersion = async () => (await m.get("PRAGMA user_version;")).user_version
+
+        let ok = true
+        try {
+            const key = databaseKey()
+            if (key) {
+                await new Promise((resolve, reject) => conn.exec(keyPragma(key), (e) => e ? reject(e) : resolve()))
+            }
+            // Generous: another shard may be holding the write lock for its own migration.
+            await m.run("PRAGMA busy_timeout = 30000")
+
+            for (const { version, migration } of queue) {
+                if (await userVersion() >= version) continue
+                try {
+                    await m.run("BEGIN IMMEDIATE")
+                    if (await userVersion() < version) {
+                        console.log("Run Migration: " + version)
+                        await migration(m)
+                        await m.run(`PRAGMA user_version = ${version}`)
+                        await m.run("COMMIT")
+                        console.log("Finished: " + version)
+                    } else {
+                        await m.run("COMMIT")
+                    }
+                } catch (e) {
+                    await m.run("ROLLBACK").catch(() => {})
+                    // Later migrations may depend on this one, so stop here. user_version
+                    // still names the last migration that fully applied.
+                    console.error(`[DB] Migration ${version} failed and was rolled back; it and later migrations will be retried on the next start:`, e?.message || e)
+                    ok = false
+                    break
+                }
+            }
+        } catch (e) {
+            console.error('[DB] Could not run migrations:', e?.message || e)
+            ok = false
+        } finally {
+            await new Promise((resolve) => conn.close(() => resolve()))
+        }
+        return ok
     }
 
     /**
