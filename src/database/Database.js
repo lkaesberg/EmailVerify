@@ -366,6 +366,26 @@ class Database {
             // in the guild, which looks rows up by user.
             this.db.run("CREATE INDEX IF NOT EXISTS idx_userEmails_user_guild ON userEmails(userID, guildID)")
         })
+        this.runMigration(28, () => {
+            // Consumable redemptions (credit packs, CSV unlock). Redeeming consumes the
+            // entitlement on Discord and then grants it here; before this ledger a failed
+            // local grant left the entitlement consumed and the guild with nothing, and
+            // nothing recorded which entitlement was owed. A row is claimed as
+            // 'consuming' before consume(), turned 'granted' in the same transaction as
+            // the grant, and rows left in 'consuming' are reconciled against Discord.
+            this.db.run(`CREATE TABLE IF NOT EXISTS entitlement_redemptions(
+                entitlementID TEXT PRIMARY KEY,
+                guildID TEXT NOT NULL,
+                userID TEXT NOT NULL,
+                skuID TEXT NOT NULL,
+                kind TEXT NOT NULL CHECK (kind IN ('credits', 'csv')),
+                amount INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL CHECK (status IN ('consuming', 'granted')),
+                createdAt INTEGER NOT NULL,
+                grantedAt INTEGER
+            );`)
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_entitlement_redemptions_status ON entitlement_redemptions(status, createdAt)")
+        })
     }
 
     /**
@@ -1303,6 +1323,122 @@ class Database {
                         return
                     }
                     resolve()
+                }
+            )
+        })
+    }
+
+    // ---------------------------------------------------------------------------
+    // Consumable redemption ledger (see migration 28)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Claim an entitlement for redemption before it is consumed on Discord. Succeeds
+     * for a new entitlement, or for one whose earlier claim was left in 'consuming'
+     * for longer than `staleMs` (the process died before consume() returned). A
+     * concurrent /premium redeem of the same entitlement finds a fresh claim and backs off.
+     *
+     * @returns {Promise<?number>} the claim's createdAt when this caller owns it, else null
+     */
+    claimEntitlementRedemption({ entitlementID, guildID, userID, skuID, kind, amount }, staleMs) {
+        const now = Date.now()
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `INSERT INTO entitlement_redemptions (entitlementID, guildID, userID, skuID, kind, amount, status, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, 'consuming', ?)
+                 ON CONFLICT(entitlementID) DO UPDATE SET
+                     guildID = excluded.guildID, userID = excluded.userID, createdAt = excluded.createdAt
+                 WHERE status = 'consuming' AND createdAt < ?`,
+                [entitlementID, guildID, userID, skuID, kind, amount || 0, now, now - staleMs],
+                function (err) {
+                    if (err) return reject(err)
+                    resolve(this.changes > 0 ? now : null)
+                }
+            )
+        })
+    }
+
+    /**
+     * Drop a claim whose entitlement was never consumed, so it can be redeemed again.
+     * Only removes the claim made at `createdAt`, never one a later redeem took over.
+     */
+    releaseEntitlementRedemption(entitlementID, createdAt) {
+        return new Promise((resolve) => {
+            this.db.run(
+                "DELETE FROM entitlement_redemptions WHERE entitlementID = ? AND status = 'consuming' AND createdAt = ?",
+                [entitlementID, createdAt],
+                function (err) {
+                    if (err) console.error('Error releasing entitlement redemption:', err)
+                    resolve(!err && this.changes > 0)
+                }
+            )
+        })
+    }
+
+    /**
+     * Apply a consumed entitlement to its guild and mark it granted, in one
+     * transaction. Runs at most once per entitlement: a row already 'granted' (or
+     * missing) resolves false and grants nothing.
+     *
+     * @returns {Promise<boolean>} whether this call granted it
+     */
+    grantEntitlementRedemption(entitlementID) {
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                this.db.run("BEGIN IMMEDIATE", (beginErr) => {
+                    if (beginErr) return reject(beginErr)
+                    const fail = (err) => this.db.run("ROLLBACK", () => reject(err))
+
+                    this.db.get(
+                        "SELECT guildID, kind, amount FROM entitlement_redemptions WHERE entitlementID = ? AND status = 'consuming'",
+                        [entitlementID],
+                        (err, row) => {
+                            if (err) return fail(err)
+                            if (!row) return this.db.run("ROLLBACK", () => resolve(false))
+
+                            const grantSql = row.kind === 'csv'
+                                ? ["INSERT INTO guild_premium (guildID, csvUnlocked) VALUES (?, 1) ON CONFLICT(guildID) DO UPDATE SET csvUnlocked = 1", [row.guildID]]
+                                : ["INSERT INTO guild_premium (guildID, bonusCredits) VALUES (?, ?) ON CONFLICT(guildID) DO UPDATE SET bonusCredits = bonusCredits + excluded.bonusCredits", [row.guildID, row.amount]]
+
+                            this.db.run(grantSql[0], grantSql[1], (grantErr) => {
+                                if (grantErr) return fail(grantErr)
+                                this.db.run(
+                                    "UPDATE entitlement_redemptions SET status = 'granted', grantedAt = ? WHERE entitlementID = ? AND status = 'consuming'",
+                                    [Date.now(), entitlementID],
+                                    (markErr) => {
+                                        if (markErr) return fail(markErr)
+                                        this.db.run("COMMIT", (commitErr) => {
+                                            if (commitErr) return fail(commitErr)
+                                            if (row.kind === 'credits') {
+                                                // As after any top-up (addGuildCredits): warn again on the next exhaustion.
+                                                this.db.run(
+                                                    "UPDATE guild_stats SET warnedCreditsLow = 0, warnedCreditsZero = 0 WHERE guildID = ?",
+                                                    [row.guildID],
+                                                    () => resolve(true)
+                                                )
+                                            } else {
+                                                resolve(true)
+                                            }
+                                        })
+                                    }
+                                )
+                            })
+                        }
+                    )
+                })
+            })
+        })
+    }
+
+    /** Claims still 'consuming' after `olderThanMs`: consumed-but-not-granted, or never consumed. */
+    getStuckEntitlementRedemptions(olderThanMs) {
+        return new Promise((resolve) => {
+            this.db.all(
+                "SELECT * FROM entitlement_redemptions WHERE status = 'consuming' AND createdAt < ?",
+                [Date.now() - olderThanMs],
+                (err, rows) => {
+                    if (err) console.error('Error reading stuck entitlement redemptions:', err)
+                    resolve(rows || [])
                 }
             )
         })

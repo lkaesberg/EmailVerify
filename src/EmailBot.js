@@ -670,6 +670,15 @@ bot.once('clientReady', async () => {
         .then(list => console.log(`[Premium] Cached ${list.length} active entitlements for premium event diffing`))
         .catch(e => console.warn('[Premium] Could not prime entitlement cache:', e?.message || e))
 
+    // Settle consumable redemptions whose local grant never landed (see the
+    // entitlement_redemptions ledger). One shard is enough; the ledger grants once.
+    if (isPrimary) {
+        const reconcile = () => premiumManager.reconcileRedemptions(bot)
+            .catch(e => console.warn('[Premium] Redemption reconciliation failed:', e?.message || e))
+        reconcile()
+        setInterval(reconcile, 60 * 60 * 1000).unref()
+    }
+
     bot.user.setActivity("/verify | Website", {
         type: "PLAYING",
         url: "https://getemailverified.com"

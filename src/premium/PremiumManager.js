@@ -17,6 +17,8 @@ const monetization = config.monetization || { enabled: false }
 const skus = monetization.skus || {}
 const zeptoCfg = config.zeptomail || {}
 const zeptoConfigured = !!(zeptoCfg.enabled && zeptoCfg.apiToken && zeptoCfg.fromAddress)
+// A redemption claim older than this with no outcome is treated as abandoned.
+const REDEMPTION_STALE_MS = 10 * 60 * 1000
 
 class PremiumManager {
     get enabled() {
@@ -289,6 +291,78 @@ class PremiumManager {
     }
 
     /**
+     * Consume one consumable entitlement on Discord and grant it to the guild, recorded
+     * in the redemption ledger so a grant that fails after the consume is owed, not lost.
+     *
+     *   'granted' : consumed and applied to the guild
+     *   'busy'    : another redeem of this entitlement is in flight; nothing done here
+     *   'pending' : consumed, but the local grant failed; reconcileRedemptions retries it
+     * Throws when consume() fails; the claim is released so the entitlement can be redeemed again.
+     */
+    async #consumeAndGrant(entitlement, userID, guildID, kind, amount) {
+        const claimedAt = await database.claimEntitlementRedemption({
+            entitlementID: entitlement.id, guildID, userID, skuID: entitlement.skuId, kind, amount
+        }, REDEMPTION_STALE_MS)
+        if (claimedAt === null) return 'busy'
+
+        try {
+            await entitlement.consume()
+        } catch (err) {
+            await database.releaseEntitlementRedemption(entitlement.id, claimedAt)
+            throw err
+        }
+
+        try {
+            if (await database.grantEntitlementRedemption(entitlement.id)) return 'granted'
+            console.error(`[Premium] Redemption ${entitlement.id} was no longer claimable after consume; left for reconciliation`)
+        } catch (err) {
+            console.error(`[Premium] Grant failed after consuming ${entitlement.id}; left for reconciliation:`, err)
+        }
+        return 'pending'
+    }
+
+    /**
+     * Settle ledger claims left in 'consuming' (a grant that failed after consume(), or
+     * a process that died around it). An entitlement Discord reports as consumed is
+     * granted now; one still unconsumed is released so the user can redeem it again.
+     * Runs on shard 0, where entitlement events land; the ledger's status check keeps
+     * a grant to once even if it overlapped a live redeem.
+     */
+    async reconcileRedemptions(client) {
+        const rows = await database.getStuckEntitlementRedemptions(REDEMPTION_STALE_MS)
+        for (const row of rows) {
+            let entitlement
+            try {
+                entitlement = await client.application.entitlements.fetch({ entitlement: row.entitlementID, force: true, cache: false })
+            } catch (err) {
+                console.warn(`[Premium] Could not fetch entitlement ${row.entitlementID} for reconciliation:`, err?.message || err)
+                continue
+            }
+            try {
+                if (entitlement.consumed) {
+                    if (await database.grantEntitlementRedemption(row.entitlementID)) {
+                        console.log(`[Premium] Reconciled redemption: ${row.kind} ${row.kind === 'credits' ? `+${row.amount} ` : ''}guild=${row.guildID} user=${row.userID} entitlement=${row.entitlementID}`)
+                        OperatorWebhook.notify({
+                            title: '🧾 Redemption reconciled',
+                            fields: [
+                                { name: 'Kind', value: row.kind === 'credits' ? `+${row.amount} credits` : 'CSV unlock', inline: true },
+                                { name: 'Guild', value: `\`${row.guildID}\``, inline: true },
+                                { name: 'User', value: `<@${row.userID}>`, inline: true },
+                                { name: 'Entitlement', value: `\`${row.entitlementID}\``, inline: true }
+                            ],
+                            level: 'success'
+                        })
+                    }
+                } else {
+                    await database.releaseEntitlementRedemption(row.entitlementID, row.createdAt)
+                }
+            } catch (err) {
+                console.error(`[Premium] Reconciling ${row.entitlementID} failed:`, err)
+            }
+        }
+    }
+
+    /**
      * Redeems the invoking user's unconsumed entitlements for the given guild.
      * Consumes credit packs and processes CSV durable unlocks.
      * Returns { creditsAdded: number, csvUnlocked: boolean, details: string[] }
@@ -319,8 +393,12 @@ class PremiumManager {
             if (creditSkuMap[entitlement.skuId] && !entitlement.consumed) {
                 const amount = creditSkuMap[entitlement.skuId]
                 try {
-                    await entitlement.consume()
-                    await database.addGuildCredits(guildID, amount)
+                    const outcome = await this.#consumeAndGrant(entitlement, interaction.user.id, guildID, 'credits', amount)
+                    if (outcome === 'busy') continue
+                    if (outcome === 'pending') {
+                        results.details.push(getLocale(lang, 'premiumRedeemCreditsFailed', amount.toString()))
+                        continue
+                    }
                     results.creditsAdded += amount
                     analytics.capture({ event: 'premium_redeemed', userId: interaction.user.id, guildId: guildID, properties: { type: 'credits', amount, sku: entitlement.skuId } })
                     results.details.push(getLocale(lang, 'premiumRedeemCredits', amount.toString()))
@@ -345,8 +423,12 @@ class PremiumManager {
             // CSV one-time unlock (consumable, per-server)
             if (entitlement.skuId === skus.csvUnlock && !entitlement.consumed) {
                 try {
-                    await entitlement.consume()
-                    await database.unlockGuildCSV(guildID)
+                    const outcome = await this.#consumeAndGrant(entitlement, interaction.user.id, guildID, 'csv', 0)
+                    if (outcome === 'busy') continue
+                    if (outcome === 'pending') {
+                        results.details.push(getLocale(lang, 'premiumRedeemCsvFailed'))
+                        continue
+                    }
                     results.csvUnlocked = true
                     analytics.capture({ event: 'premium_redeemed', userId: interaction.user.id, guildId: guildID, properties: { type: 'csv', sku: entitlement.skuId } })
                     results.details.push(getLocale(lang, 'premiumRedeemCsv'))
