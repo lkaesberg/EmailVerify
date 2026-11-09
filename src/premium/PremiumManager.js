@@ -136,8 +136,10 @@ class PremiumManager {
 
     /**
      * Determines whether the guild is allowed to send an email.
-     * If credits are consumed, the credit is decremented atomically.
-     * Returns { allowed, source, autoDisabled?, reason?, mailsSentMonth?, freeLimit? }.
+     * Whatever admits the send is taken atomically up front: a free email
+     * (reserveFreeMail), a credit, or a vote email. MailSender gives it back if the
+     * send fails.
+     * Returns { allowed, source, votePassId?, autoDisabled?, reason?, mailsSentMonth?, freeLimit? }.
      * `autoDisabled` is true exactly once per zeptomail-mode exhaustion event so the
      * caller knows to notify the owner.
      *
@@ -163,16 +165,17 @@ class PremiumManager {
             if (consumed) return { allowed: true, source: 'credits-zepto' }
 
             const autoDisabled = await database.tryAutoDisableZeptoMode(guildID)
-            const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
             const freeLimit = this.freeMonthlyLimit
-            if (stats.mailsSentMonth < freeLimit) {
+            if (await database.reserveFreeMail(guildID, freeLimit)) {
                 return { allowed: true, source: 'free', autoDisabled, autoDisabledReason: 'credits_exhausted' }
             }
             const consumedFallback = await database.consumeGuildCredit(guildID)
             if (consumedFallback) return { allowed: true, source: 'credits', autoDisabled, autoDisabledReason: 'credits_exhausted' }
-            if (userID && await database.consumeVotePass(userID, guildID)) {
-                return { allowed: true, source: 'vote', autoDisabled, autoDisabledReason: 'credits_exhausted' }
+            const votePassId = userID ? await database.consumeVotePass(userID, guildID) : null
+            if (votePassId) {
+                return { allowed: true, source: 'vote', votePassId, autoDisabled, autoDisabledReason: 'credits_exhausted' }
             }
+            const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
             return {
                 allowed: false,
                 reason: 'limit_reached',
@@ -185,14 +188,15 @@ class PremiumManager {
 
         // 3. Default 'free' mode: free monthly allowance → credits → the member's own
         //    vote emails → denied.
-        const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
         const freeLimit = this.freeMonthlyLimit
-        if (stats.mailsSentMonth < freeLimit) {
+        if (await database.reserveFreeMail(guildID, freeLimit)) {
             return { allowed: true, source: 'free' }
         }
         const consumed = await database.consumeGuildCredit(guildID)
         if (consumed) return { allowed: true, source: 'credits' }
-        if (userID && await database.consumeVotePass(userID, guildID)) return { allowed: true, source: 'vote' }
+        const votePassId = userID ? await database.consumeVotePass(userID, guildID) : null
+        if (votePassId) return { allowed: true, source: 'vote', votePassId }
+        const stats = await new Promise(resolve => database.getGuildStats(guildID, resolve))
         return {
             allowed: false,
             reason: 'limit_reached',
@@ -391,7 +395,10 @@ class PremiumManager {
             freeRemaining: Math.max(0, freeLimit - stats.mailsSentMonth),
             bonusCredits: premium.bonusCredits,
             csvUnlocked: premium.csvUnlocked,
-            mailMode: premium.mailMode || 'free',
+            // The mode that is actually in effect: a stored 'zeptomail' does nothing
+            // while ZeptoMail isn't configured (canSendMail takes the free path), so
+            // don't show it as active.
+            mailMode: this.zeptoConfigured ? (premium.mailMode || 'free') : 'free',
             zeptoAvailable: this.zeptoConfigured,
             hasUnlimitedMails: !!tier
         }

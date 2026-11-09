@@ -100,8 +100,10 @@ module.exports = class MailSender {
      *   verification flow where interaction.guild / interaction.guildId are null.
      * @param {Object} [preloadedSettings=null] - already-loaded ServerSettings; when the
      *   caller just read them, passing them here skips a redundant DB read.
+     * @param {?number} [votePassId=null] - canSendMail's votePassId for a 'vote' send, so a
+     *   failed send refunds the exact vote row it was taken from.
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null) {
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null, votePassId = null) {
         // Prefer the explicit guild: in the DM flow interaction.guild/guildId are null.
         const ctxGuild = guild || interaction.guild || null
         const serverId = ctxGuild?.id || interaction.guildId
@@ -207,13 +209,16 @@ module.exports = class MailSender {
                         console.log('SMTP Response:', info.response)
                     }
                 }
-                // canSendMail() consumed a credit before this attempt — refund it since
-                // no verification mail was actually delivered.
+                // canSendMail() took a free email, a credit or a vote email before this
+                // attempt — give it back since no verification mail was delivered.
+                if (premiumSource === 'free') {
+                    database.releaseFreeMail(serverId).catch(() => {})
+                }
                 if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                     database.refundGuildCredit(serverId).catch(() => {})
                 }
                 if (premiumSource === 'vote' && interaction.user?.id) {
-                    database.refundVotePass(interaction.user.id, serverId).catch(() => {})
+                    database.refundVotePass(interaction.user.id, serverId, votePassId).catch(() => {})
                 }
                 // A rejected recipient is the member's typo, not an outage — point them at
                 // the address instead of showing the generic "mail system failed" embed.
@@ -252,7 +257,7 @@ module.exports = class MailSender {
                 }
             } catch (e) {
                 console.error('[MailSender] Failed to record/check thresholds:', e)
-                database.incrementMailsSent(serverId)
+                database.incrementMailsSent(serverId, premiumSource)
             }
 
             const accepted = info.accepted && info.accepted.length > 0 ? info.accepted[0] : toEmail
@@ -350,6 +355,9 @@ module.exports = class MailSender {
 
         const failed = !info || (info.rejected && info.rejected.length > 0)
         if (failed) {
+            if (premiumSource === 'free') {
+                database.releaseFreeMail(guildId).catch(() => {})
+            }
             if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                 database.refundGuildCredit(guildId).catch(() => {})
             }
@@ -361,7 +369,7 @@ module.exports = class MailSender {
         }
 
         this.serverStatsAPI.increaseMailSend()
-        database.incrementMailsSent(guildId)
+        database.incrementMailsSent(guildId, premiumSource)
         analytics.capture({
             event: 'mail_sent',
             guildId,

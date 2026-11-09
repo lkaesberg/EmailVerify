@@ -315,7 +315,7 @@ async function handleResendCode(interaction, guildId) {
                 codePromptMessages.set(interaction.user.id + guildId, { id: sent.id, ts: Date.now() })
             }
             setTimeout(() => { interaction.deleteReply().catch(() => {}) }, 300000)
-        }, premiumCheck.source, serverSettings.effectiveEmailStyle, userGuild, serverSettings)
+        }, premiumCheck.source, serverSettings.effectiveEmailStyle, userGuild, serverSettings, premiumCheck.votePassId)
     })
 }
 
@@ -1403,7 +1403,7 @@ bot.on('interactionCreate', async interaction => {
                             interaction.webhook.deleteMessage(follow.id).catch(() => {})
                         }, 300000)
                     }
-                }, premiumCheck.source, serverSettings.effectiveEmailStyle, userGuild, serverSettings)
+                }, premiumCheck.source, serverSettings.effectiveEmailStyle, userGuild, serverSettings, premiumCheck.votePassId)
             })
             return
         }

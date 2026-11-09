@@ -848,69 +848,98 @@ class Database {
         })
     }
 
-    incrementMailsSent(guildID) {
-        // Fire-and-forget; legacy callers do not await
-        this.#incrementMailsSentAwaitable(guildID).catch(err => {
-            console.error('Error incrementing mails sent:', err)
+    /**
+     * Start a new stats month for the guild if its row is from an earlier one (or
+     * create the row). One atomic upsert, and the only place the monthly counters and
+     * flags are reset, so every writer below agrees on what a rollover clears — and two
+     * shards rolling over at once can't wipe each other's increments.
+     * getGuildStats mirrors this for reads of a row that hasn't rolled over yet.
+     */
+    #rollStatsMonth(guildID) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `INSERT INTO guild_stats (guildID, statsMonth) VALUES (?, ?)
+                 ON CONFLICT(guildID) DO UPDATE SET
+                     mailsSentMonth = 0, verificationsMonth = 0, mailsDeniedMonth = 0,
+                     warned80 = 0, warned95 = 0, warned100 = 0,
+                     warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0,
+                     statsMonth = excluded.statsMonth
+                 WHERE statsMonth IS NOT excluded.statsMonth`,
+                [guildID, this.getCurrentMonth()],
+                (err) => err ? reject(err) : resolve()
+            )
         })
     }
 
-    #incrementMailsSentAwaitable(guildID) {
-        const currentMonth = this.getCurrentMonth()
+    #runStats(sql, params) {
         return new Promise((resolve, reject) => {
-            this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
+            this.db.run(sql, params, function (err) {
                 if (err) return reject(err)
-                const cb = (e) => e ? reject(e) : resolve()
-                if (result === undefined) {
-                    this.db.run(
-                        "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 1, 1, 0, 0, ?)",
-                        [guildID, currentMonth],
-                        cb
-                    )
-                } else if (result.statsMonth !== currentMonth) {
-                    this.db.run(
-                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = 1, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, mailsDeniedMonth = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
-                        [currentMonth, guildID],
-                        cb
-                    )
-                } else {
-                    this.db.run(
-                        "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ?",
-                        [guildID],
-                        cb
-                    )
-                }
+                resolve(this.changes)
             })
         })
     }
 
-    incrementVerifications(guildID) {
-        const currentMonth = this.getCurrentMonth()
-        this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
-            if (err) {
-                console.error('Error incrementing verifications:', err)
-                return
-            }
-            if (result === undefined) {
-                // Create new entry
-                this.db.run(
-                    "INSERT INTO guild_stats (guildID, mailsSentTotal, mailsSentMonth, verificationsTotal, verificationsMonth, statsMonth) VALUES (?, 0, 0, 1, 1, ?)",
-                    [guildID, currentMonth]
-                )
-            } else if (result.statsMonth !== currentMonth) {
-                // Reset monthly counter for new month (also resets monthly quota warned flags)
-                this.db.run(
-                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = 1, mailsSentMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, mailsDeniedMonth = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
-                    [currentMonth, guildID]
-                )
-            } else {
-                // Increment both counters
-                this.db.run(
-                    "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = verificationsMonth + 1 WHERE guildID = ?",
-                    [guildID]
-                )
-            }
+    /**
+     * Count a sent mail. `source` is the admission source from canSendMail: a 'free'
+     * send already took its slot in mailsSentMonth when it was admitted
+     * (reserveFreeMail), so only the total is counted here.
+     */
+    incrementMailsSent(guildID, source = null) {
+        // Fire-and-forget; legacy callers do not await
+        this.#incrementMailsSentAwaitable(guildID, source !== 'free').catch(err => {
+            console.error('Error incrementing mails sent:', err)
         })
+    }
+
+    async #incrementMailsSentAwaitable(guildID, countMonth = true) {
+        await this.#rollStatsMonth(guildID)
+        await this.#runStats(
+            countMonth
+                ? "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1, mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ?"
+                : "UPDATE guild_stats SET mailsSentTotal = mailsSentTotal + 1 WHERE guildID = ?",
+            [guildID]
+        )
+    }
+
+    /**
+     * Take one of the guild's free monthly emails, atomically: the check and the
+     * increment are one conditional UPDATE, so concurrent sends on different shards
+     * can't all pass on the same count and overshoot the limit. Give it back with
+     * releaseFreeMail if the send then fails.
+     * @returns {Promise<boolean>} false when the free quota is used up (or on a DB error)
+     */
+    async reserveFreeMail(guildID, freeLimit) {
+        try {
+            await this.#rollStatsMonth(guildID)
+            const changes = await this.#runStats(
+                "UPDATE guild_stats SET mailsSentMonth = mailsSentMonth + 1 WHERE guildID = ? AND statsMonth = ? AND mailsSentMonth < ?",
+                [guildID, this.getCurrentMonth(), freeLimit]
+            )
+            return changes > 0
+        } catch (err) {
+            console.error('Error reserving free mail:', err)
+            return false
+        }
+    }
+
+    /** Give back a free email reserved for a send that failed (same month only). */
+    releaseFreeMail(guildID) {
+        return this.#runStats(
+            "UPDATE guild_stats SET mailsSentMonth = mailsSentMonth - 1 WHERE guildID = ? AND statsMonth = ? AND mailsSentMonth > 0",
+            [guildID, this.getCurrentMonth()]
+        ).then(() => {}, (err) => {
+            console.error('Error releasing free mail:', err)
+        })
+    }
+
+    incrementVerifications(guildID) {
+        this.#rollStatsMonth(guildID)
+            .then(() => this.#runStats(
+                "UPDATE guild_stats SET verificationsTotal = verificationsTotal + 1, verificationsMonth = verificationsMonth + 1 WHERE guildID = ?",
+                [guildID]
+            ))
+            .catch(err => console.error('Error incrementing verifications:', err))
     }
 
     getGuildPremium(guildID) {
@@ -1045,7 +1074,7 @@ class Database {
      * @param {number} freeLimit
      */
     async recordMailSentAndCheckThresholds(guildID, source, freeLimit) {
-        await this.#incrementMailsSentAwaitable(guildID)
+        await this.#incrementMailsSentAwaitable(guildID, source !== 'free')
 
         const out = {
             crossed80: false,
@@ -1116,32 +1145,8 @@ class Database {
      * Returns { deniedMonth, crossed1, crossed5, crossed20 }.
      */
     async recordMailDeniedAndCheckThresholds(guildID) {
-        const currentMonth = this.getCurrentMonth()
-        await new Promise((resolve, reject) => {
-            this.db.get("SELECT * FROM guild_stats WHERE guildID = ?", [guildID], (err, result) => {
-                if (err) return reject(err)
-                const cb = (e) => e ? reject(e) : resolve()
-                if (result === undefined) {
-                    this.db.run(
-                        "INSERT INTO guild_stats (guildID, mailsDeniedMonth, statsMonth) VALUES (?, 1, ?)",
-                        [guildID, currentMonth],
-                        cb
-                    )
-                } else if (result.statsMonth !== currentMonth) {
-                    this.db.run(
-                        "UPDATE guild_stats SET mailsDeniedMonth = 1, mailsSentMonth = 0, verificationsMonth = 0, statsMonth = ?, warned80 = 0, warned95 = 0, warned100 = 0, warnedDenied1 = 0, warnedDenied5 = 0, warnedDenied20 = 0 WHERE guildID = ?",
-                        [currentMonth, guildID],
-                        cb
-                    )
-                } else {
-                    this.db.run(
-                        "UPDATE guild_stats SET mailsDeniedMonth = mailsDeniedMonth + 1 WHERE guildID = ?",
-                        [guildID],
-                        cb
-                    )
-                }
-            })
-        })
+        await this.#rollStatsMonth(guildID)
+        await this.#runStats("UPDATE guild_stats SET mailsDeniedMonth = mailsDeniedMonth + 1 WHERE guildID = ?", [guildID])
 
         const out = { deniedMonth: null, crossed1: false, crossed5: false, crossed20: false }
         out.crossed1 = await this.#tripFlag(guildID, 'warnedDenied1', 1, 'mailsDeniedMonth')
@@ -1198,8 +1203,18 @@ class Database {
                 "INSERT INTO guild_premium (guildID, bonusCredits) VALUES (?, 1) ON CONFLICT(guildID) DO UPDATE SET bonusCredits = bonusCredits + 1",
                 [guildID],
                 (err) => {
-                    if (err) console.error('Error refunding guild credit:', err)
-                    resolve()
+                    if (err) {
+                        console.error('Error refunding guild credit:', err)
+                        return resolve()
+                    }
+                    // A concurrent send may have tripped the zero warning on the way down;
+                    // with credits back above 0 it must fire again at the next exhaustion,
+                    // as after a top-up (addGuildCredits).
+                    this.db.run(
+                        "UPDATE guild_stats SET warnedCreditsZero = 0 WHERE guildID = ? AND (SELECT bonusCredits FROM guild_premium WHERE guildID = ?) > 0",
+                        [guildID, guildID],
+                        () => resolve()
+                    )
                 }
             )
         })
@@ -1553,42 +1568,47 @@ class Database {
      * Spend one of the emails a user's votes unlocked in this guild this month. A single
      * UPDATE, so two sends at once can't both take the last one.
      *
-     * @returns {Promise<boolean>} false when the user has none left
+     * @returns {Promise<?number>} the id of the votes row it was taken from (hand it to
+     *   refundVotePass), or null when the user has none left
      */
     consumeVotePass(userID, guildID) {
         return new Promise((resolve) => {
-            this.db.run(
+            this.db.get(
                 `UPDATE votes SET mailsUsed = mailsUsed + 1 WHERE id = (
                      SELECT id FROM votes WHERE userID = ? AND guildID = ? AND month = ? AND mailsUsed < bonusGranted
                      ORDER BY id LIMIT 1
-                 )`,
+                 ) RETURNING id`,
                 [userID, guildID, this.getCurrentMonth()],
-                function (err) {
+                (err, row) => {
                     if (err) {
                         console.error('Error consuming vote pass:', err)
-                        resolve(false)
+                        resolve(null)
                         return
                     }
-                    resolve(this.changes > 0)
+                    resolve(row ? row.id : null)
                 }
             )
         })
     }
 
-    /** Give back a vote email whose send failed, like refundGuildCredit does for credits. */
-    refundVotePass(userID, guildID) {
-        return new Promise((resolve) => {
-            this.db.run(
-                `UPDATE votes SET mailsUsed = mailsUsed - 1 WHERE id = (
+    /**
+     * Give back a vote email whose send failed, like refundGuildCredit does for credits.
+     * With `voteId` (from consumeVotePass) the email goes back to the row it came from,
+     * even when the month rolled over in between; without it, to the newest used row
+     * of the current month.
+     */
+    refundVotePass(userID, guildID, voteId = null) {
+        const [sql, params] = voteId
+            ? ["UPDATE votes SET mailsUsed = mailsUsed - 1 WHERE id = ? AND userID = ? AND mailsUsed > 0", [voteId, userID]]
+            : [`UPDATE votes SET mailsUsed = mailsUsed - 1 WHERE id = (
                      SELECT id FROM votes WHERE userID = ? AND guildID = ? AND month = ? AND mailsUsed > 0
                      ORDER BY id DESC LIMIT 1
-                 )`,
-                [userID, guildID, this.getCurrentMonth()],
-                (err) => {
-                    if (err) console.error('Error refunding vote pass:', err)
-                    resolve()
-                }
-            )
+                 )`, [userID, guildID, this.getCurrentMonth()]]
+        return new Promise((resolve) => {
+            this.db.run(sql, params, (err) => {
+                if (err) console.error('Error refunding vote pass:', err)
+                resolve()
+            })
         })
     }
 
