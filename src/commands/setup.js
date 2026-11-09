@@ -194,18 +194,62 @@ function step3Message(language, note) {
     return { embeds: [embed], components: [row] };
 }
 
-function step4Message(language, domainsNote) {
+const POSTABLE_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
+
+/**
+ * Step 4: where the verification message goes. `here` is the channel the wizard runs in.
+ *
+ * Discord's channel picker is filled in by the admin's client, and it has been seen
+ * leaving out a channel the admin and the bot could both see (a private channel,
+ * reported 2026-11-09). A button that posts in the wizard's own channel does not
+ * depend on that list.
+ */
+function step4Message(language, domainsNote, here) {
     const embed = new EmbedBuilder()
         .setTitle(getLocale(language, 'setupStep4Title'))
         .setDescription(`${domainsNote}\n\n` + getLocale(language, 'setupStep4Body'))
         .setColor(WIZARD_COLOR);
-    const row = new ActionRowBuilder().addComponents(
+    const components = [new ActionRowBuilder().addComponents(
         new ChannelSelectMenuBuilder()
             .setCustomId('setupChannel')
             .setPlaceholder(getLocale(language, 'setupChannelPlaceholder'))
-            .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-    );
-    return { embeds: [embed], components: [row] };
+            .addChannelTypes(...POSTABLE_TYPES)
+    )];
+    if (here && POSTABLE_TYPES.includes(here.type)) {
+        // Button labels stop at 80 characters and channel names run to 100.
+        const name = here.name.length > 50 ? `${here.name.slice(0, 49)}…` : here.name;
+        components.push(new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('setupChannelHere')
+                .setLabel(getLocale(language, 'setupChannelHereButton', `#${name}`))
+                .setEmoji('📍')
+                .setStyle(ButtonStyle.Secondary)
+        ));
+    }
+    return { embeds: [embed], components };
+}
+
+/** Post the verification message in `channel`, then show the summary or step 4 again with the reason. */
+async function postVerificationMessage(interaction, channel, serverSettings, language) {
+    const me = interaction.guild.members.me;
+    const perms = channel && me ? channel.permissionsFor(me) : null;
+    if (!perms || !perms.has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages])) {
+        const retry = step4Message(language, getLocale(language, 'setupChannelNoPerms', `<#${channel?.id}>`), interaction.channel);
+        await interaction.update(retry).catch(() => {});
+        return;
+    }
+
+    const sent = await channel.send({
+        embeds: [buildVerifyEmbed(interaction.guild, language)],
+        components: [buildVerifyButtons(language)]
+    }).catch(() => null);
+    if (!sent) {
+        const retry = step4Message(language, getLocale(language, 'setupChannelPostFailed', `<#${channel.id}>`), interaction.channel);
+        await interaction.update(retry).catch(() => {});
+        return;
+    }
+
+    await interaction.update(await buildSummaryMessage(interaction.guild, serverSettings, channel)).catch(() => {});
 }
 
 async function buildSummaryMessage(guild, serverSettings, channel) {
@@ -387,32 +431,19 @@ module.exports = {
 
         // Step 3b → allow any email, straight to step 4
         if (interaction.customId === 'setupDomainsAny') {
-            await interaction.update(step4Message(language, getLocale(language, 'setupAnyEmailNote'))).catch(() => {});
+            await interaction.update(step4Message(language, getLocale(language, 'setupAnyEmailNote'), interaction.channel)).catch(() => {});
             return;
         }
 
-        // Step 4 → post the verification message
+        // Step 4 → post the verification message in the picked channel
         if (interaction.customId === 'setupChannel' && interaction.isChannelSelectMenu()) {
-            const channel = interaction.channels.first();
-            const me = interaction.guild.members.me;
-            const perms = channel && me ? channel.permissionsFor(me) : null;
-            if (!perms || !perms.has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages])) {
-                const retry = step4Message(language, getLocale(language, 'setupChannelNoPerms', `<#${channel?.id}>`));
-                await interaction.update(retry).catch(() => {});
-                return;
-            }
+            await postVerificationMessage(interaction, interaction.channels.first(), serverSettings, language);
+            return;
+        }
 
-            const sent = await channel.send({
-                embeds: [buildVerifyEmbed(interaction.guild, language)],
-                components: [buildVerifyButtons(language)]
-            }).catch(() => null);
-            if (!sent) {
-                const retry = step4Message(language, getLocale(language, 'setupChannelPostFailed', `<#${channel.id}>`));
-                await interaction.update(retry).catch(() => {});
-                return;
-            }
-
-            await interaction.update(await buildSummaryMessage(interaction.guild, serverSettings, channel)).catch(() => {});
+        // Step 4 (alternative) → post it in the channel the wizard runs in
+        if (interaction.customId === 'setupChannelHere') {
+            await postVerificationMessage(interaction, interaction.channel, serverSettings, language);
             return;
         }
     },
@@ -444,7 +475,7 @@ module.exports = {
         database.updateServerSettings(interaction.guildId, serverSettings);
 
         const display = domains.map(d => `\`${d.replaceAll('*', '✱')}\``).join(', ');
-        const next = step4Message(language, getLocale(language, 'setupDomainsSaved', display));
+        const next = step4Message(language, getLocale(language, 'setupDomainsSaved', display), interaction.channel);
         if (interaction.isFromMessage()) {
             await interaction.update(next).catch(() => {});
         } else {

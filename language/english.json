@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Setup — Step 4 of 4: Verification channel",
   "setupStep4Body": "Pick the channel where the verification message (with the **Verify** button) should be posted. Members click it to start verifying.",
   "setupChannelPlaceholder": "Select the verification channel",
+  "setupChannelHereButton": "Post here in %VAR%",
   "setupChannelNoPerms": "⚠️ I can't send messages in %VAR%. Give me **View Channel** and **Send Messages** there, or pick another channel.",
   "setupChannelPostFailed": "⚠️ Posting in %VAR% failed. Check my permissions there or pick another channel.",
   "setupSummaryTitle": "✅ Setup complete!",

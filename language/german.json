@@ -377,6 +377,7 @@
   "setupStep4Title": "🧭 Einrichtung — Schritt 4 von 4: Verifizierungskanal",
   "setupStep4Body": "Wähle den Kanal, in dem die Verifizierungsnachricht (mit dem Button **Verifizierung starten**) gepostet werden soll. Mitglieder klicken darauf, um sich zu verifizieren.",
   "setupChannelPlaceholder": "Verifizierungskanal auswählen",
+  "setupChannelHereButton": "Hier in %VAR% posten",
   "setupChannelNoPerms": "⚠️ Ich kann in %VAR% keine Nachrichten senden. Gib mir dort **Kanäle anzeigen** und **Nachrichten senden** oder wähle einen anderen Kanal.",
   "setupChannelPostFailed": "⚠️ Das Posten in %VAR% ist fehlgeschlagen. Prüfe dort meine Berechtigungen oder wähle einen anderen Kanal.",
   "setupSummaryTitle": "✅ Einrichtung abgeschlossen!",
