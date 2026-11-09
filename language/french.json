@@ -374,6 +374,7 @@
   "setupDomainsModalLabel": "Domaines autorisés (séparés par des virgules)",
   "setupNoValidDomains": "❌ Aucun domaine valide trouvé. Formats : `@gmail.com`, `gmail.com` ou jokers comme `@*.edu` — séparés par des virgules. Cliquez sur **Restreindre les domaines** pour réessayer.",
   "setupAnyEmailNote": "**Toute adresse e-mail** peut se vérifier (vous pourrez restreindre plus tard avec `/domain add`).",
+  "setupAnyEmailListKept": "Restrictions de domaine supprimées. Votre liste d'e-mails importée (%VAR% adresse(s)) s'applique toujours : seules ces adresses peuvent se vérifier. Lancez `/emaillist clear` pour autoriser **toute adresse e-mail**.",
   "setupDomainsSaved": "Domaines autorisés enregistrés : %VAR%",
   "setupStep4Title": "🧭 Configuration — Étape 4 sur 4 : salon de vérification",
   "setupStep4Body": "Choisissez le salon où publier le message de vérification (avec le bouton **Démarrer la Vérification**). Les membres cliquent dessus pour se faire vérifier.",

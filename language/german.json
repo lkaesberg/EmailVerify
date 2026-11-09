@@ -374,6 +374,7 @@
   "setupDomainsModalLabel": "Erlaubte Domains (durch Kommas getrennt)",
   "setupNoValidDomains": "❌ Keine gültigen Domains gefunden. Formate: `@gmail.com`, `gmail.com` oder Platzhalter wie `@*.edu` — durch Kommas getrennt. Klicke auf **Domains beschränken**, um es erneut zu versuchen.",
   "setupAnyEmailNote": "**Jede E-Mail-Adresse** kann sich verifizieren (einschränken kannst du das später mit `/domain add`).",
+  "setupAnyEmailListKept": "Domain-Beschränkungen entfernt. Deine hochgeladene E-Mail-Liste (%VAR% Adresse(n)) gilt weiterhin, daher können sich nur diese Adressen verifizieren. Führe `/emaillist clear` aus, um **jede E-Mail-Adresse** zuzulassen.",
   "setupDomainsSaved": "Erlaubte Domains gespeichert: %VAR%",
   "setupStep4Title": "🧭 Einrichtung — Schritt 4 von 4: Verifizierungskanal",
   "setupStep4Body": "Wähle den Kanal, in dem die Verifizierungsnachricht (mit dem Button **Verifizierung starten**) gepostet werden soll. Mitglieder klicken darauf, um sich zu verifizieren.",

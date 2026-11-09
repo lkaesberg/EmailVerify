@@ -374,6 +374,7 @@
   "setupDomainsModalLabel": "Allowed domains (comma-separated)",
   "setupNoValidDomains": "❌ No valid domains found. Formats: `@gmail.com`, `gmail.com`, or wildcards like `@*.edu` — comma-separated. Click **Restrict domains** to try again.",
   "setupAnyEmailNote": "Allowing **any email address** to verify (you can restrict later with `/domain add`).",
+  "setupAnyEmailListKept": "Domain restrictions removed. Your uploaded email list (%VAR% address(es)) still applies, so only those addresses can verify. Run `/emaillist clear` to allow **any email address**.",
   "setupDomainsSaved": "Allowed domains saved: %VAR%",
   "setupStep4Title": "🧭 Setup — Step 4 of 4: Verification channel",
   "setupStep4Body": "Pick the channel where the verification message (with the **Verify** button) should be posted. Members click it to start verifying.",

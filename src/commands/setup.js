@@ -445,9 +445,20 @@ module.exports = {
             return;
         }
 
-        // Step 3b → allow any email, straight to step 4
+        // Step 3b → allow any email, straight to step 4. Re-running /setup on a guild
+        // that already has domains used to leave them in place while the wizard said
+        // "any email", so drop them here. An uploaded email list is not wiped by a
+        // button click (it may be large and paid for); the note says it still applies.
         if (interaction.customId === 'setupDomainsAny') {
-            await interaction.update(step4Message(language, getLocale(language, 'setupAnyEmailNote'), interaction.channel)).catch(() => {});
+            if (serverSettings.domains.length > 0) {
+                serverSettings.domains = [];
+                await database.updateServerSettings(interaction.guildId, serverSettings);
+            }
+            const listCount = (serverSettings.allowedEmails || []).length;
+            const note = listCount > 0
+                ? getLocale(language, 'setupAnyEmailListKept', listCount.toString())
+                : getLocale(language, 'setupAnyEmailNote');
+            await interaction.update(step4Message(language, note, interaction.channel)).catch(() => {});
             return;
         }
 
