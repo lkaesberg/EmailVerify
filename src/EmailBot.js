@@ -26,12 +26,11 @@ const sendVerifyMessage = require("./bot/sendVerifyMessage")
 const {showEmailModal} = require("./bot/showEmailModal")
 const rest = require("./api/DiscordRest")
 const {PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, LabelBuilder, TextDisplayBuilder, EmbedBuilder} = require("discord.js");
-const UserTimeout = require("./UserTimeout");
 const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
-const { resolveVerificationRoles, unverifyPreviousHolder } = require('./utils/resolveVerificationRoles');
+const { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder } = require('./utils/resolveVerificationRoles');
 const { removeVerifiedStatusOnShard } = require('./utils/removeVerifiedStatus');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { describeSku, getCurrency, buildGetBotRow } = require('./utils/premiumButtons');
@@ -67,6 +66,55 @@ function notifyEmaillistLocked(guild, language) {
     }).catch(() => {})
 }
 const { emailMatchesDomains, emailIsBlacklisted } = require('./utils/wildcardMatch');
+
+/**
+ * Why this address may not verify in the guild right now, or null when it may:
+ * blacklist, a locked email list (entries exist but CSV access is gone), the address
+ * format, then the domain allowlist / uploaded email list. Runs when the email is
+ * submitted and again when its code is redeemed, so a code issued before an admin
+ * blacklisted the address or the list became locked can't verify within its TTL.
+ *
+ * @returns {Promise<?('blacklisted'|'emaillist_locked'|'invalid_format'|'domain_not_allowed')>}
+ */
+async function emailRejectionReason(guildId, serverSettings, email, interaction, { checkFormat = true } = {}) {
+    // Supports wildcards, e.g. *@tempmail.*, spam*
+    if (emailIsBlacklisted(email, serverSettings.blacklist)) return 'blacklisted'
+    const allowedEmails = serverSettings.allowedEmails || []
+    // Locked-list gate: an allowedEmails list exists from a prior Pro / CSV unlock, but
+    // the guild can no longer manage it. Block all verifications until the admin either
+    // clears the list (`/emaillist clear`) or restores CSV access.
+    if (allowedEmails.length > 0) {
+        const csvCheck = await premiumManager.canUseCSVFeature(guildId, await getEntitlementsForGuild(guildId, interaction))
+        if (!csvCheck.allowed) return 'emaillist_locked'
+    }
+    // Strict enough that the mail provider never sees an address it would reject or
+    // read differently from the domain check below — see utils/emailFormat.js. The CSV
+    // import and the API use the same check.
+    if (checkFormat && !isValidEmailAddress(email)) return 'invalid_format'
+    // Domain allowlist (wildcards, e.g. @*.edu) or the uploaded email list, stored as
+    // MD5 hashes of the lowercased address. Neither configured = any address is accepted.
+    const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
+    if (noRestrictionsConfigured) return null
+    if (emailMatchesDomains(email, serverSettings.domains)) return null
+    if (allowedEmails.includes(md5hash(email.toLowerCase()))) return null
+    return 'domain_not_allowed'
+}
+
+function emailRejectionEmbed(language, reason) {
+    if (reason === 'blacklisted') {
+        return new EmbedBuilder()
+            .setTitle(getLocale(language, "mailBlacklistedTitle"))
+            .setDescription(getLocale(language, "mailBlacklistedDescription"))
+            .setColor(0xED4245)
+    }
+    if (reason === 'emaillist_locked') {
+        return new EmbedBuilder()
+            .setTitle(getLocale(language, 'emaillistLockedUserTitle'))
+            .setDescription(getLocale(language, 'emaillistLockedUserMessage'))
+            .setColor(0xED4245)
+    }
+    return createInvalidEmailEmbed(language)
+}
 const premiumManager = require('./premium/PremiumManager');
 
 const bot = new Discord.Client({
@@ -88,10 +136,9 @@ bot.removeVerifiedStatusOnShard = (guildIds, userId) => removeVerifiedStatusOnSh
 
 let emailNotify = true
 
-// Pending verification codes now live in SQLite (see Database.pending_verifications)
-// so they survive restarts and are reachable from whichever shard a DM interaction
-// lands on. Only the best-effort, same-shard email-send rate limiter stays in memory.
-let userTimeouts = new Map()
+// Pending verification codes and the email-request backoff live in SQLite (see
+// Database.pending_verifications / email_rate_limits) so they survive restarts and are
+// shared with whichever shard a DM interaction lands on.
 
 const mailSender = new MailSender(serverStatsAPI, { codeTtlMs: CODE_TTL_MS })
 // Exposed for commands that send mail outside the verification flow (/testmail)
@@ -246,13 +293,20 @@ async function handleResendCode(interaction, guildId) {
 
         const code = crypto.randomInt(100000, 1000000).toString()
         await mailSender.sendEmail(pending.logEmail, code, userGuild.name, interaction, emailNotify, async (email) => {
-            // Replace the old code with the fresh one (resets attempts, new TTL).
-            await database.setPendingVerification(interaction.user.id, guildId, {
+            // Replace the old code with the fresh one (new TTL). The attempt counter
+            // carries over: a resend has only a flat cooldown and must not hand out a
+            // fresh set of guesses each time.
+            const stored = await database.setPendingVerification(interaction.user.id, guildId, {
                 code,
                 emailHash: pending.emailHash,
                 logEmail: pending.logEmail,
                 expiresAt: Date.now() + CODE_TTL_MS
-            })
+            }, { keepAttempts: true })
+            if (!stored) {
+                await interaction.editReply({ embeds: [createGenericErrorEmbed(language)], components: [] }).catch(() => {})
+                autoDelete(15000)
+                return
+            }
             analytics.capture({ event: 'verification_code_resent', userId: interaction.user.id, guild: userGuild })
             const codePromptEmbed = createCodeSentEmbed(language, pending.logEmail)
             await interaction.editReply({ embeds: [codePromptEmbed], components: [buildCodePromptRow(language, guildId)] }).catch(() => {})
@@ -677,13 +731,11 @@ setInterval(function () {
 }, 3600000).unref();
 
 // Periodic cleanup. The in-memory maps are per-shard, so every shard prunes its own;
-// the expired-code sweep touches the shared DB, so only the primary shard runs it.
+// the expired-code and email-backoff sweeps touch the shared DB, so only the primary
+// shard runs them.
 const CLEANUP_STALE_MS = 60 * 60 * 1000
 setInterval(() => {
     const now = Date.now()
-    for (const [userId, t] of userTimeouts) {
-        if (t.timestamp + t.waitseconds * 1000 < now - CLEANUP_STALE_MS) userTimeouts.delete(userId)
-    }
     for (const [key, v] of codePromptMessages) {
         if (!v || v.ts < now - CLEANUP_STALE_MS) codePromptMessages.delete(key)
     }
@@ -693,6 +745,7 @@ setInterval(() => {
     const isPrimary = !bot.shard || bot.shard.ids.includes(0)
     if (isPrimary) {
         database.sweepExpiredPendingVerifications().catch(() => {})
+        database.sweepEmailRateLimits(CLEANUP_STALE_MS).catch(() => {})
     }
 }, 30 * 60 * 1000).unref();
 
@@ -1264,70 +1317,30 @@ bot.on('interactionCreate', async interaction => {
                     });
                     return
                 }
-                // Blacklist check (supports wildcards, e.g., *@tempmail.*, spam*)
-                if (emailIsBlacklisted(emailText, serverSettings.blacklist)) {
-                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'blacklisted' } })
-                    const blacklistEmbed = new EmbedBuilder()
-                        .setTitle(getLocale(serverSettings.language, "mailBlacklistedTitle"))
-                        .setDescription(getLocale(serverSettings.language, "mailBlacklistedDescription"))
-                        .setColor(0xED4245)
-                    await interaction.followUp({ embeds: [blacklistEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
-                    return
-                }
-                // Locked-list gate: an allowedEmails list exists from a prior Pro / CSV unlock,
-                // but the guild can no longer manage it. Block all verifications until the admin
-                // either clears the list (`/emaillist clear`) or restores CSV access.
-                if ((serverSettings.allowedEmails || []).length > 0) {
-                    const csvCheck = await premiumManager.canUseCSVFeature(userGuild.id, await getEntitlementsForGuild(userGuild.id, interaction))
-                    if (!csvCheck.allowed) {
-                        analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'emaillist_locked' } })
-                        const lockedUserEmbed = new EmbedBuilder()
-                            .setTitle(getLocale(serverSettings.language, 'emaillistLockedUserTitle'))
-                            .setDescription(getLocale(serverSettings.language, 'emaillistLockedUserMessage'))
-                            .setColor(0xED4245)
-                        await interaction.followUp({ embeds: [lockedUserEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
-                        notifyEmaillistLocked(userGuild, serverSettings.language)
-                        return
-                    }
-                }
-                // Domain allowlist check (supports wildcards, e.g., @*.edu, @*.harvard.edu)
-                // Also checks against uploaded email list. If neither domains nor an allowedEmails
-                // list is configured, all valid email addresses are accepted (subject to blacklist).
-                // Strict enough that the mail provider never sees an address it would
-                // reject or read differently from the domain check below — see
-                // utils/emailFormat.js. The CSV import and the API use the same check.
-                const hasValidFormat = isValidEmailAddress(emailText)
-                const allowedEmails = serverSettings.allowedEmails || []
-                const noRestrictionsConfigured = serverSettings.domains.length === 0 && allowedEmails.length === 0
-                const matchesDomain = emailMatchesDomains(emailText, serverSettings.domains)
-                // allowedEmails are stored as MD5 hashes of the lowercased address (same scheme as userEmails)
-                const isInAllowedList = allowedEmails.includes(md5hash(emailText.toLowerCase()))
-
-                if (!hasValidFormat || (!noRestrictionsConfigured && !matchesDomain && !isInAllowedList)) {
-                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: hasValidFormat ? 'domain_not_allowed' : 'invalid_format' } })
-                    await interaction.followUp({ embeds: [createInvalidEmailEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
+                // Blacklist, locked email list, address format and domain/allowlist.
+                // The same check runs again when the code is redeemed (codeModal).
+                const rejection = await emailRejectionReason(userGuild.id, serverSettings, emailText, interaction)
+                if (rejection) {
+                    analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: rejection } })
+                    await interaction.followUp({ embeds: [emailRejectionEmbed(serverSettings.language, rejection)], flags: MessageFlags.Ephemeral }).catch(() => {})
+                    if (rejection === 'emaillist_locked') notifyEmaillistLocked(userGuild, serverSettings.language)
                     return
                 }
                 // Rate limit per user per guild — per-guild keying means abusive
                 // escalation in one guild neither penalizes nor is reset by the same
-                // user's legitimate activity in another guild.
-                let userTimeout = userTimeouts.get(interaction.user.id + userGuild.id)
-                if (!userTimeout) {
-                    userTimeout = new UserTimeout()
-                    userTimeouts.set(interaction.user.id + userGuild.id, userTimeout)
-                }
-                const timeoutMs = userTimeout.timestamp + userTimeout.waitseconds * 1000 - Date.now()
-                if (timeoutMs > 0) {
+                // user's legitimate activity in another guild. Kept in SQLite so the DM
+                // flow (shard 0) and the guild's own shard share one backoff, and two
+                // submits at once can't both pass.
+                const rateClaim = await database.claimEmailSend(interaction.user.id, userGuild.id)
+                if (!rateClaim.allowed) {
                     analytics.capture({ event: 'verification_email_rejected', userId: interaction.user.id, guild: userGuild, properties: { reason: 'rate_limited' } })
                     const timeoutEmbed = new EmbedBuilder()
                         .setTitle(getLocale(serverSettings.language, "mailTimeoutTitle"))
-                        .setDescription(getLocale(serverSettings.language, "mailTimeoutDescription", (timeoutMs / 1000).toFixed(0)))
+                        .setDescription(getLocale(serverSettings.language, "mailTimeoutDescription", (rateClaim.retryAfterMs / 1000).toFixed(0)))
                         .setColor(0xFFA500)
                     await interaction.followUp({ embeds: [timeoutEmbed], flags: MessageFlags.Ephemeral }).catch(() => {})
                     return
                 }
-                userTimeout.timestamp = Date.now()
-                userTimeout.increaseWaitTime()
 
                 // Premium check: verify the guild hasn't exceeded its free monthly limit.
                 // The user-facing embed deliberately omits quota numbers and purchase prompts —
@@ -1338,6 +1351,9 @@ bot.on('interactionCreate', async interaction => {
                     premiumManager.notifyZeptoModeAutoDisabled(userGuild, serverSettings.language).catch(() => {})
                 }
                 if (!premiumCheck.allowed) {
+                    // Turned away for the server's quota, not for asking too often: don't
+                    // push the member into a longer wait for it.
+                    await database.releaseEmailSend(interaction.user.id, userGuild.id, rateClaim.claim)
                     analytics.capture({
                         event: 'mail_denied',
                         userId: interaction.user.id,
@@ -1362,12 +1378,17 @@ bot.on('interactionCreate', async interaction => {
                 const code = crypto.randomInt(100000, 1000000).toString()
                 // Send email and store code on success
                 await mailSender.sendEmail(emailText.toLowerCase(), code, userGuild.name, interaction, emailNotify, async (email) => {
-                    await database.setPendingVerification(interaction.user.id, userGuild.id, {
+                    const stored = await database.setPendingVerification(interaction.user.id, userGuild.id, {
                         code,
                         emailHash: md5hash(email),
                         logEmail: email,
                         expiresAt: Date.now() + CODE_TTL_MS
                     })
+                    if (!stored) {
+                        // The mailed code could never be accepted; don't ask for it.
+                        await interaction.followUp({ embeds: [createGenericErrorEmbed(serverSettings.language)], flags: MessageFlags.Ephemeral }).catch(() => {})
+                        return
+                    }
 
                     // Only show the code prompt if email was successfully sent
                     const codePromptEmbed = createCodeSentEmbed(serverSettings.language, emailText.toLowerCase())
@@ -1440,6 +1461,20 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
 
+                // Re-check the address: a code issued before an admin blacklisted it,
+                // narrowed the domains/allowlist or lost access to the email list must
+                // not still verify within its TTL.
+                const rejection = await emailRejectionReason(userGuild.id, serverSettings, pending.logEmail, interaction, { checkFormat: false })
+                if (rejection) {
+                    await database.deletePendingVerification(interaction.user.id, userGuild.id)
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: rejection } })
+                    await interaction.editReply({ embeds: [emailRejectionEmbed(language, rejection)] }).catch(() => {})
+                    if (rejection === 'emaillist_locked') notifyEmaillistLocked(userGuild, language)
+                    cleanupCodePrompt()
+                    autoDelete(15000)
+                    return
+                }
+
                 // Wrong code: count the attempt and invalidate the code once the cap is hit
                 // so a 6-digit code can't be brute-forced. incrementPendingAttempts is a
                 // single atomic UPDATE…RETURNING; on a DB error we fail closed (generic
@@ -1506,28 +1541,38 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
 
-                // Unverify any previous holder of this email.
-                unverifyPreviousHolder(userGuild, pending.emailHash, interaction.user.id, rolesToAdd, roleUnverified, language)
-
-                // Persist the new verified user (first role kept in the legacy field for back-compat).
-                const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || (rolesToAdd[0] && rolesToAdd[0].id) || ''
-                database.updateEmailUser(new EmailUser(pending.emailHash, interaction.user.id, userGuild.id, primaryRoleId, 0))
-
-                // Assign roles to the verifying member.
-                const assignedRoleNames = []
+                // Who held this email before. Read now, before the ownership change below
+                // is written, or the read would find the new user.
+                let previousHolderId = null
                 try {
-                    const verifyMember = await userGuild.members.fetch(interaction.user.id)
+                    previousHolderId = await findPreviousHolder(userGuild, pending.emailHash, interaction.user.id)
+                } catch (e) {
+                    console.error('Error reading previous email holder:', e)
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'db_error' } })
+                    await restorePending()
+                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
+                    return
+                }
+
+                // Assign roles to the verifying member first: if Discord refuses, nothing
+                // has changed yet (no ownership moved, no previous holder displaced).
+                const assignedRoleNames = []
+                const addedRoles = []
+                let verifyMember = null
+                try {
+                    verifyMember = await userGuild.members.fetch(interaction.user.id)
                     for (const role of rolesToAdd) {
                         await verifyMember.roles.add(role)
+                        addedRoles.push(role)
                         assignedRoleNames.push(role.name)
                     }
-                    if (roleUnverified) {
-                        await verifyMember.roles.remove(roleUnverified).catch(() => {})
-                    }
                 } catch (e) {
-                    // Restore the code so the user can resubmit once the admin fixes the
-                    // bot's permissions, notify admins (no `interaction`, so no duplicate
-                    // followUp), and resolve the deferred reply so it doesn't hang.
+                    // Take back any role already handed out, restore the code so the user
+                    // can resubmit once the admin fixes the bot's permissions, notify
+                    // admins (no `interaction`, so no duplicate followUp), and resolve the
+                    // deferred reply so it doesn't hang.
+                    for (const role of addedRoles) await verifyMember?.roles.remove(role).catch(() => {})
                     analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'role_assignment_failed', detail: 'role_add_error' } })
                     await restorePending()
                     await permissions.notifyRoleAssignmentFailure(userGuild, serverSettings, language, interaction.user)
@@ -1535,6 +1580,27 @@ bot.on('interactionCreate', async interaction => {
                     autoDelete(15000)
                     return
                 }
+
+                // Persist the new verified user (first role kept in the legacy field for back-compat).
+                const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || (rolesToAdd[0] && rolesToAdd[0].id) || ''
+                const owned = await database.updateEmailUser(new EmailUser(pending.emailHash, interaction.user.id, userGuild.id, primaryRoleId, 0))
+                if (!owned) {
+                    // Roles without a record would let the next holder of this email verify
+                    // without displacing this member: take the roles back and keep the code.
+                    for (const role of addedRoles) await verifyMember.roles.remove(role).catch(() => {})
+                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'db_error' } })
+                    await restorePending()
+                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
+                    autoDelete(15000)
+                    return
+                }
+                if (roleUnverified) {
+                    await verifyMember.roles.remove(roleUnverified).catch(() => {})
+                }
+
+                // Only now unverify the previous holder of this email.
+                displacePreviousHolder(userGuild, previousHolderId, rolesToAdd, roleUnverified, language)
+                    .catch(e => console.error('Error displacing previous email holder:', e))
 
                 try {
                     if (serverSettings.logChannel !== "") {
@@ -1567,7 +1633,7 @@ bot.on('interactionCreate', async interaction => {
                 serverStatsAPI.increaseVerifiedUsers()
                 database.incrementVerifications(userGuild.id)
                 analytics.capture({ event: 'verification_completed', userId: interaction.user.id, guild: userGuild, properties: { roles_assigned: assignedRoleNames.length } })
-                userTimeouts.delete(interaction.user.id + userGuild.id)
+                database.clearEmailRateLimit(interaction.user.id, userGuild.id)
 
                 cleanupCodePrompt()
                 autoDelete(20000)

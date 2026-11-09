@@ -51,34 +51,47 @@ function resolveVerificationRoles(guild, serverSettings, email) {
 }
 
 /**
- * Unverify whoever previously verified with this email in the guild: strip the
- * verification roles, re-apply the unverified role, and DM them why. Fire-and-forget —
- * shared by the email-verification flow and `/manualverify` so both behave identically.
+ * The member who currently owns this email in the guild, unless it is `newUserId`.
+ * Read BEFORE the new ownership is written: reading afterwards would find the new
+ * user and never displace anyone.
  *
  * @param {import('discord.js').Guild} guild
  * @param {string} emailHash - MD5 hash of the (lowercased) email
- * @param {string} newUserId - the user who just verified; skipped if they're the previous holder
+ * @param {string} newUserId - the user who is verifying
+ * @returns {Promise<?string>} the previous holder's user id, or null
+ */
+async function findPreviousHolder(guild, emailHash, newUserId) {
+    const ownerId = await database.getEmailOwnerId(emailHash, guild.id)
+    return ownerId && ownerId !== newUserId ? ownerId : null
+}
+
+/**
+ * Unverify the previous holder of an email once the new owner has their roles and the
+ * ownership change is stored: strip the verification roles, re-apply the unverified
+ * role, and DM them why. Shared by the email-verification flow and `/manualverify`.
+ *
+ * Skipped when the previous holder still owns another address in this guild: they are
+ * still verified through that one, and stripping roles would leave them unverified
+ * with a valid record.
+ *
+ * @param {import('discord.js').Guild} guild
+ * @param {?string} previousUserId - from findPreviousHolder
  * @param {import('discord.js').Role[]} rolesToAdd - roles the new verification grants (removed from the previous holder)
  * @param {import('discord.js').Role|null} roleUnverified
  * @param {string} language - guild language for the DM
  */
-function unverifyPreviousHolder(guild, emailHash, newUserId, rolesToAdd, roleUnverified, language) {
-    database.getEmailUser(emailHash, guild.id, async (currentUserEmail) => {
-        if (!currentUserEmail || currentUserEmail.userID === newUserId) return
-        const member = await guild.members.fetch(currentUserEmail.userID).catch(() => null)
-        if (!member) return
-        try {
-            for (const role of rolesToAdd) {
-                await member.roles.remove(role).catch(() => {})
-            }
-            if (roleUnverified) {
-                await member.roles.add(roleUnverified).catch(() => {})
-            }
-        } catch (e) {
-            console.log(e)
-        }
-        member.send(getLocale(language, 'unverifiedByOtherDm', guild.name)).catch(() => {})
-    })
+async function displacePreviousHolder(guild, previousUserId, rolesToAdd, roleUnverified, language) {
+    if (!previousUserId) return
+    if (await database.userHasEmailInGuild(previousUserId, guild.id)) return
+    const member = await guild.members.fetch(previousUserId).catch(() => null)
+    if (!member) return
+    for (const role of rolesToAdd) {
+        await member.roles.remove(role).catch(() => {})
+    }
+    if (roleUnverified) {
+        await member.roles.add(roleUnverified).catch(() => {})
+    }
+    member.send(getLocale(language, 'unverifiedByOtherDm', guild.name)).catch(() => {})
 }
 
-module.exports = { resolveVerificationRoles, unverifyPreviousHolder }
+module.exports = { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder }

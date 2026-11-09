@@ -309,6 +309,22 @@ class Database {
             this.db.run("ALTER TABLE votes ADD COLUMN mailsUsed INTEGER NOT NULL DEFAULT 0")
             this.db.run("CREATE INDEX IF NOT EXISTS idx_votes_user_guild_month ON votes(userID, guildID, month)")
         })
+        this.runMigration(27, () => {
+            // Email-request backoff, shared by every shard. It used to be a per-shard
+            // in-memory Map, so a user had one backoff on shard 0 (DM interactions) and
+            // another on the guild's own shard, and two submits on different shards both
+            // went through. Same escalation as before: 0 → 12 → 60 → 300 seconds.
+            this.db.run(`CREATE TABLE IF NOT EXISTS email_rate_limits(
+                userID TEXT NOT NULL,
+                guildID TEXT NOT NULL,
+                waitSeconds INTEGER NOT NULL DEFAULT 0,
+                lastAt INTEGER NOT NULL,
+                PRIMARY KEY (userID, guildID)
+            );`)
+            // Displacing a previous holder checks whether they still own another address
+            // in the guild, which looks rows up by user.
+            this.db.run("CREATE INDEX IF NOT EXISTS idx_userEmails_user_guild ON userEmails(userID, guildID)")
+        })
     }
 
     /**
@@ -378,6 +394,10 @@ class Database {
         this.db.run("DELETE FROM vote_targets WHERE userID = ?;", [userID])
         // A vote only ever rewards the voter, so nothing is left to keep for anyone else.
         this.db.run("DELETE FROM votes WHERE userID = ?;", [userID])
+        // A code still pending would otherwise let the user re-verify from a deleted
+        // account's address within its TTL.
+        this.db.run("DELETE FROM pending_verifications WHERE userID = ?;", [userID])
+        this.db.run("DELETE FROM email_rate_limits WHERE userID = ?;", [userID])
     }
 
     deleteServerData(guildID) {
@@ -390,6 +410,7 @@ class Database {
         // here would control the allowlist again once the bot is re-added.
         this.db.run("DELETE FROM guild_api_tokens WHERE guildID = ?;", [guildID])
         this.db.run("DELETE FROM pending_verifications WHERE guildID = ?;", [guildID])
+        this.db.run("DELETE FROM email_rate_limits WHERE guildID = ?;", [guildID])
     }
 
     /** Whether the guild has saved settings at all (a fresh join has none). */
@@ -511,10 +532,133 @@ class Database {
         )
     }
 
+    /**
+     * Record `emailUser.userID` as the owner of the address in the guild. Resolves
+     * true once written, false on a DB error (logged), so callers can wait for the
+     * ownership change before acting on it.
+     */
     updateEmailUser(emailUser) {
-        this.db.run(
-            "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
-            [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic])
+        return new Promise((resolve) => {
+            this.db.run(
+                "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
+                [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic],
+                (err) => {
+                    if (err) console.error('Error storing verified email owner:', err)
+                    resolve(!err)
+                }
+            )
+        })
+    }
+
+    /**
+     * The user who currently owns this address in the guild, or null.
+     * Rejects on a DB error so a caller never mistakes it for "no owner".
+     */
+    getEmailOwnerId(emailHash, guildID) {
+        return new Promise((resolve, reject) => {
+            this.db.get("SELECT userID FROM userEmails WHERE guildID = ? AND email = ?", [guildID, emailHash], (err, row) => {
+                if (err) return reject(err)
+                resolve(row ? row.userID : null)
+            })
+        })
+    }
+
+    /** Whether the user still owns any address in the guild. Errs towards true. */
+    userHasEmailInGuild(userID, guildID) {
+        return new Promise((resolve) => {
+            this.db.get("SELECT 1 AS found FROM userEmails WHERE userID = ? AND guildID = ? LIMIT 1", [userID, guildID], (err, row) => {
+                if (err) {
+                    console.error('Error checking remaining verified emails:', err)
+                    return resolve(true)
+                }
+                resolve(!!row)
+            })
+        })
+    }
+
+    /**
+     * Claim one email send against the per-user, per-guild backoff, atomically across
+     * shards. Allowed when the previous wait has run out; a claim stamps now and
+     * escalates the wait (0 → 12 → 60 → 300 s, then stays at 300).
+     *
+     * @returns {Promise<{allowed: true, claim: ?Object} | {allowed: false, retryAfterMs: number}>}
+     *   `claim` is handed to releaseEmailSend when the send is then not admitted.
+     */
+    async claimEmailSend(userID, guildID) {
+        const now = Date.now()
+        const prev = await new Promise((resolve) => {
+            this.db.get("SELECT waitSeconds, lastAt FROM email_rate_limits WHERE userID = ? AND guildID = ?", [userID, guildID], (err, row) => {
+                resolve(err ? undefined : (row || null))
+            })
+        })
+        const changes = await new Promise((resolve) => {
+            this.db.run(
+                `INSERT INTO email_rate_limits (userID, guildID, waitSeconds, lastAt) VALUES (?, ?, 12, ?)
+                 ON CONFLICT(userID, guildID) DO UPDATE SET
+                     waitSeconds = CASE WHEN waitSeconds <= 0 THEN 12 WHEN waitSeconds < 300 THEN waitSeconds * 5 ELSE waitSeconds END,
+                     lastAt = excluded.lastAt
+                 WHERE lastAt + waitSeconds * 1000 <= excluded.lastAt`,
+                [userID, guildID, now],
+                function (err) {
+                    if (err) {
+                        // Fail open: the guild's mail quota still applies, and a broken
+                        // limiter must not block every verification.
+                        console.error('Error claiming email send slot:', err)
+                        return resolve(null)
+                    }
+                    resolve(this.changes)
+                }
+            )
+        })
+        if (changes === null) return { allowed: true, claim: null }
+        if (changes > 0) return { allowed: true, claim: { at: now, prev: prev || null } }
+
+        const row = await new Promise((resolve) => {
+            this.db.get("SELECT waitSeconds, lastAt FROM email_rate_limits WHERE userID = ? AND guildID = ?", [userID, guildID], (err, r) => resolve(err ? null : r))
+        })
+        const retryAfterMs = row ? Math.max(1000, row.lastAt + row.waitSeconds * 1000 - now) : 1000
+        return { allowed: false, retryAfterMs }
+    }
+
+    /**
+     * Undo a claim whose send was then not admitted (e.g. the mail quota denied it), so
+     * a member turned away for the server's quota isn't pushed into longer waits. Only
+     * touches the row while it still holds this claim.
+     */
+    releaseEmailSend(userID, guildID, claim) {
+        if (!claim) return Promise.resolve()
+        return new Promise((resolve) => {
+            const done = (err) => {
+                if (err) console.error('Error releasing email send slot:', err)
+                resolve()
+            }
+            if (claim.prev) {
+                this.db.run(
+                    "UPDATE email_rate_limits SET waitSeconds = ?, lastAt = ? WHERE userID = ? AND guildID = ? AND lastAt = ?",
+                    [claim.prev.waitSeconds, claim.prev.lastAt, userID, guildID, claim.at],
+                    done
+                )
+            } else {
+                this.db.run("DELETE FROM email_rate_limits WHERE userID = ? AND guildID = ? AND lastAt = ?", [userID, guildID, claim.at], done)
+            }
+        })
+    }
+
+    /** Reset the backoff once the member has verified. */
+    clearEmailRateLimit(userID, guildID) {
+        this.db.run("DELETE FROM email_rate_limits WHERE userID = ? AND guildID = ?", [userID, guildID], (err) => {
+            if (err) console.error('Error clearing email rate limit:', err)
+        })
+    }
+
+    /** Drop backoff rows whose wait ran out more than `staleMs` ago. */
+    sweepEmailRateLimits(staleMs) {
+        return new Promise((resolve) => {
+            this.db.run("DELETE FROM email_rate_limits WHERE lastAt + waitSeconds * 1000 < ?", [Date.now() - staleMs], function (err) {
+                if (err) console.error('Error sweeping email rate limits:', err)
+                resolve(err ? 0 : (this.changes || 0))
+            })
+        })
     }
 
     getEmailUser(email, guildID, callback) {
@@ -531,19 +675,30 @@ class Database {
 
     /**
      * Store (or replace) a pending verification code for a user in a guild.
-     * Replacing resets the attempt counter, so re-requesting a code gives a clean slate.
+     * Replacing resets the attempt counter, so a new email request gives a clean slate
+     * (those go through the escalating email backoff). With `keepAttempts`, a row that
+     * is still there keeps its counter: "Resend code" only has a flat cooldown, so it
+     * must not hand out a fresh set of guesses with every resend.
+     * Resolves true once stored, false on a DB error (logged): the caller must not tell
+     * the member a code is waiting when none was stored.
      * @param {string} userID
      * @param {string} guildID
      * @param {{code: string, emailHash: string, logEmail: string, expiresAt: number}} data
+     * @param {{keepAttempts?: boolean}} [options]
      */
-    setPendingVerification(userID, guildID, { code, emailHash, logEmail, expiresAt }) {
+    setPendingVerification(userID, guildID, { code, emailHash, logEmail, expiresAt }, { keepAttempts = false } = {}) {
+        const sql = keepAttempts
+            ? `INSERT INTO pending_verifications (userID, guildID, code, emailHash, logEmail, attempts, lastSentAt, expiresAt) VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+               ON CONFLICT(userID, guildID) DO UPDATE SET code = excluded.code, emailHash = excluded.emailHash, logEmail = excluded.logEmail,
+                   lastSentAt = excluded.lastSentAt, expiresAt = excluded.expiresAt`
+            : "INSERT OR REPLACE INTO pending_verifications (userID, guildID, code, emailHash, logEmail, attempts, lastSentAt, expiresAt) VALUES (?, ?, ?, ?, ?, 0, ?, ?)"
         return new Promise((resolve) => {
             this.db.run(
-                "INSERT OR REPLACE INTO pending_verifications (userID, guildID, code, emailHash, logEmail, attempts, lastSentAt, expiresAt) VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+                sql,
                 [userID, guildID, code, emailHash, logEmail, Date.now(), expiresAt],
                 (err) => {
                     if (err) console.error('Error storing pending verification:', err)
-                    resolve()
+                    resolve(!err)
                 }
             )
         })
