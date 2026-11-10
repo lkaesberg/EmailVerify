@@ -14,7 +14,7 @@ const {getLocale} = require("../Language");
 const md5hash = require("../crypto/Crypto");
 const EmailUser = require("../database/EmailUser");
 const ErrorNotifier = require("../utils/ErrorNotifier");
-const { resolveVerificationRoles, unverifyPreviousHolder } = require("../utils/resolveVerificationRoles");
+const { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder } = require("../utils/resolveVerificationRoles");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -62,31 +62,53 @@ module.exports = {
 
             const emailHash = md5hash(email);
 
-            // Check if another user already has this email and unverify them
-            unverifyPreviousHolder(interaction.guild, emailHash, targetUser.id, rolesToAdd, roleUnverified, serverSettings.language);
-
-            // Update the database with the new user (first role kept in the legacy field)
-            const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || rolesToAdd[0].id || '';
-            database.updateEmailUser(new EmailUser(emailHash, targetUser.id, interaction.guildId, primaryRoleId, 0));
-
-            // Assign roles to the target user
-            const assignedRoleNames = [];
+            // Who held this email before. Read before the ownership change below is
+            // written, or the read would find the target user.
+            let previousHolderId = null;
             try {
-                const verifyMember = await interaction.guild.members.fetch(targetUser.id);
+                previousHolderId = await findPreviousHolder(interaction.guild, emailHash, targetUser.id);
+            } catch (e) {
+                console.error('Error reading previous email holder:', e);
+                await interaction.reply({ content: "❌ Could not read the verification records. Please try again.", flags: MessageFlags.Ephemeral });
+                return;
+            }
+
+            // Assign roles first: if that fails, nothing has changed yet (no ownership
+            // moved, no previous holder displaced).
+            const assignedRoleNames = [];
+            const addedRoles = [];
+            let verifyMember = null;
+            try {
+                verifyMember = await interaction.guild.members.fetch(targetUser.id);
                 for (const role of rolesToAdd) {
                     await verifyMember.roles.add(role);
+                    addedRoles.push(role);
                     assignedRoleNames.push(role.name);
                 }
-                if (roleUnverified) {
-                    await verifyMember.roles.remove(roleUnverified).catch(() => {});
-                }
             } catch (e) {
+                for (const role of addedRoles) await verifyMember?.roles.remove(role).catch(() => {});
                 await interaction.reply({
                     content: `Failed to assign role to user. Make sure the user is in the server and the bot has proper permissions.\nError: ${e.message}`,
                     flags: MessageFlags.Ephemeral
                 });
                 return;
             }
+
+            // Record the new owner (first role kept in the legacy field)
+            const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || rolesToAdd[0].id || '';
+            const owned = await database.updateEmailUser(new EmailUser(emailHash, targetUser.id, interaction.guildId, primaryRoleId, 0));
+            if (!owned) {
+                for (const role of addedRoles) await verifyMember.roles.remove(role).catch(() => {});
+                await interaction.reply({ content: "❌ Could not save the verification. No roles were changed.", flags: MessageFlags.Ephemeral });
+                return;
+            }
+            if (roleUnverified) {
+                await verifyMember.roles.remove(roleUnverified).catch(() => {});
+            }
+
+            // Only now unverify whoever held this email before
+            displacePreviousHolder(interaction.guild, previousHolderId, rolesToAdd, roleUnverified, serverSettings.language)
+                .catch(e => console.error('Error displacing previous email holder:', e));
 
             // Log to the log channel if configured
             try {

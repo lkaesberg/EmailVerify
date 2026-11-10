@@ -103,10 +103,11 @@ module.exports = {
                     });
                     return;
                 }
-                serverSettings.allowedEmails = [];
-                database.updateServerSettings(interaction.guildId, serverSettings);
+                // One-column write under a transaction, like the API's: a whole-row save
+                // could race an API change to the list.
+                const cleared = await database.clearAllowedEmails(interaction.guildId);
                 await interaction.reply({
-                    content: getLocale(language, "emaillistCleared", count.toString()),
+                    content: getLocale(language, "emaillistCleared", (cleared.missing ? count : cleared.removed).toString()),
                     flags: MessageFlags.Ephemeral
                 });
                 return;
@@ -261,20 +262,20 @@ module.exports = {
                         return;
                     }
 
-                    // Hash + dedup the new entries, then merge with the existing list (append, not replace).
-                    const newHashes = new Set(parsedEmails.map(e => md5hash(e)));
-                    const existingHashes = new Set(serverSettings.allowedEmails || []);
-                    let added = 0;
-                    for (const h of newHashes) {
-                        if (!existingHashes.has(h)) {
-                            existingHashes.add(h);
-                            added++;
-                        }
+                    // Hash + dedup the new entries, then merge them into the list as it is
+                    // NOW (append, not replace). The download above can take a while, so
+                    // merging into the copy read before it would drop entries the API
+                    // added in the meantime; addAllowedEmailHashes reads and writes under
+                    // one transaction.
+                    const newHashes = Array.from(new Set(parsedEmails.map(e => md5hash(e))));
+                    let result = await database.addAllowedEmailHashes(interaction.guildId, newHashes);
+                    if (result.missing) {
+                        // No settings row yet: create it with this list.
+                        serverSettings.allowedEmails = newHashes;
+                        await database.updateServerSettings(interaction.guildId, serverSettings);
+                        result = { added: newHashes.length, total: newHashes.length };
                     }
-                    const total = existingHashes.size;
-
-                    serverSettings.allowedEmails = Array.from(existingHashes);
-                    database.updateServerSettings(interaction.guildId, serverSettings);
+                    const { added, total } = result;
 
                     await interaction.editReply({
                         content: getLocale(language, "emaillistUploaded", added.toString(), total.toString())

@@ -187,23 +187,27 @@ module.exports = {
 
             if (subcommand === 'auto-unverified') {
                 const enable = interaction.options.getBoolean('enable', true);
-                serverSettings.autoAddUnverified = +enable;
-                database.updateServerSettings(interaction.guildId, serverSettings);
 
                 if (enable) {
+                    // Without an unverified role the flag would be stored and then do
+                    // nothing on join, so it needs the role first.
                     const roleUnverified = interaction.guild.roles.cache.find(r => r.id === serverSettings.unverifiedRoleName);
-                    if (roleUnverified) {
+                    if (!roleUnverified) {
                         await interaction.reply({
-                            content: `✅ **Auto-assign unverified role enabled!**\n\nNew members will automatically receive the **${roleUnverified.name}** role when they join.`,
+                            content: "❌ **No unverified role is configured.**\n\nUse `/role unverified` to set one first, then run this command again.",
                             flags: MessageFlags.Ephemeral
                         });
-                    } else {
-                        await interaction.reply({
-                            content: "✅ **Auto-assign unverified role enabled!**\n\n⚠️ **Warning:** No unverified role is configured. Use `/role unverified` to set one first.",
-                            flags: MessageFlags.Ephemeral
-                        });
+                        return;
                     }
+                    serverSettings.autoAddUnverified = 1;
+                    database.updateServerSettings(interaction.guildId, serverSettings);
+                    await interaction.reply({
+                        content: `✅ **Auto-assign unverified role enabled!**\n\nNew members will automatically receive the **${roleUnverified.name}** role when they join.`,
+                        flags: MessageFlags.Ephemeral
+                    });
                 } else {
+                    serverSettings.autoAddUnverified = 0;
+                    database.updateServerSettings(interaction.guildId, serverSettings);
                     await interaction.reply({
                         content: "❌ **Auto-assign unverified role disabled.**\n\nNew members will not automatically receive the unverified role.",
                         flags: MessageFlags.Ephemeral

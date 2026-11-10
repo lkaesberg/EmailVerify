@@ -331,6 +331,15 @@ module.exports = {
                 }).catch(() => {});
                 return;
             }
+            // The same role can't be both: verifying would add it and remove it again.
+            const unverifiedPick = selected.find(role => role.id === serverSettings.unverifiedRoleName);
+            if (unverifiedPick) {
+                await interaction.reply({
+                    content: getLocale(language, 'setupRoleIsUnverified', `<@&${unverifiedPick.id}>`),
+                    flags: MessageFlags.Ephemeral
+                }).catch(() => {});
+                return;
+            }
 
             for (const role of selected) {
                 if (!serverSettings.defaultRoles.includes(role.id)) {
@@ -359,6 +368,13 @@ module.exports = {
             trackRole(interaction, 'verified', result);
             if (!result.role) {
                 await interaction.reply(roleCreateFailedReply(result, language)).catch(() => {});
+                return;
+            }
+            if (result.role.id === serverSettings.unverifiedRoleName) {
+                await interaction.reply({
+                    content: getLocale(language, 'setupRoleIsUnverified', `<@&${result.role.id}>`),
+                    flags: MessageFlags.Ephemeral
+                }).catch(() => {});
                 return;
             }
 
@@ -429,9 +445,20 @@ module.exports = {
             return;
         }
 
-        // Step 3b → allow any email, straight to step 4
+        // Step 3b → allow any email, straight to step 4. Re-running /setup on a guild
+        // that already has domains used to leave them in place while the wizard said
+        // "any email", so drop them here. An uploaded email list is not wiped by a
+        // button click (it may be large and paid for); the note says it still applies.
         if (interaction.customId === 'setupDomainsAny') {
-            await interaction.update(step4Message(language, getLocale(language, 'setupAnyEmailNote'), interaction.channel)).catch(() => {});
+            if (serverSettings.domains.length > 0) {
+                serverSettings.domains = [];
+                await database.updateServerSettings(interaction.guildId, serverSettings);
+            }
+            const listCount = (serverSettings.allowedEmails || []).length;
+            const note = listCount > 0
+                ? getLocale(language, 'setupAnyEmailListKept', listCount.toString())
+                : getLocale(language, 'setupAnyEmailNote');
+            await interaction.update(step4Message(language, note, interaction.channel)).catch(() => {});
             return;
         }
 

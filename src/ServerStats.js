@@ -9,6 +9,12 @@
 
 'use strict';
 const fs = require("fs");
+
+/** YYYY-MM-DD in UTC. */
+function utcDay(date) {
+    return date.toISOString().split('T')[0]
+}
+
 module.exports = class ServerStats {
     constructor(getServerCountFn = null) {
         this.mailsSendAll = 0
@@ -52,28 +58,40 @@ module.exports = class ServerStats {
         this.updateFile()
     }
 
+    /**
+     * Roll the "today" counters over when the UTC day changed. The comparison is on the
+     * full date (comparing the day of the month alone missed a restart a month later,
+     * e.g. Jan 5 -> Feb 5). The snapshot, reset and new lastDate all happen before the
+     * first await, so a concurrent increment or stats GET sees the new day at once: it
+     * neither appends a second history line nor gets its count zeroed by a late reset.
+     */
     async testDate() {
         const date = new Date();
-        if (date.getUTCDate() !== this.lastDate.getUTCDate()) {
-            // Save yesterday's stats to history before resetting
-            await this.appendDailyStats()
-            this.lastDate = date
-            this.mailsSendToday = 0
-            this.usersVerifiedToday = 0
-            console.log("RESET")
-            this.updateFile()
+        if (utcDay(date) === utcDay(this.lastDate)) return
+        const finished = {
+            dateStr: utcDay(this.lastDate),
+            mailsSendToday: this.mailsSendToday,
+            mailsSendAll: this.mailsSendAll,
+            usersVerifiedToday: this.usersVerifiedToday,
+            usersVerifiedAll: this.usersVerifiedAll
         }
+        this.lastDate = date
+        this.mailsSendToday = 0
+        this.usersVerifiedToday = 0
+        console.log("RESET")
+        this.updateFile()
+        // Save the finished day's stats to history
+        await this.appendDailyStats(finished)
     }
 
-    async appendDailyStats() {
-        const dateStr = this.lastDate.toISOString().split('T')[0]
+    async appendDailyStats(day) {
         let serverCount = 0
         if (this.getServerCount) {
             try {
                 serverCount = await this.getServerCount()
             } catch {}
         }
-        const logLine = `${dateStr},${this.mailsSendToday},${this.mailsSendAll},${this.usersVerifiedToday},${this.usersVerifiedAll},${serverCount}\n`
+        const logLine = `${day.dateStr},${day.mailsSendToday},${day.mailsSendAll},${day.usersVerifiedToday},${day.usersVerifiedAll},${serverCount}\n`
         fs.appendFileSync(this.historyFileName, logLine)
         console.log(`Saved daily stats: ${logLine.trim()}`)
     }

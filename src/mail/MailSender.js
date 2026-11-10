@@ -13,6 +13,7 @@ const database = require("../database/Database")
 const { MessageFlags, EmbedBuilder } = require('discord.js')
 const ErrorNotifier = require('../utils/ErrorNotifier')
 const OperatorWebhook = require('../utils/OperatorWebhook')
+const { throttledNotify } = require('../utils/notifyThrottle')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
@@ -22,7 +23,7 @@ const analytics = require('../utils/Analytics')
 const voting = require('../utils/voting')
 
 // ZeptoMail outages typically affect every guild at once, so throttle the
-// operator-webhook notification to one ping per 24h globally. The console.warn
+// operator-webhook notification to one ping per 24h globally (across shards and restarts). The console.warn
 // still fires on every failure for forensic visibility — only the webhook is
 // rate-limited so the operator isn't spammed during a long outage.
 const ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS = 24 * 60 * 60 * 1000
@@ -46,7 +47,6 @@ module.exports = class MailSender {
      */
     constructor(serverStatsAPI, { codeTtlMs } = {}) {
         this.serverStatsAPI = serverStatsAPI
-        this.zeptoFallbackLastWebhookAt = 0
         this.codeTtlMinutes = codeTtlMs ? Math.round(codeTtlMs / 60000) : null
 
         const username = typeof config.username === 'undefined' ? config.email : config.username
@@ -100,8 +100,10 @@ module.exports = class MailSender {
      *   verification flow where interaction.guild / interaction.guildId are null.
      * @param {Object} [preloadedSettings=null] - already-loaded ServerSettings; when the
      *   caller just read them, passing them here skips a redundant DB read.
+     * @param {?number} [votePassId=null] - canSendMail's votePassId for a 'vote' send, so a
+     *   failed send refunds the exact vote row it was taken from.
      */
-    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null) {
+    async sendEmail(toEmail, code, name, interaction, emailNotify, callback, premiumSource = 'free', emailStyle = 'plain', guild = null, preloadedSettings = null, votePassId = null) {
         // Prefer the explicit guild: in the DM flow interaction.guild/guildId are null.
         const ctxGuild = guild || interaction.guild || null
         const serverId = ctxGuild?.id || interaction.guildId
@@ -153,9 +155,8 @@ module.exports = class MailSender {
                         console.warn(`[MailSender] ZeptoMail rejected the recipient for guild=${ctxGuild?.id ?? 'unknown'}:`, err.message)
                     } else {
                         console.warn(`[MailSender] ZeptoMail send failed for guild=${ctxGuild?.id ?? 'unknown'} — falling back to self-SMTP:`, err.message)
-                        const now = Date.now()
-                        if (now - this.zeptoFallbackLastWebhookAt >= ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS) {
-                            this.zeptoFallbackLastWebhookAt = now
+                        // Bot-wide window, shared by every shard and kept across restarts.
+                        if (OperatorWebhook.enabled) throttledNotify('zeptomail_fallback', '*', ZEPTO_FALLBACK_WEBHOOK_INTERVAL_MS, () =>
                             OperatorWebhook.notify({
                                 title: '✉️ ZeptoMail fallback',
                                 description: 'A premium mail send failed and was retried on self-SMTP. The retry usually succeeds, but it is not guaranteed — check stdout if users report failures. Recipient addresses rejected by ZeptoMail are not reported here. This alert is throttled to once per 24h; further fallbacks during this window are logged to stdout only.',
@@ -165,7 +166,7 @@ module.exports = class MailSender {
                                 ],
                                 level: 'warn'
                             })
-                        }
+                        ).catch(() => {})
                     }
                 }
             }
@@ -207,13 +208,16 @@ module.exports = class MailSender {
                         console.log('SMTP Response:', info.response)
                     }
                 }
-                // canSendMail() consumed a credit before this attempt — refund it since
-                // no verification mail was actually delivered.
+                // canSendMail() took a free email, a credit or a vote email before this
+                // attempt — give it back since no verification mail was delivered.
+                if (premiumSource === 'free') {
+                    database.releaseFreeMail(serverId).catch(() => {})
+                }
                 if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                     database.refundGuildCredit(serverId).catch(() => {})
                 }
                 if (premiumSource === 'vote' && interaction.user?.id) {
-                    database.refundVotePass(interaction.user.id, serverId).catch(() => {})
+                    database.refundVotePass(interaction.user.id, serverId, votePassId).catch(() => {})
                 }
                 // A rejected recipient is the member's typo, not an outage — point them at
                 // the address instead of showing the generic "mail system failed" embed.
@@ -252,7 +256,7 @@ module.exports = class MailSender {
                 }
             } catch (e) {
                 console.error('[MailSender] Failed to record/check thresholds:', e)
-                database.incrementMailsSent(serverId)
+                database.incrementMailsSent(serverId, premiumSource)
             }
 
             const accepted = info.accepted && info.accepted.length > 0 ? info.accepted[0] : toEmail
@@ -350,6 +354,9 @@ module.exports = class MailSender {
 
         const failed = !info || (info.rejected && info.rejected.length > 0)
         if (failed) {
+            if (premiumSource === 'free') {
+                database.releaseFreeMail(guildId).catch(() => {})
+            }
             if (premiumSource === 'credits' || premiumSource === 'credits-zepto') {
                 database.refundGuildCredit(guildId).catch(() => {})
             }
@@ -361,7 +368,7 @@ module.exports = class MailSender {
         }
 
         this.serverStatsAPI.increaseMailSend()
-        database.incrementMailsSent(guildId)
+        database.incrementMailsSent(guildId, premiumSource)
         analytics.capture({
             event: 'mail_sent',
             guildId,
