@@ -4,7 +4,8 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "node src/sharder.js"
+    "start": "node src/sharder.js",
+    "test": "node --test test/*.test.js"
   },
   "author": "Lars Benedikt Kaesberg",
   "license": "AGPL-3.0-or-later",

@@ -30,7 +30,7 @@ const md5hash = require("./crypto/Crypto");
 const EmailUser = require("./database/EmailUser");
 const { MessageFlags } = require('discord.js');
 const { createSessionExpiredEmbed, createCodeExpiredEmbed, createTooManyAttemptsEmbed, createGenericErrorEmbed, createInvalidCodeEmbed, createInvalidEmailEmbed, createVerificationSuccessEmbed, createCodeSentEmbed } = require('./utils/embeds');
-const { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder } = require('./utils/resolveVerificationRoles');
+const { resolveVerificationRoles, takeEmailOwnership, displacePreviousHolder } = require('./utils/resolveVerificationRoles');
 const { removeVerifiedStatusOnShard } = require('./utils/removeVerifiedStatus');
 const ErrorNotifier = require('./utils/ErrorNotifier');
 const { throttledNotify } = require('./utils/notifyThrottle');
@@ -1549,20 +1549,6 @@ bot.on('interactionCreate', async interaction => {
                     return
                 }
 
-                // Who held this email before. Read now, before the ownership change below
-                // is written, or the read would find the new user.
-                let previousHolderId = null
-                try {
-                    previousHolderId = await findPreviousHolder(userGuild, pending.emailHash, interaction.user.id)
-                } catch (e) {
-                    console.error('Error reading previous email holder:', e)
-                    analytics.capture({ event: 'verification_code_failed', userId: interaction.user.id, guild: userGuild, properties: { reason: 'db_error' } })
-                    await restorePending()
-                    await interaction.editReply({ embeds: [createGenericErrorEmbed(language)] }).catch(() => {})
-                    autoDelete(15000)
-                    return
-                }
-
                 // Assign roles to the verifying member first: if Discord refuses, nothing
                 // has changed yet (no ownership moved, no previous holder displaced).
                 const assignedRoleNames = []
@@ -1590,8 +1576,12 @@ bot.on('interactionCreate', async interaction => {
                 }
 
                 // Persist the new verified user (first role kept in the legacy field for back-compat).
+                // The ownership write is a compare-and-swap that reports whose record it
+                // replaced: a member verifying the same address at the same time (possibly
+                // on another shard) is then displaced below instead of keeping the roles
+                // with no record.
                 const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || (rolesToAdd[0] && rolesToAdd[0].id) || ''
-                const owned = await database.updateEmailUser(new EmailUser(pending.emailHash, interaction.user.id, userGuild.id, primaryRoleId, 0))
+                const { owned, previousHolderId } = await takeEmailOwnership(new EmailUser(pending.emailHash, interaction.user.id, userGuild.id, primaryRoleId, 0))
                 if (!owned) {
                     // Roles without a record would let the next holder of this email verify
                     // without displacing this member: take the roles back and keep the code.
