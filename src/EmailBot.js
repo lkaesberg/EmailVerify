@@ -1734,7 +1734,16 @@ bot.on('interactionCreate', async interaction => {
 
 // CLI listener is initialized in ready() only on primary shard
 
-bot.login(token).catch((e) => {
+// Log in only once this shard's schema migrations have settled. Everything that
+// queries the database at startup (clientReady: guild priming, command cleanup, the
+// redemption reconcile, alert throttles, quota claims) runs after login, and before
+// the migrations finish those queries hit tables that do not exist yet. A failed
+// migration has been rolled back and logged by applyMigrations; the shard still comes
+// up, as it did before, so a bad migration degrades features instead of taking the
+// bot offline.
+database.migrated.then((ok) => {
+    if (!ok) console.error('[DB] Schema migrations did not all apply; starting anyway on the older schema. See the migration error above.')
+}).then(() => bot.login(token)).catch((e) => {
     console.log("Failed to login: " + e.toString())
     OperatorWebhook.notify({
         title: '🚨 Bot failed to log in',
