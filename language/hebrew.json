@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ נכשל מימוש חבילת %VAR% קרדיטים",
   "premiumRedeemCsv": "✅ נפתחו תכונות **ייבוא וייצוא CSV**",
   "premiumRedeemCsvFailed": "❌ נכשל פתיחת תכונות CSV",
+  "premiumRedeemCreditsPending": "⏳ הרכישה אושרה: חבילת %VAR% הקרדיטים שלך תתווסף לשרת הזה אוטומטית, בדרך כלל תוך 90 דקות. אין צורך לקנות או לממש אותה שוב.",
+  "premiumRedeemCsvPending": "⏳ הרכישה אושרה: ייבוא וייצוא CSV ייפתחו לשרת הזה אוטומטית, בדרך כלל תוך 90 דקות. אין צורך לקנות או לממש שוב.",
   "premiumFetchFailed": "נכשל שליפת הרכישות שלך מ-Discord.",
   "premiumFieldPlan": "📋 תוכנית",
   "premiumFieldEmails": "📧 דוא\"ל",

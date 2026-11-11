@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ Failed to redeem %VAR% credit pack",
   "premiumRedeemCsv": "✅ Unlocked **CSV import & export** features",
   "premiumRedeemCsvFailed": "❌ Failed to unlock CSV features",
+  "premiumRedeemCreditsPending": "⏳ Purchase confirmed: your %VAR% credit pack will be added to this server automatically, usually within 90 minutes. You don't need to buy or redeem it again.",
+  "premiumRedeemCsvPending": "⏳ Purchase confirmed: CSV import & export will be unlocked for this server automatically, usually within 90 minutes. You don't need to buy or redeem it again.",
   "premiumFetchFailed": "Failed to fetch your purchases from Discord.",
   "premiumFieldPlan": "📋 Plan",
   "premiumFieldEmails": "📧 Emails",

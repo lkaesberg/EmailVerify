@@ -156,7 +156,8 @@ module.exports = {
                     embed.addFields({ name: getLocale(language, 'premiumCreditsAdded'), value: `+${results.creditsAdded}`, inline: true })
                 }
 
-                if (results.creditsAdded > 0 || results.csvUnlocked) {
+                // A pending grant is bound to this server too: it lands here once reconciled.
+                if (results.creditsAdded > 0 || results.csvUnlocked || results.pending) {
                     embed.addFields({
                         name: getLocale(language, 'premiumRedeemMultiGuildWarningTitle'),
                         value: getLocale(language, 'premiumRedeemMultiGuildWarning', interaction.guild?.name || ''),

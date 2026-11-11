@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ Error al canjear el paquete de %VAR% créditos",
   "premiumRedeemCsv": "✅ Funciones de **importación y exportación CSV** desbloqueadas",
   "premiumRedeemCsvFailed": "❌ Error al desbloquear las funciones CSV",
+  "premiumRedeemCreditsPending": "⏳ Compra confirmada: tu paquete de %VAR% créditos se añadirá automáticamente a este servidor, normalmente en un plazo de 90 minutos. No necesitas comprarlo ni canjearlo de nuevo.",
+  "premiumRedeemCsvPending": "⏳ Compra confirmada: la importación y exportación CSV se desbloqueará automáticamente para este servidor, normalmente en un plazo de 90 minutos. No necesitas comprarla ni canjearla de nuevo.",
   "premiumFetchFailed": "No se pudieron obtener tus compras de Discord.",
   "premiumFieldPlan": "📋 Plan",
   "premiumFieldEmails": "📧 Emails",

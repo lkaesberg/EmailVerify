@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ %VAR% kredi paketi kullanılamadı",
   "premiumRedeemCsv": "✅ **CSV içe ve dışa aktarma** özellikleri açıldı",
   "premiumRedeemCsvFailed": "❌ CSV özellikleri açılamadı",
+  "premiumRedeemCreditsPending": "⏳ Satın alma onaylandı: %VAR% kredi paketiniz bu sunucuya otomatik olarak eklenecek, genellikle 90 dakika içinde. Tekrar satın almanıza veya kullanmanıza gerek yok.",
+  "premiumRedeemCsvPending": "⏳ Satın alma onaylandı: CSV içe ve dışa aktarma bu sunucu için otomatik olarak açılacak, genellikle 90 dakika içinde. Tekrar satın almanıza veya kullanmanıza gerek yok.",
   "premiumFetchFailed": "Discord'dan satın alımlarınız getirilemedi.",
   "premiumFieldPlan": "📋 Plan",
   "premiumFieldEmails": "📧 E-postalar",

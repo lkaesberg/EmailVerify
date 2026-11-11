@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ Falha ao resgatar pacote de %VAR% créditos",
   "premiumRedeemCsv": "✅ Recursos de **importação e exportação CSV** desbloqueados",
   "premiumRedeemCsvFailed": "❌ Falha ao desbloquear recursos CSV",
+  "premiumRedeemCreditsPending": "⏳ Compra confirmada: seu pacote de %VAR% créditos será adicionado a este servidor automaticamente, geralmente em até 90 minutos. Não é preciso comprar nem resgatar de novo.",
+  "premiumRedeemCsvPending": "⏳ Compra confirmada: a importação e exportação CSV será desbloqueada para este servidor automaticamente, geralmente em até 90 minutos. Não é preciso comprar nem resgatar de novo.",
   "premiumFetchFailed": "Falha ao buscar suas compras no Discord.",
   "premiumFieldPlan": "📋 Plano",
   "premiumFieldEmails": "📧 Emails",

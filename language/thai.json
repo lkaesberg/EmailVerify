@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ แลกแพ็คเครดิต %VAR% ไม่สำเร็จ",
   "premiumRedeemCsv": "✅ ปลดล็อคฟีเจอร์ **นำเข้าและส่งออก CSV** แล้ว",
   "premiumRedeemCsvFailed": "❌ ปลดล็อคฟีเจอร์ CSV ไม่สำเร็จ",
+  "premiumRedeemCreditsPending": "⏳ ยืนยันการซื้อแล้ว: แพ็คเครดิต %VAR% ของคุณจะถูกเพิ่มให้เซิร์ฟเวอร์นี้โดยอัตโนมัติ โดยปกติภายใน 90 นาที ไม่ต้องซื้อหรือแลกซ้ำ",
+  "premiumRedeemCsvPending": "⏳ ยืนยันการซื้อแล้ว: การนำเข้าและส่งออก CSV จะถูกปลดล็อคให้เซิร์ฟเวอร์นี้โดยอัตโนมัติ โดยปกติภายใน 90 นาที ไม่ต้องซื้อหรือแลกซ้ำ",
   "premiumFetchFailed": "ไม่สามารถดึงข้อมูลการซื้อจาก Discord ได้",
   "premiumFieldPlan": "📋 แผน",
   "premiumFieldEmails": "📧 อีเมล",
