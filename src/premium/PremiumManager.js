@@ -365,11 +365,12 @@ class PremiumManager {
     /**
      * Redeems the invoking user's unconsumed entitlements for the given guild.
      * Consumes credit packs and processes CSV durable unlocks.
-     * Returns { creditsAdded: number, csvUnlocked: boolean, details: string[] }
+     * Returns { creditsAdded: number, csvUnlocked: boolean, pending: boolean, details: string[] };
+     * pending: something was consumed but its grant was left for reconcileRedemptions
      */
     async redeemEntitlements(interaction, guildID, language) {
         const lang = language || 'english'
-        const results = { creditsAdded: 0, csvUnlocked: false, details: [] }
+        const results = { creditsAdded: 0, csvUnlocked: false, pending: false, details: [] }
 
         const creditSkuMap = {}
         if (skus.credits100) creditSkuMap[skus.credits100] = 100
@@ -396,7 +397,11 @@ class PremiumManager {
                     const outcome = await this.#consumeAndGrant(entitlement, interaction.user.id, guildID, 'credits', amount)
                     if (outcome === 'busy') continue
                     if (outcome === 'pending') {
-                        results.details.push(getLocale(lang, 'premiumRedeemCreditsFailed', amount.toString()))
+                        // Consumed on Discord, so it is paid for and owed: reconcileRedemptions
+                        // grants it (claims older than REDEMPTION_STALE_MS, hourly on shard 0).
+                        // Saying "failed" here invites a second purchase or a refund request.
+                        results.pending = true
+                        results.details.push(getLocale(lang, 'premiumRedeemCreditsPending', amount.toString()))
                         continue
                     }
                     results.creditsAdded += amount
@@ -426,7 +431,8 @@ class PremiumManager {
                     const outcome = await this.#consumeAndGrant(entitlement, interaction.user.id, guildID, 'csv', 0)
                     if (outcome === 'busy') continue
                     if (outcome === 'pending') {
-                        results.details.push(getLocale(lang, 'premiumRedeemCsvFailed'))
+                        results.pending = true
+                        results.details.push(getLocale(lang, 'premiumRedeemCsvPending'))
                         continue
                     }
                     results.csvUnlocked = true

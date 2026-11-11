@@ -697,21 +697,38 @@ class Database {
     }
 
     /**
-     * Record `emailUser.userID` as the owner of the address in the guild. Resolves
-     * true once written, false on a DB error (logged), so callers can wait for the
-     * ownership change before acting on it.
+     * Compare-and-swap the owner of an address in the guild: record `emailUser.userID`
+     * only if the current owner is still `expectedOwnerId` (null: nobody owns it yet).
+     * Each branch is a single statement, so two shards verifying the same address at
+     * once cannot both believe they replaced the same owner.
+     *
+     * @returns {Promise<'ok'|'conflict'|'error'>} 'conflict' when the owner changed
+     *   since it was read; 'error' on a DB error (logged)
      */
-    updateEmailUser(emailUser) {
-        return new Promise((resolve) => {
-            this.db.run(
-                "INSERT OR REPLACE INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?)",
-                [emailUser.email, emailUser.userID, emailUser.guildID, emailUser.groupID, emailUser.isPublic],
-                (err) => {
-                    if (err) console.error('Error storing verified email owner:', err)
-                    resolve(!err)
-                }
-            )
+    swapEmailOwner(emailUser, expectedOwnerId) {
+        const { email, userID, guildID, groupID, isPublic } = emailUser
+        const run = (sql, params) => new Promise((resolve, reject) => {
+            this.db.run(sql, params, function (err) {
+                if (err) reject(err)
+                else resolve(this.changes)
+            })
         })
+        // `userID IS ?` also matches a row whose userID is NULL when nobody is expected.
+        const update = () => run(
+            "UPDATE userEmails SET userID = ?, groupID = ?, isPublic = ? WHERE email = ? AND guildID = ? AND userID IS ?",
+            [userID, groupID, isPublic, email, guildID, expectedOwnerId]
+        )
+        const attempt = expectedOwnerId === null
+            ? run("INSERT INTO userEmails (email, userID, guildID, groupID, isPublic) VALUES (?, ?, ?, ?, ?) ON CONFLICT(email, guildID) DO NOTHING",
+                [email, userID, guildID, groupID, isPublic]).then((changes) => changes > 0 ? changes : update())
+            : update()
+        return attempt.then(
+            (changes) => changes > 0 ? 'ok' : 'conflict',
+            (err) => {
+                console.error('Error storing verified email owner:', err)
+                return 'error'
+            }
+        )
     }
 
     /**

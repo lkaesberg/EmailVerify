@@ -102,6 +102,8 @@
     "premiumRedeemCreditsFailed": "❌ Échec de l'échange du pack de %VAR% crédits",
     "premiumRedeemCsv": "✅ Fonctionnalités **import & export CSV** débloquées",
     "premiumRedeemCsvFailed": "❌ Échec du déblocage des fonctionnalités CSV",
+    "premiumRedeemCreditsPending": "⏳ Achat confirmé : votre pack de %VAR% crédits sera ajouté automatiquement à ce serveur, généralement sous 90 minutes. Inutile de l'acheter ou de l'échanger à nouveau.",
+    "premiumRedeemCsvPending": "⏳ Achat confirmé : l'import & export CSV sera débloqué automatiquement pour ce serveur, généralement sous 90 minutes. Inutile de l'acheter ou de l'échanger à nouveau.",
     "premiumFetchFailed": "Impossible de récupérer vos achats depuis Discord.",
     "premiumFieldPlan": "📋 Plan",
     "premiumFieldEmails": "📧 Emails",

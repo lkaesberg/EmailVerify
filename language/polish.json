@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ Nie udało się wymienić pakietu %VAR% kredytów",
   "premiumRedeemCsv": "✅ Odblokowano funkcje **importu i eksportu CSV**",
   "premiumRedeemCsvFailed": "❌ Nie udało się odblokować funkcji CSV",
+  "premiumRedeemCreditsPending": "⏳ Zakup potwierdzony: pakiet %VAR% kredytów zostanie automatycznie dodany do tego serwera, zwykle w ciągu 90 minut. Nie musisz go ponownie kupować ani wymieniać.",
+  "premiumRedeemCsvPending": "⏳ Zakup potwierdzony: import i eksport CSV zostanie automatycznie odblokowany dla tego serwera, zwykle w ciągu 90 minut. Nie musisz go ponownie kupować ani wymieniać.",
   "premiumFetchFailed": "Nie udało się pobrać zakupów z Discorda.",
   "premiumFieldPlan": "📋 Plan",
   "premiumFieldEmails": "📧 Emaile",

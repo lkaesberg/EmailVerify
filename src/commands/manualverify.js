@@ -14,7 +14,7 @@ const {getLocale} = require("../Language");
 const md5hash = require("../crypto/Crypto");
 const EmailUser = require("../database/EmailUser");
 const ErrorNotifier = require("../utils/ErrorNotifier");
-const { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder } = require("../utils/resolveVerificationRoles");
+const { resolveVerificationRoles, takeEmailOwnership, displacePreviousHolder } = require("../utils/resolveVerificationRoles");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -62,17 +62,6 @@ module.exports = {
 
             const emailHash = md5hash(email);
 
-            // Who held this email before. Read before the ownership change below is
-            // written, or the read would find the target user.
-            let previousHolderId = null;
-            try {
-                previousHolderId = await findPreviousHolder(interaction.guild, emailHash, targetUser.id);
-            } catch (e) {
-                console.error('Error reading previous email holder:', e);
-                await interaction.reply({ content: "❌ Could not read the verification records. Please try again.", flags: MessageFlags.Ephemeral });
-                return;
-            }
-
             // Assign roles first: if that fails, nothing has changed yet (no ownership
             // moved, no previous holder displaced).
             const assignedRoleNames = [];
@@ -94,9 +83,11 @@ module.exports = {
                 return;
             }
 
-            // Record the new owner (first role kept in the legacy field)
+            // Record the new owner (first role kept in the legacy field). The write is a
+            // compare-and-swap that reports whose record it replaced, so a verification of
+            // the same address running at the same time is displaced below, not left verified.
             const primaryRoleId = (serverSettings.defaultRoles && serverSettings.defaultRoles[0]) || rolesToAdd[0].id || '';
-            const owned = await database.updateEmailUser(new EmailUser(emailHash, targetUser.id, interaction.guildId, primaryRoleId, 0));
+            const { owned, previousHolderId } = await takeEmailOwnership(new EmailUser(emailHash, targetUser.id, interaction.guildId, primaryRoleId, 0));
             if (!owned) {
                 for (const role of addedRoles) await verifyMember.roles.remove(role).catch(() => {});
                 await interaction.reply({ content: "❌ Could not save the verification. No roles were changed.", flags: MessageFlags.Ephemeral });

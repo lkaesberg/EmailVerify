@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ Einlösen von %VAR% Guthaben-Paket fehlgeschlagen",
   "premiumRedeemCsv": "✅ **CSV-Import & -Export** freigeschaltet",
   "premiumRedeemCsvFailed": "❌ CSV-Freischaltung fehlgeschlagen",
+  "premiumRedeemCreditsPending": "⏳ Kauf bestätigt: Dein %VAR%-Guthaben-Paket wird diesem Server automatisch gutgeschrieben, meist innerhalb von 90 Minuten. Du musst es nicht erneut kaufen oder einlösen.",
+  "premiumRedeemCsvPending": "⏳ Kauf bestätigt: CSV-Import & -Export wird für diesen Server automatisch freigeschaltet, meist innerhalb von 90 Minuten. Du musst es nicht erneut kaufen oder einlösen.",
   "premiumFetchFailed": "Käufe konnten nicht von Discord abgerufen werden.",
   "premiumFieldPlan": "📋 Plan",
   "premiumFieldEmails": "📧 E-Mails",

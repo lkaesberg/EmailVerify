@@ -102,6 +102,8 @@
   "premiumRedeemCreditsFailed": "❌ %VAR% 크레딧 팩 교환 실패",
   "premiumRedeemCsv": "✅ **CSV 가져오기 및 내보내기** 기능 잠금 해제됨",
   "premiumRedeemCsvFailed": "❌ CSV 기능 잠금 해제 실패",
+  "premiumRedeemCreditsPending": "⏳ 구매가 확인되었습니다: %VAR% 크레딧 팩이 보통 90분 이내에 이 서버에 자동으로 추가됩니다. 다시 구매하거나 교환할 필요가 없습니다.",
+  "premiumRedeemCsvPending": "⏳ 구매가 확인되었습니다: CSV 가져오기 및 내보내기가 보통 90분 이내에 이 서버에서 자동으로 잠금 해제됩니다. 다시 구매하거나 교환할 필요가 없습니다.",
   "premiumFetchFailed": "Discord에서 구매 정보를 가져오지 못했습니다.",
   "premiumFieldPlan": "📋 플랜",
   "premiumFieldEmails": "📧 이메일",

@@ -50,19 +50,41 @@ function resolveVerificationRoles(guild, serverSettings, email) {
     return { rolesToAdd, roleUnverified }
 }
 
+const OWNERSHIP_SWAP_ATTEMPTS = 5
+
 /**
- * The member who currently owns this email in the guild, unless it is `newUserId`.
- * Read BEFORE the new ownership is written: reading afterwards would find the new
- * user and never displace anyone.
+ * Make `emailUser.userID` the owner of the address in the guild and report whose
+ * ownership that write actually replaced. The owner is read and then swapped only if
+ * it is unchanged (Database.swapEmailOwner); if another verification of the same
+ * address (another member, possibly on another shard) wrote in between, the owner is
+ * re-read and the swap retried against them. So of two members verifying one address
+ * at once, the later write always names the earlier one as its previous holder and
+ * displaces them, instead of both keeping the roles with only one record.
  *
- * @param {import('discord.js').Guild} guild
- * @param {string} emailHash - MD5 hash of the (lowercased) email
- * @param {string} newUserId - the user who is verifying
- * @returns {Promise<?string>} the previous holder's user id, or null
+ * Call it after the new owner's roles are assigned, and displace the returned
+ * previous holder only after it succeeds.
+ *
+ * @param {import('../database/EmailUser')} emailUser
+ * @returns {Promise<{ owned: boolean, previousHolderId: ?string }>} owned is false on a
+ *   DB error or when the swap kept losing; nothing was written in that case
  */
-async function findPreviousHolder(guild, emailHash, newUserId) {
-    const ownerId = await database.getEmailOwnerId(emailHash, guild.id)
-    return ownerId && ownerId !== newUserId ? ownerId : null
+async function takeEmailOwnership(emailUser) {
+    for (let attempt = 0; attempt < OWNERSHIP_SWAP_ATTEMPTS; attempt++) {
+        let ownerId
+        try {
+            ownerId = await database.getEmailOwnerId(emailUser.email, emailUser.guildID)
+        } catch (e) {
+            console.error('Error reading previous email holder:', e)
+            return { owned: false, previousHolderId: null }
+        }
+        const result = await database.swapEmailOwner(emailUser, ownerId)
+        if (result === 'ok') {
+            return { owned: true, previousHolderId: ownerId && ownerId !== emailUser.userID ? ownerId : null }
+        }
+        if (result === 'error') return { owned: false, previousHolderId: null }
+    }
+    console.error(`Email ownership in guild ${emailUser.guildID} kept changing; gave up after ${OWNERSHIP_SWAP_ATTEMPTS} attempts`)
+    return { owned: false, previousHolderId: null }
 }
 
 /**
@@ -75,7 +97,7 @@ async function findPreviousHolder(guild, emailHash, newUserId) {
  * with a valid record.
  *
  * @param {import('discord.js').Guild} guild
- * @param {?string} previousUserId - from findPreviousHolder
+ * @param {?string} previousUserId - from takeEmailOwnership
  * @param {import('discord.js').Role[]} rolesToAdd - roles the new verification grants (removed from the previous holder)
  * @param {import('discord.js').Role|null} roleUnverified
  * @param {string} language - guild language for the DM
@@ -94,4 +116,4 @@ async function displacePreviousHolder(guild, previousUserId, rolesToAdd, roleUnv
     member.send(getLocale(language, 'unverifiedByOtherDm', guild.name)).catch(() => {})
 }
 
-module.exports = { resolveVerificationRoles, findPreviousHolder, displacePreviousHolder }
+module.exports = { resolveVerificationRoles, takeEmailOwnership, displacePreviousHolder }
