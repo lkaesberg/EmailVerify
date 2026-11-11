@@ -39,7 +39,7 @@ jobs:
             type=raw,value=nightly
 
       - name: Build & push (nightly)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -76,7 +76,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build & push (release)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
