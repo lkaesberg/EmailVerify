@@ -16,7 +16,7 @@
     "@discordjs/builders": "^1.13.1",
     "@discordjs/rest": "^2.6.0",
     "cors": "^2.8.5",
-    "discord-api-types": "^0.38.37",
+    "discord-api-types": "^0.38.58",
     "discord.js": "^14.25.1",
     "express": "^5.2.1",
     "nodemailer": "^10.1.1",
