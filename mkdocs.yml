@@ -52,6 +52,9 @@ theme:
     - search.suggest
     - search.highlight
     - search.share
+# Internal working documents that live next to the pages but must not be published.
+exclude_docs: |
+  /POSITIONING.md
 extra_css:
   - stylesheets/extra.css
 extra_javascript:

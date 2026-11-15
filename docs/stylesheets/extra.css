@@ -38,6 +38,11 @@
   /* Hero wash */
   --ev-hero-from: rgba(88, 101, 242, .10);
   --ev-hero-to: rgba(22, 163, 74, .08);
+
+  /* Comparison table: our column, and the "partly" mark */
+  --ev-us-bg: rgba(88, 101, 242, .07);
+  --ev-us-edge: rgba(88, 101, 242, .55);
+  --ev-amber: #b45309;
 }
 
 [data-md-color-scheme="slate"] {
@@ -57,6 +62,10 @@
 
   --ev-hero-from: rgba(88, 101, 242, .22);
   --ev-hero-to: rgba(52, 211, 153, .12);
+
+  --ev-us-bg: rgba(88, 101, 242, .16);
+  --ev-us-edge: rgba(165, 180, 252, .6);
+  --ev-amber: #fbbf24;
 }
 
 /* --------------------------------------------------------------------------
@@ -546,6 +555,183 @@
 
 .ev-no {
   color: var(--ev-muted);
+}
+
+/* Text for screen readers only (yes/no marks, table captions). */
+.ev-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* EmailVerify vs. the alternatives (docs/index.md, docs/compare.md)
+
+   A real <table> with explicit ARIA roles: below 45em it is restyled into one
+   card per criterion, and Safari drops table semantics from tables whose
+   display is changed unless the roles are spelled out. Our column is tinted
+   with --ev-us-bg; marks are a shape (✓ ✕ ◐) plus screen-reader text, so
+   colour is never the only signal. */
+.ev-vs-wrap {
+  position: relative;
+  margin: 1.2rem 0 .5rem;
+  overflow-x: auto;
+  border: 1px solid var(--ev-border);
+  border-radius: var(--ev-radius);
+  background: var(--ev-surface-raised);
+  box-shadow: var(--ev-shadow);
+}
+
+.md-typeset table.ev-vs {
+  display: table;
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: .72rem;
+  line-height: 1.45;
+}
+
+.md-typeset .ev-vs th,
+.md-typeset .ev-vs td {
+  padding: .65rem .8rem;
+  border-bottom: 1px solid var(--ev-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.md-typeset .ev-vs tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.md-typeset .ev-vs thead th {
+  vertical-align: bottom;
+  background: var(--ev-surface);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.md-typeset .ev-vs tbody th {
+  width: 30%;
+  font-weight: 600;
+  color: var(--ev-text);
+}
+
+.md-typeset .ev-vs .ev-vs-us {
+  background: var(--ev-us-bg);
+}
+
+.md-typeset .ev-vs thead .ev-vs-us {
+  box-shadow: inset 0 3px 0 var(--ev-us-edge);
+}
+
+.md-typeset .ev-vs-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--ev-text);
+}
+
+.md-typeset a.ev-vs-brand:hover,
+.md-typeset a.ev-vs-brand:focus-visible {
+  color: var(--md-accent-fg-color);
+}
+
+.md-typeset .ev-vs-logo {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 22%;
+  box-shadow: 0 0 0 1px var(--ev-border);
+}
+
+/* Guild's mark is a circle; a square ring around it looks like a mistake. */
+.md-typeset .ev-vs-logo--round {
+  border-radius: 50%;
+}
+
+.md-typeset .ev-vs-val {
+  display: block;
+}
+
+.ev-vs-mark {
+  display: inline-block;
+  min-width: 1em;
+  margin-right: .3em;
+  font-weight: 700;
+}
+
+.ev-vs-mark.is-yes { color: var(--ev-green); }
+.ev-vs-mark.is-no { color: var(--ev-muted); }
+.ev-vs-mark.is-part { color: var(--ev-amber); }
+
+.md-typeset .ev-vs-note {
+  margin: .4rem 0 1.2rem;
+  font-size: .62rem;
+  line-height: 1.5;
+  color: var(--ev-muted);
+}
+
+@media screen and (max-width: 44.9375em) {
+  .md-typeset table.ev-vs,
+  .md-typeset .ev-vs tbody,
+  .md-typeset .ev-vs tr,
+  .md-typeset .ev-vs th,
+  .md-typeset .ev-vs td {
+    display: block;
+    width: auto;
+  }
+
+  /* The column headers stay in the accessibility tree; each cell shows its
+     column's name through data-label instead. */
+  .md-typeset .ev-vs thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .md-typeset .ev-vs tbody tr {
+    padding: .75rem .8rem .6rem;
+    border-bottom: 1px solid var(--ev-border);
+  }
+
+  .md-typeset .ev-vs tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .md-typeset .ev-vs tbody th {
+    width: auto;
+    padding: 0 0 .4rem;
+    border: 0;
+  }
+
+  .md-typeset .ev-vs td {
+    display: grid;
+    grid-template-columns: 6.6rem 1fr;
+    gap: .6rem;
+    padding: .35rem .5rem;
+    border: 0;
+    border-radius: var(--ev-radius-sm);
+  }
+
+  .md-typeset .ev-vs td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--ev-muted);
+  }
+
+  .md-typeset .ev-vs td.ev-vs-us::before {
+    color: var(--ev-text);
+  }
 }
 
 /* Pull-quote used on the segment pages */

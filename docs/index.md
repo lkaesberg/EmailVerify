@@ -1,6 +1,6 @@
 ---
 title: EmailVerify Bot — Email Verification for Discord
-description: Verify that Discord members really own an email address at a domain you choose (@*.edu, your company domain, or a fixed allowlist) before they get a role. Free for 25 verifications a month, open source, GDPR-friendly.
+description: Don't let just anyone into your Discord server. EmailVerify checks that members own the email address they claim and gives them roles by domain (@*.edu, your company domain, or a fixed allowlist). Free for 25 verifications a month, open source.
 faq:
   - q: How does email verification on Discord work?
     a: The member clicks a button in your server, types their email address into a popup, and receives a 6-digit code. Entering that code back in Discord proves they control the mailbox, and the bot assigns the role you configured. There is no account to create on another website and no extra login screen.
@@ -22,9 +22,9 @@ faq:
 
 </div>
 
-**Verify that the people in your server actually own the email address they claim to.**
-A user enters their email, gets a 6-digit code, types it back, and a role is assigned. That's it.
-Built for university servers, employee groups, and any closed community where you want to know who's joining.
+**Don't let just anyone into your Discord server.**
+Members prove they own the email address they claim, and the bot gives them the role for their email domain, so `@students.uni.edu` sees the student channels and `@staff.uni.edu` the staff ones.
+It all happens inside Discord, with a 6-digit code.
 { .hero-lead }
 
 :material-check-circle: **Free for 25 verification emails a month** per server. No sign-up, no payment details.
@@ -255,6 +255,66 @@ Sends a real verification mail to an address you pick, so you find out about a s
 
 [Full quick start →](setup.md){ .md-button }
 [All commands →](commands.md){ .md-button }
+
+---
+
+## Why EmailVerify
+
+An invite link is all it takes to join a Discord server. For a course, a company team or a student society, that means strangers and old accounts end up next to the people who belong there.
+
+Most servers deal with it in one of three ways. Moderators check people by hand: a screenshot of a student card, an address sent by DM. That's slow, and someone ends up keeping photos of ID cards. **Guild.xyz** has an email-domain check, but members sign in on guild.xyz and connect Discord and their email there, and each domain has to match exactly. **Discord Student Hubs** verify school addresses for Discord's directory of student servers, not for your server, and only at schools Discord has added.
+
+EmailVerify does one job, inside Discord. A member clicks a button, types their address, enters the code, and gets the roles for their domain. You set the rules once, and a wildcard like `@*.edu` covers every matching domain.
+
+<div class="ev-vs-wrap">
+<table class="ev-vs" role="table">
+<caption class="ev-sr">EmailVerify compared with Guild.xyz and Discord Student Hubs, as of October 2026</caption>
+<thead role="rowgroup">
+<tr role="row">
+<th scope="col" role="columnheader"><span class="ev-sr">Criterion</span></th>
+<th scope="col" role="columnheader" class="ev-vs-us"><span class="ev-vs-brand"><img class="ev-vs-logo" src="/assets/favicon-48x48.png" alt="EmailVerify" width="28" height="28"><span aria-hidden="true">EmailVerify</span></span></th>
+<th scope="col" role="columnheader"><a class="ev-vs-brand" href="/compare/#guild-xyz"><img class="ev-vs-logo ev-vs-logo--round" src="/assets/competitors/guildxyz.png" alt="Guild.xyz" width="28" height="28"><span aria-hidden="true">Guild.xyz</span></a></th>
+<th scope="col" role="columnheader"><a class="ev-vs-brand" href="/compare/#discord-student-hubs"><img class="ev-vs-logo" src="/assets/competitors/discord.svg" alt="Discord Student Hubs" width="28" height="28"><span aria-hidden="true">Discord Student Hubs</span></a></th>
+</tr>
+</thead>
+<tbody role="rowgroup">
+<tr role="row">
+<th scope="row" role="rowheader">Gates your own server's roles and channels</th>
+<td role="cell" class="ev-vs-us" data-label="EmailVerify"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes</span></span></td>
+<td role="cell" data-label="Guild.xyz"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes:</span> through Guild's bot</span></td>
+<td role="cell" data-label="Student Hubs"><span class="ev-vs-val"><span class="ev-vs-mark is-no" aria-hidden="true">✕</span><span class="ev-sr">No:</span> verifies entry to the school's hub</span></td>
+</tr>
+<tr role="row">
+<th scope="row" role="rowheader">Members verify inside Discord, without another account</th>
+<td role="cell" class="ev-vs-us" data-label="EmailVerify"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes:</span> button, popup, 6-digit code</span></td>
+<td role="cell" data-label="Guild.xyz"><span class="ev-vs-val"><span class="ev-vs-mark is-no" aria-hidden="true">✕</span><span class="ev-sr">No:</span> Guild account on guild.xyz</span></td>
+<td role="cell" data-label="Student Hubs"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes</span></span></td>
+</tr>
+<tr role="row">
+<th scope="row" role="rowheader">Wildcard domains like <code>@*.edu</code></th>
+<td role="cell" class="ev-vs-us" data-label="EmailVerify"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes</span></span></td>
+<td role="cell" data-label="Guild.xyz"><span class="ev-vs-val"><span class="ev-vs-mark is-no" aria-hidden="true">✕</span><span class="ev-sr">No:</span> exact domain match</span></td>
+<td role="cell" data-label="Student Hubs"><span class="ev-vs-val"><span class="ev-vs-mark is-no" aria-hidden="true">✕</span><span class="ev-sr">No:</span> the school's own domain</span></td>
+</tr>
+<tr role="row">
+<th scope="row" role="rowheader">A different role per domain, e.g. students and staff</th>
+<td role="cell" class="ev-vs-us" data-label="EmailVerify"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes</span></span></td>
+<td role="cell" data-label="Guild.xyz"><span class="ev-vs-val"><span class="ev-vs-mark is-yes" aria-hidden="true">✓</span><span class="ev-sr">Yes:</span> one Guild role per domain</span></td>
+<td role="cell" data-label="Student Hubs"><span class="ev-vs-val"><span class="ev-vs-mark is-no" aria-hidden="true">✕</span><span class="ev-sr">No</span></span></td>
+</tr>
+<tr role="row">
+<th scope="row" role="rowheader">Price</th>
+<td role="cell" class="ev-vs-us" data-label="EmailVerify"><span class="ev-vs-val">Free for 25 emails a month, then from €4.99/month</span></td>
+<td role="cell" data-label="Guild.xyz"><span class="ev-vs-val">Free plan; paid plans from $29/month</span></td>
+<td role="cell" data-label="Student Hubs"><span class="ev-vs-val">Free</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p class="ev-vs-note">Based on each vendor's public website and documentation as of October 2026. Trademarks and logos belong to their owners. Something out of date? Write to <a href="mailto:contact@wksolutions.de">contact@wksolutions.de</a> and we'll correct it.</p>
+
+[Full comparison →](compare.md){ .md-button }
 
 ---
 
