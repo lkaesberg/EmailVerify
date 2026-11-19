@@ -286,7 +286,7 @@ async function handleResendCode(interaction, guildId) {
                     resend: true
                 }
             })
-            await interaction.editReply(await voting.limitReachedMessage(language, guildId, interaction.user.id)).catch(() => {})
+            await interaction.editReply(await voting.limitReachedMessage(language)).catch(() => {})
             premiumManager.notifyMailDenied(userGuild, language).catch(() => {})
             autoDelete(15000)
             return
@@ -1372,7 +1372,7 @@ bot.on('interactionCreate', async interaction => {
                             free_limit: premiumCheck.freeLimit ?? null
                         }
                     })
-                    const limitMessage = await voting.limitReachedMessage(serverSettings.language, userGuild.id, interaction.user.id)
+                    const limitMessage = await voting.limitReachedMessage(serverSettings.language)
                     await interaction.followUp({ ...limitMessage, flags: MessageFlags.Ephemeral }).catch(() => {})
                     // Record the denial and fire the escalating admin upsell (1st/5th/20th
                     // blocked member per month) — this is lost demand admins can't see otherwise.
