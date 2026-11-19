@@ -16,8 +16,8 @@
 // server is the one the voter last ran /vote (or pressed a vote button) in. top.gg can
 // also carry it in the vote URL's query string, which wins when present.
 //
-// The prompt is placed where a vote is most wanted: when a server runs out of free
-// emails, the member who can't get in is one click away from getting in anyway.
+// The prompt is reached through /vote. The out-of-emails notice no longer offers it, so
+// that a server at its limit is a reason for its admin to buy a plan.
 
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageFlags, Routes } = require('discord.js')
 const config = require('../../config/config.json')
@@ -27,7 +27,7 @@ const { getLocale, defaultLanguage } = require('../Language')
 const analytics = require('./Analytics')
 const rest = require('../api/DiscordRest')
 const { createMailLimitReachedEmbed } = require('./embeds')
-const { getWebsiteUrl } = require('./premiumButtons')
+const { websiteMarkdownLink } = require('./premiumButtons')
 
 // Both lists allow one vote per user every 12 hours. Anything from the same user on the
 // same list inside 11 hours is a webhook retry, not a new vote.
@@ -152,23 +152,13 @@ async function showVotePrompt(interaction, guildId, entry) {
 }
 
 /**
- * The "this server is out of free emails" message, plus the offer to vote for your own
- * way in. `userId` is the member who was turned away; the offer is left out once they
- * have unlocked this month's maximum. Without it (the public notice in the verify
- * channel) the offer is always there.
+ * The "this server is out of free emails" message members see, in their own reply and
+ * as the public notice in the verify channel. It carries no vote offer: a member who
+ * could vote their way past the limit left the admin no reason to buy a plan (servers
+ * hitting the limit stopped buying after the vote rewards came in). /vote still works.
  */
-async function limitReachedMessage(language, guildId, userId = null) {
-    const embed = createMailLimitReachedEmbed(language, getWebsiteUrl())
-    const payload = { embeds: [embed] }
-    if (!isEnabled() || !guildId) return payload
-    try {
-        if (userId && (await getVoteStatus(guildId, userId)).capped) return payload
-        embed.setDescription(embed.data.description + '\n\n' + getLocale(language, 'voteLimitHint', String(premiumManager.voteReward.perVote)))
-        payload.components = [voteButtonRow(language, guildId)]
-    } catch {
-        // The limit notice matters more than the vote offer — send it without.
-    }
-    return payload
+async function limitReachedMessage(language) {
+    return { embeds: [createMailLimitReachedEmbed(language, websiteMarkdownLink('limit_notice'))] }
 }
 
 /**

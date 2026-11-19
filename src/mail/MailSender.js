@@ -17,7 +17,7 @@ const { throttledNotify } = require('../utils/notifyThrottle')
 const SelfSmtpProvider = require('./providers/SelfSmtpProvider')
 const ZeptoMailProvider = require('./providers/ZeptoMailProvider')
 const premiumManager = require('../premium/PremiumManager')
-const { buildPlanButtons, getWebsiteUrl, mobileHintLine } = require('../utils/premiumButtons')
+const { buildPlanButtons, websiteMarkdownLink, mobileHintLine } = require('../utils/premiumButtons')
 const { createInvalidEmailEmbed } = require('../utils/embeds')
 const analytics = require('../utils/Analytics')
 const voting = require('../utils/voting')
@@ -417,9 +417,11 @@ module.exports = class MailSender {
             console.warn('[MailSender] Could not build premium buttons for quota warning:', e.message)
         }
 
-        const footer = this.#buildQuotaFooter(language, getWebsiteUrl())
+        const footer = this.#buildQuotaFooter(language, websiteMarkdownLink('quota_warning'))
 
-        const fire = (titleKey, msgKey, extraLine, ...vars) => {
+        // error_notified fires before sending, so a warning that reached no admin (DMs
+        // closed, no notify channel) is only visible in quota_warning_delivery.
+        const fire = (threshold, titleKey, msgKey, extraLine, ...vars) => {
             let baseMessage = getLocale(language, msgKey, ...vars)
             if (extraLine) baseMessage += `\n\n${extraLine}`
             ErrorNotifier.notify({
@@ -428,7 +430,12 @@ module.exports = class MailSender {
                 errorMessage: footer ? `${baseMessage}\n\n${footer}` : baseMessage,
                 language,
                 components
-            }).catch(() => {})
+            }).then(delivered => analytics.capture({
+                event: 'quota_warning_delivery',
+                userId: quotaUserId,
+                guild,
+                properties: { threshold, delivered: !!delivered, plan_buttons: !!components }
+            })).catch(() => {})
         }
 
         // Deadline framing beats percentage framing: append "on pace to run out
@@ -436,26 +443,26 @@ module.exports = class MailSender {
         const forecast = premiumManager.forecastLine(language, crossings.mailsSentMonth, freeLimit)
 
         if (crossings.crossed80) {
-            fire('quotaWarn80Title', 'quotaWarn80Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
+            fire('80', 'quotaWarn80Title', 'quotaWarn80Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
         }
         if (crossings.crossed95) {
-            fire('quotaWarn95Title', 'quotaWarn95Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
+            fire('95', 'quotaWarn95Title', 'quotaWarn95Message', forecast, String(crossings.mailsSentMonth ?? ''), String(freeLimit))
         }
         if (crossings.crossed100) {
-            fire('quotaWarn100Title', 'quotaWarn100Message', null, String(freeLimit))
+            fire('100', 'quotaWarn100Title', 'quotaWarn100Message', null, String(freeLimit))
         }
         if (crossings.crossedCreditsLow) {
-            fire('quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', null, String(crossings.creditsRemaining ?? 0))
+            fire('credits_low', 'quotaWarnCreditsLowTitle', 'quotaWarnCreditsLowMessage', null, String(crossings.creditsRemaining ?? 0))
         }
         if (crossings.crossedCreditsZero) {
-            fire('quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage', null)
+            fire('credits_zero', 'quotaWarnCreditsZeroTitle', 'quotaWarnCreditsZeroMessage', null)
         }
 
         // Public-facing service notice in the verify channel: only on quota exhaustion
         // (100% or zero credits), not advisory crossings. This is what regular members
         // see so they can explain to themselves why verification stopped working.
         if (crossings.crossed100 || crossings.crossedCreditsZero) {
-            this.#postPublicLimitNotice(interaction, language, guild.id).catch(() => {})
+            this.#postPublicLimitNotice(interaction, language).catch(() => {})
         }
     }
 
@@ -471,7 +478,7 @@ module.exports = class MailSender {
         return lines.join('\n')
     }
 
-    async #postPublicLimitNotice(interaction, language, guildId) {
+    async #postPublicLimitNotice(interaction, language) {
         // Post into the channel the user was actively verifying in — that's necessarily
         // the verify channel (or wherever the admin placed the verify button), and the
         // bot just used permissions there for the email modal, so the send should work.
@@ -483,9 +490,7 @@ module.exports = class MailSender {
         // notice is for the guild's verify channel, so skip it there.
         if (channel.isDMBased?.()) return
         try {
-            // Carries the vote button, so a member who can't get in can unlock their own
-            // verification.
-            await channel.send(await voting.limitReachedMessage(language, guildId))
+            await channel.send(await voting.limitReachedMessage(language))
         } catch (e) {
             // Missing send permission is fine — the admin DM path still fires.
         }

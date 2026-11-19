@@ -63,6 +63,16 @@ function websiteLink(path, medium) {
 }
 
 /**
+ * The website as a masked link for embed text: it reads as the bare host while the
+ * target carries the utm tag of where in the bot it was clicked.
+ */
+function websiteMarkdownLink(medium) {
+    const url = websiteLink('', medium)
+    if (!url) return null
+    return `[${new URL(websiteUrl).host}](${url})`
+}
+
+/**
  * "Get EmailVerify for your server" on a member's verification success message. Every
  * verification shows the bot to someone who may run a community of their own; paying
  * servers don't carry the link.
@@ -179,6 +189,7 @@ module.exports = {
     getWebsiteUrl,
     getSupportUrl,
     websiteLink,
+    websiteMarkdownLink,
     buildGetBotRow,
     getCurrency,
     describeSku
